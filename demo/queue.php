@@ -10,10 +10,10 @@ Resque::setBackend('127.0.0.1:6379');
 $class = new stdClass;
 $class->test = 'test';
 
-$args = array(
-	time(),
-	$class
-);
+$args = new stdClass;
+$args->time = time();
+$args->class = $class;
+
 $jobId = Resque::enqueue('default', $argv[1], $args, true);
 echo "Queued job ".$jobId."\n\n";
 ?>
