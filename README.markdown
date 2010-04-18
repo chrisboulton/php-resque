@@ -45,9 +45,8 @@ Jobs are queued as follows:
 	// Required if redis is located elsewhere
 	Resque::setBackend('localhost', 6379);
 
-	$args = array(
-		'name' => 'Chris'
-	);
+	$args = new stdClass;
+	$args->name = 'Chris';
 	Resque::enqueue('default', 'My_Job', $args);
 
 ### Defining Jobs ###
@@ -60,6 +59,7 @@ It's important to note that classes are called statically.
 		public static function perform($args)
 		{
 			// Work work work
+			echo $args->name;
 		}
 	}
 
