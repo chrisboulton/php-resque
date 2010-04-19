@@ -55,7 +55,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 		$this->assertFalse(Resque_Worker::exists((string)$worker));
 		$this->assertEquals(array(), Resque_Worker::all());
-		$this->assertNull($this->redis->smembers('redis:workers'));
+		$this->assertEquals(array(), $this->redis->smembers('resque:workers'));
 	}
 
 	public function testPausedWorkerDoesNotPickUpJobs()
