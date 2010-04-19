@@ -424,7 +424,7 @@ class Resque_Worker
 	{
 		$workerPids = $this->workerPids();
 		if(empty($workerPids)) {
-			continue;
+			return;
 		}
 		$workers = self::all();
 		foreach($workers as $worker) {
