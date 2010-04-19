@@ -22,11 +22,6 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$this->worker->registerWorker();
 	}
 
-	public function tearDown()
-	{
-		$this->worker->unregisterWorker();
-	}
-
 	public function testJobCanBeQueued()
 	{
 		$this->assertTrue((bool)Resque::enqueue('jobs', 'Test_Job'));
