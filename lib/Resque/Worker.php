@@ -423,9 +423,6 @@ class Resque_Worker
 	public function pruneDeadWorkers()
 	{
 		$workerPids = $this->workerPids();
-		if(empty($workerPids)) {
-			return;
-		}
 		$workers = self::all();
 		foreach($workers as $worker) {
 			list($host, $pid, $queues) = explode(':', (string)$worker, 3);
