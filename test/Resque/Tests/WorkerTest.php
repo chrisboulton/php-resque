@@ -153,7 +153,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 		$job = $worker->reserve();
 		$worker->workingOn($job);
 		$worker->doneWorking();
-		$this->assertEquals(new stdClass, $worker->job());
+		$this->assertEquals(array(), $worker->job());
 	}
 
 	public function testWorkerRecordsWhatItIsWorkingOn()
@@ -161,17 +161,18 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 		$worker = new Resque_Worker('jobs');
 		$worker->registerWorker();
 
-		$payload = new stdClass;
-		$payload->class = 'Test_Job';
+		$payload = array(
+			'class' => 'Test_Job'
+		);
 		$job = new Resque_Job('jobs', $payload);
 		$worker->workingOn($job);
 
 		$job = $worker->job();
-		$this->assertEquals('jobs', $job->queue);
-		if(!isset($job->run_at)) {
+		$this->assertEquals('jobs', $job['queue']);
+		if(!isset($job['run_at'])) {
 			$this->fail('Job does not have run_at time');
 		}
-		$this->assertEquals($payload, $job->payload);
+		$this->assertEquals($payload, $job['payload']);
 	}
 
 	public function testWorkerErasesItsStatsWhenShutdown()
@@ -239,8 +240,9 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 		$worker = new Resque_Worker('jobs');
 		$worker->registerWorker();
 
-		$payload = new stdClass;
-		$payload->class = 'Test_Job';
+		$payload = array(
+			'class' => 'Test_Job'
+		);
 		$job = new Resque_Job('jobs', $payload);
 
 		$worker->workingOn($job);

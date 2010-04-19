@@ -73,7 +73,7 @@ class Resque
 			return;
 		}
 
-		return json_decode($item);
+		return json_decode($item, true);
 	}
 
 	/**

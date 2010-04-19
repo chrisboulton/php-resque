@@ -43,14 +43,14 @@ class Resque_Job
 	 *
 	 * @param string $queue The name of the queue to place the job in.
 	 * @param string $class The name of the class that contains the code to execute the job.
-	 * @param object $args Any optional arguments that should be passed when the job is executed. Pass as a class.
+	 * @param array $args Any optional arguments that should be passed when the job is executed.
 	 * @param boolean $monitor Set to true to be able to monitor the status of a job.
 	 */
 	public static function create($queue, $class, $args = null, $monitor = false)
 	{
-		if($args !== null && !is_object($args)) {
+		if($args !== null && !is_array($args)) {
 			throw new InvalidArgumentException(
-				'Supplied $args must be an object and an instance of stdClass.'
+				'Supplied $args must be an array.'
 			);
 		}
 		$id = md5(uniqid('', true));
@@ -95,7 +95,7 @@ class Resque_Job
 			return;
 		}
 
-		$statusInstance = new Resque_Job_Status($this->payload->id);
+		$statusInstance = new Resque_Job_Status($this->payload['id']);
 		$statusInstance->update($status);
 	}
 
@@ -106,7 +106,7 @@ class Resque_Job
 	 */
 	public function getStatus()
 	{
-		$status = new Resque_Job_Status($this->payload->id);
+		$status = new Resque_Job_Status($this->payload['id']);
 		return $status->get();
 	}
 
@@ -118,19 +118,19 @@ class Resque_Job
 	 */
 	public function perform()
 	{
-		if(!class_exists($this->payload->class)) {
+		if(!class_exists($this->payload['class'])) {
 			throw new Resque_Exception(
-				'Could not find job class ' . $this->payload->class . '.'
+				'Could not find job class ' . $this->payload['class'] . '.'
 			);
 		}
 
-		if(!method_exists($this->payload->class, 'perform')) {
+		if(!method_exists($this->payload['class'], 'perform')) {
 			throw new Resque_Exception(
-				'Job class ' . $this->payload->class . ' does not contain a perform method.'
+				'Job class ' . $this->payload['class'] . ' does not contain a perform method.'
 			);
 		}
 
-		call_user_func(array($this->payload->class, 'perform'), $this->payload->args);
+		call_user_func(array($this->payload['class'], 'perform'), $this->payload['args']);
 	}
 
 	/**
@@ -155,13 +155,13 @@ class Resque_Job
 	 */
 	public function recreate()
 	{
-		$status = new Resque_Job_Status($this->payload->id);
+		$status = new Resque_Job_Status($this->payload['id']);
 		$monitor = false;
 		if($status->isTracking()) {
 			$monitor = true;
 		}
 
-		return self::create($this->queue, $this->payload->class, $this->payload->args, $monitor);
+		return self::create($this->queue, $this->payload['class'], $this->payload['args'], $monitor);
 	}
 
 	/**
@@ -171,24 +171,16 @@ class Resque_Job
 	 */
 	public function __toString()
 	{
-		$args = array();
-		if(isset($this->payload->args)) {
-			$args = $this->payload->args;
-			foreach($args as $k => $v) {
-				if(is_object($v)) {
-					$args[$k] = '{' . get_class($v) . ' - '.implode(',', get_object_vars($v)) . '}';
-				}
-			}
-		}
-
 		$name = array(
 			'Job{' . $this->queue .'}'
 		);
-		if(!empty($this->payload->id)) {
-			$name[] = 'ID: ' . $this->payload->id;
+		if(!empty($this->payload['id'])) {
+			$name[] = 'ID: ' . $this->payload['id'];
 		}
-		$name[] = $this->payload->class;
-		$name[] = implode(',', $args);
+		$name[] = $this->payload['class'];
+		if(!empty($this->payload['args'])) {
+			$name[] = json_encode($this->payload['args']);
+		}
 		return '(' . implode(' | ', $name) . ')';
 	}
 }

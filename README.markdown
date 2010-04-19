@@ -45,8 +45,9 @@ Jobs are queued as follows:
 	// Required if redis is located elsewhere
 	Resque::setBackend('localhost', 6379);
 
-	$args = new stdClass;
-	$args->name = 'Chris';
+	$args = array(
+		'name' => 'Chris'
+	);
 	Resque::enqueue('default', 'My_Job', $args);
 
 ### Defining Jobs ###
@@ -59,7 +60,7 @@ It's important to note that classes are called statically.
 		public static function perform($args)
 		{
 			// Work work work
-			echo $args->name;
+			echo $args['name'];
 		}
 	}
 
@@ -77,7 +78,7 @@ To track the status of a job, pass `true` as the fourth argument to
 `Resque::enqueue`. A token used for tracking the job status will be
 returned:
 
-	$token = Resque::enqueue('default', 'My_Job', $args);
+	$token = Resque::enqueue('default', 'My_Job', $args, true);
 	echo $token;
 
 To fetch the status of a job:

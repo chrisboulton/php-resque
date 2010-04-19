@@ -543,10 +543,10 @@ class Resque_Worker
 	{
 		$job = Resque::redis()->get('worker:' . $this);
 		if(!$job) {
-			return new stdClass;
+			return array();
 		}
 		else {
-			return json_decode($job);
+			return json_decode($job, true);
 		}
 	}
 

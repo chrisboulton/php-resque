@@ -41,35 +41,36 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 			$this->fail('Job could not be reserved.');
 		}
 		$this->assertEquals('jobs', $job->queue);
-		$this->assertEquals('Test_Job', $job->payload->class);
+		$this->assertEquals('Test_Job', $job->payload['class']);
 	}
 
 	/**
 	 * @expectedException InvalidArgumentException
 	 */
-	public function testArrayArgumentsCannotBePassedToJob()
+	public function testObjectArgumentsCannotBePassedToJob()
 	{
-		Resque::enqueue('jobs', 'Test_Job', array(
-			'test'
-		));
+		$args = new stdClass;
+		$args->test = 'somevalue';
+		Resque::enqueue('jobs', 'Test_Job', $args);
 	}
 
 	public function testQueuedJobReturnsExactSamePassedInArguments()
 	{
-		$args = new stdClass;
-		$args->int = 123;
-		$args->numArray = array(
-			1,
-			2,
+		$args = array(
+			'int' => 123,
+			'numArray' => array(
+				1,
+				2,
+			),
+			'assocArray' => array(
+				'key1' => 'value1',
+				'key2' => 'value2'
+			),
 		);
-		$args->assocArray = new stdClass;
-		$args->assocArray->key1 = 'value1';
-		$args->assocArray->key2 = 'value2';
-
 		Resque::enqueue('jobs', 'Test_Job', $args);
 		$job = Resque_Job::reserve('jobs');
 
-		$this->assertEquals($args, $job->payload->args);
+		$this->assertEquals($args, $job->payload['args']);
 	}
 
 	public function testAfterJobIsReservedItIsRemoved()
@@ -81,15 +82,17 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 
 	public function testRecreatedJobMatchesExistingJob()
 	{
-		$args = new stdClass;
-		$args->int = 123;
-		$args->numArray = array(
-			1,
-			2,
+		$args = array(
+			'int' => 123,
+			'numArray' => array(
+				1,
+				2,
+			),
+			'assocArray' => array(
+				'key1' => 'value1',
+				'key2' => 'value2'
+			),
 		);
-		$args->assocArray = new stdClass;
-		$args->assocArray->key1 = 'value1';
-		$args->assocArray->key2 = 'value2';
 
 		Resque::enqueue('jobs', 'Test_Job', $args);
 		$job = Resque_Job::reserve('jobs');
@@ -98,15 +101,16 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$job->recreate();
 
 		$newJob = Resque_Job::reserve('jobs');
-		$this->assertEquals($job->payload->class, $newJob->payload->class);
-		$this->assertEquals($job->payload->args, $newJob->payload->args);
+		$this->assertEquals($job->payload['class'], $newJob->payload['class']);
+		$this->assertEquals($job->payload['args'], $newJob->payload['args']);
 	}
 
 	public function testFailedJobExceptionsAreCaught()
 	{
-		$payload = new stdClass;
-		$payload->class = 'Failing_Job';
-		$payload->args = null;
+		$payload = array(
+			'class' => 'Failing_Job',
+			'args' => null
+		);
 		$job = new Resque_Job('jobs', $payload);
 		$job->worker = $this->worker;
 

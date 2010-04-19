@@ -16,7 +16,7 @@ if(!empty($_ENV['APP_INCLUDE'])) {
 }
 
 require 'lib/Resque.php';
-require 'Resque/Worker.php';
+require 'lib/Resque/Worker.php';
 
 if(!empty($_ENV['REDIS_BACKEND'])) {
 	Resque::setBackend($_ENV['REDIS_BACKEND']);
