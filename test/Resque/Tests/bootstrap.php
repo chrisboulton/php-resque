@@ -114,3 +114,38 @@ class Test_Job_Without_Perform_Method
 {
 
 }
+
+class Test_Job_With_SetUp
+{
+	public static $called = false;
+	public static $data = false;
+
+	public function setUp($data)
+	{
+		self::$called = true;
+		self::$data = $data;
+	}
+
+	public function perform($data)
+	{
+
+	}
+}
+
+
+class Test_Job_With_TearDown
+{
+	public static $called = false;
+	public static $data = false;
+
+	public function perform($data)
+	{
+
+	}
+
+	public function tearDown($data)
+	{
+		self::$called = true;
+		self::$data = $data;
+	}
+}

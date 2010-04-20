@@ -136,4 +136,36 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$job->worker = $this->worker;
 		$job->perform();
 	}
+	
+	public function testJobWithSetUpCallbackFiresSetUp()
+	{
+		$payload = array(
+			'class' => 'Test_Job_With_SetUp',
+			'args' => array(
+				'somevar',
+				'somevar2',
+			),
+		);
+		$job = new Resque_Job('jobs', $payload);
+		$job->perform();
+		
+		$this->assertTrue(Test_Job_With_SetUp::$called);
+		$this->assertEquals($payload['args'], Test_Job_With_SetUp::$data);
+	}
+	
+	public function testJobWithTearDownCallbackFiresSetUp()
+	{
+		$payload = array(
+			'class' => 'Test_Job_With_TearDown',
+			'args' => array(
+				'somevar',
+				'somevar2',
+			),
+		);
+		$job = new Resque_Job('jobs', $payload);
+		$job->perform();
+		
+		$this->assertTrue(Test_Job_With_TearDown::$called);
+		$this->assertEquals($payload['args'], Test_Job_With_TearDown::$data);
+	}
 }

@@ -33,6 +33,8 @@ In addition, it also:
 * Has the ability to track the status of jobs
 * Will mark a job as failed, if a forked child running a job does
 not exit with a status code as 0
+* Has built in support for `setUp` and `tearDown` methods, called
+pre and post jobs
 
 ## Jobs ##
 
@@ -67,6 +69,36 @@ It's important to note that classes are called statically.
 Any exception thrown by a job will result in the job failing - be
 careful here and make sure you handle the exceptions that shouldn't
 result in a job failing.
+
+Jobs can also have `setUp` and `tearDown` methods. If a `setUp` method
+is defined, it will be called along with `$args` before the `perform`
+method is run. The `tearDown` method if defined, will be called with
+`$args` also, after the job finishes.
+
+	class My_Job
+	{
+		public static function setUp($args)
+		{
+			// ... Set up environment for this job
+		}
+		
+		public static function perform($args)
+		{
+			// .. Run job
+		}
+		
+		public static function tearDown($args)
+		{
+			// ... Remove environment for this job
+		}
+	}
+	
+It is **IMPORTANT** to note, that on operating systems where Resque
+cannot fork to run a job (Mac OS X, or other platforms where the PHP
+process control functions are unavailable), that because job classes
+are static, their state will be retained between job calls. **ALWAYS**
+reset the environment back to how you got it if you're using a `setUp`
+method, by resetting changes in a `tearDown` method.
 
 ### Tracking Job Statuses ###
 
