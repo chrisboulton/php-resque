@@ -1,5 +1,5 @@
 <?php
-require_once 'Resque/Exception.php';
+require_once dirname(__FILE__) . '/Resque/Exception.php';
 
 /**
  * Base Resque class.
@@ -28,7 +28,7 @@ class Resque
 	{
 		list($host, $port) = explode(':', $server);
 
-		require_once 'Resque/Redis.php';
+		require_once dirname(__FILE__) . '/Resque/Redis.php';
 		self::$redis = new Resque_Redis($host, $port);
 	}
 
@@ -96,7 +96,7 @@ class Resque
 	 */
 	public static function enqueue($queue, $class, $args = null, $trackStatus = false)
 	{
-		require_once 'Resque/Job.php';
+		require_once dirname(__FILE__) . '/Resque/Job.php';
 		return Resque_Job::create($queue, $class, $args, $trackStatus);
 	}
 
@@ -108,7 +108,7 @@ class Resque
 	 */
 	public static function reserve($queue)
 	{
-		require_once 'Resque/Job.php';
+		require_once dirname(__FILE__) . '/Resque/Job.php';
 		return Resque_Job::reserve($queue);
 	}
 

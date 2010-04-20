@@ -1,5 +1,5 @@
 <?php
-require_once 'Job/Status.php';
+require_once dirname(__FILE__) . '/Job/Status.php';
 
 /**
  * Resque job.
@@ -147,7 +147,7 @@ class Resque_Job
 	public function fail($exception)
 	{
 		$this->updateStatus(Resque_Job_Status::STATUS_FAILED);
-		require_once 'Failure.php';
+		require_once dirname(__FILE__) . '/Failure.php';
 		Resque_Failure::create(
 			$this->payload,
 			$exception,

@@ -42,7 +42,7 @@ pre and post jobs
 
 Jobs are queued as follows:
 
-    require_once 'Resque.php';
+    require_once 'lib/Resque.php';
 
 	// Required if redis is located elsewhere
 	Resque::setBackend('localhost', 6379);
