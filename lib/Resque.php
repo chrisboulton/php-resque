@@ -26,10 +26,17 @@ class Resque
 	 */
 	public static function setBackend($server)
 	{
-		list($host, $port) = explode(':', $server);
+    if(is_array($server)) {
 
-		require_once dirname(__FILE__) . '/Resque/Redis.php';
-		self::$redis = new Resque_Redis($host, $port);
+      require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
+      self::$redis = new Resque_RedisCluster($server);
+
+    }else{
+      list($host, $port) = explode(':', $server);
+
+      require_once dirname(__FILE__) . '/Resque/Redis.php';
+      self::$redis = new Resque_Redis($host, $port);
+    }
 	}
 
 	/**
