@@ -150,7 +150,6 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$job->perform();
 		
 		$this->assertTrue(Test_Job_With_SetUp::$called);
-		$this->assertEquals($payload['args'], Test_Job_With_SetUp::$data);
 	}
 	
 	public function testJobWithTearDownCallbackFiresSetUp()
@@ -166,6 +165,5 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$job->perform();
 		
 		$this->assertTrue(Test_Job_With_TearDown::$called);
-		$this->assertEquals($payload['args'], Test_Job_With_TearDown::$data);
 	}
 }

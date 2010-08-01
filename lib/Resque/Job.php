@@ -129,15 +129,18 @@ class Resque_Job
 				'Job class ' . $this->payload['class'] . ' does not contain a perform method.'
 			);
 		}
-		
-		if(method_exists($this->payload['class'], 'setUp')) {
-			call_user_func(array($this->payload['class'], 'setUp'), $this->payload['args']);
+
+		$instance = new $this->payload['class'];
+		$isntance->args = $this->payload['args'];
+
+		if(method_exists($instance, 'setUp')) {
+			$instance->setUp();
 		}
 
-		call_user_func(array($this->payload['class'], 'perform'), $this->payload['args']);
-		
-		if(method_exists($this->payload['class'], 'tearDown')) {
-			call_user_func(array($this->payload['class'], 'tearDown'), $this->payload['args']);
+		$instance->perform();
+
+		if(method_exists($instance, 'tearDown')) {
+			$instance->tearDown();
 		}
 	}
 

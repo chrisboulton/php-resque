@@ -118,15 +118,14 @@ class Test_Job_Without_Perform_Method
 class Test_Job_With_SetUp
 {
 	public static $called = false;
-	public static $data = false;
+	public $args = false;
 
-	public function setUp($data)
+	public function setUp()
 	{
 		self::$called = true;
-		self::$data = $data;
 	}
 
-	public function perform($data)
+	public function perform()
 	{
 
 	}
@@ -136,16 +135,15 @@ class Test_Job_With_SetUp
 class Test_Job_With_TearDown
 {
 	public static $called = false;
-	public static $data = false;
+	public $args = false;
 
-	public function perform($data)
+	public function perform()
 	{
 
 	}
 
-	public function tearDown($data)
+	public function tearDown()
 	{
 		self::$called = true;
-		self::$data = $data;
 	}
 }

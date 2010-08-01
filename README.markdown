@@ -55,50 +55,45 @@ Jobs are queued as follows:
 ### Defining Jobs ###
 
 Each job should be in it's own class, and include a `perform` method.
-It's important to note that classes are called statically.
 
 	class My_Job
 	{
-		public static function perform($args)
+		public function perform()
 		{
 			// Work work work
-			echo $args['name'];
+			echo $this->args['name'];
 		}
 	}
+
+When the job is run, the class will be instantiated and any arguments
+will be set as an array on the instantiated object, and are accessible
+via `$this->args`.
 
 Any exception thrown by a job will result in the job failing - be
 careful here and make sure you handle the exceptions that shouldn't
 result in a job failing.
 
 Jobs can also have `setUp` and `tearDown` methods. If a `setUp` method
-is defined, it will be called along with `$args` before the `perform`
-method is run. The `tearDown` method if defined, will be called with
-`$args` also, after the job finishes.
+is defined, it will be called before the `perform` method is run.
+The `tearDown` method if defined, will be called after the job finishes.
 
 	class My_Job
 	{
-		public static function setUp($args)
+		public function setUp()
 		{
 			// ... Set up environment for this job
 		}
 		
-		public static function perform($args)
+		public function perform()
 		{
 			// .. Run job
 		}
 		
-		public static function tearDown($args)
+		public function tearDown()
 		{
 			// ... Remove environment for this job
 		}
 	}
-	
-It is **IMPORTANT** to note, that on operating systems where Resque
-cannot fork to run a job (Mac OS X, or other platforms where the PHP
-process control functions are unavailable), that because job classes
-are static, their state will be retained between job calls. **ALWAYS**
-reset the environment back to how you got it if you're using a `setUp`
-method, by resetting changes in a `tearDown` method.
 
 ### Tracking Job Statuses ###
 
