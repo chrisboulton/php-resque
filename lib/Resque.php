@@ -22,21 +22,20 @@ class Resque
 	 * Given a host/port combination separated by a colon, set it as
 	 * the redis server that Resque will talk to.
 	 *
-	 * @param string $server Host/port combination separated by a colon.
+	 * @param mixed $server Host/port combination separated by a colon, or
+	 * a nested array of servers with host/port pairs.
 	 */
 	public static function setBackend($server)
 	{
-    if(is_array($server)) {
-
-      require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
-      self::$redis = new Resque_RedisCluster($server);
-
-    }else{
-      list($host, $port) = explode(':', $server);
-
-      require_once dirname(__FILE__) . '/Resque/Redis.php';
-      self::$redis = new Resque_Redis($host, $port);
-    }
+		if(is_array($server)) {
+			require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
+			self::$redis = new Resque_RedisCluster($server);
+		}
+		else {
+			list($host, $port) = explode(':', $server);
+			require_once dirname(__FILE__) . '/Resque/Redis.php';
+			self::$redis = new Resque_Redis($host, $port);
+		}
 	}
 
 	/**
