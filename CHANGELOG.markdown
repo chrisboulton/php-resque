@@ -5,6 +5,7 @@ PHP.
 and after every single run.
 * Ability to specify a cluster/multiple redis servers and consistent hash
 between them (Thanks dceballos)
+* Fix `APP_INCLUDE` environment variable not loading correctly.
 
 ## 1.0 (2010-04-18) ##
 

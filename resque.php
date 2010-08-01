@@ -12,7 +12,7 @@ if(!empty($_ENV['APP_INCLUDE'])) {
 		die('APP_INCLUDE ('.$_ENV['APP_INCLUDE'].") does not exist.\n");
 	}
 
-	require_once APP_INCLUDE;
+	require_once $_ENV['APP_INCLUDE'];
 }
 
 require 'lib/Resque.php';
