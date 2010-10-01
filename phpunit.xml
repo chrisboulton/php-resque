@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit backupGlobals="false"
+	backupStaticAttributes="false"
+	colors="false"
+	convertErrorsToExceptions="true"
+	convertNoticesToExceptions="true"
+	convertWarningsToExceptions="true"
+	processIsolation="false"
+	stopOnFailure="false"
+	syntaxCheck="false"
+>
+	<testsuites>
+		<testsuite name="Resque Test Suite">
+			<directory>./test/Resque/</directory>
+		</testsuite>
+	</testsuites>
+
+	<filter>
+		<whitelist>
+			<directory suffix=".php">./lib/Resque/</directory>
+		</whitelist>
+	</filter>
+</phpunit>
