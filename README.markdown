@@ -171,7 +171,7 @@ checked in.
 
 As per the original example:
 
-	$ QUEUES=file_serve,warm_cache php resque.php
+	$ QUEUE=file_serve,warm_cache php resque.php
 
 The `file_serve` queue will always be checked for new jobs on each
 iteration before the `warm_cache` queue is checked.
@@ -181,7 +181,7 @@ iteration before the `warm_cache` queue is checked.
 All queues are supported in the same manner and processed in alphabetical
 order:
 
-    $ QUEUES=* php resque.php
+    $ QUEUE=* php resque.php
 
 ### Running Multiple Workers ###
 
@@ -224,3 +224,14 @@ their resque status.
 A PECL module (<http://pecl.php.net/package/proctitle>) exists that
 adds this funcitonality to PHP, so if you'd like process titles updated,
 install the PECL module as well. php-resque will detect and use it.
+
+### Errors and troubleshooting ###
+
+**php.ini settings**
+
+If you don't have E in variables_order you can specify @-c ./@ as an 
+option to the PHP cli program. This reverts values to the defaults which 
+include E.
+
+    $ QUEUE=file_serve php -c ./ resque.php
+

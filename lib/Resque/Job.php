@@ -131,7 +131,7 @@ class Resque_Job
 		}
 
 		$instance = new $this->payload['class'];
-		$isntance->args = $this->payload['args'];
+		$instance->args = $this->payload['args'];
 
 		if(method_exists($instance, 'setUp')) {
 			$instance->setUp();
