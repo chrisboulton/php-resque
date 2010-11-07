@@ -175,7 +175,7 @@ class Resque_Worker
 				else {
 					$this->updateProcLine('Waiting for ' . implode(',', $this->queues));
 				}
-				sleep($interval);
+				usleep($interval*1000000);
 				continue;
 			}
 
