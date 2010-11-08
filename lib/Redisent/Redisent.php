@@ -83,15 +83,15 @@ class Redisent {
 				break;
 			/* Bulk reply */
 			case '$':
+				$response = null;
 				if ($reply == '$-1') {
-					$response = null;
 					break;
 				}
 				$read = 0;
 				$size = substr($reply, 1);
 				do {
 					$block_size = ($size - $read) > 1024 ? 1024 : ($size - $read);
-					$response = fread($this->__sock, $block_size);
+					$response .= fread($this->__sock, $block_size);
 					$read += $block_size;
 				} while ($read < $size);
 				fread($this->__sock, 2); /* discard crlf */
