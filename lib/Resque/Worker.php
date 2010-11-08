@@ -445,7 +445,7 @@ class Resque_Worker
 		$pids = array();
 		exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
 		foreach($cmdOutput as $line) {
-			list($pids[],) = explode(' ', $line, 2);
+			list($pids[],) = explode(' ', trim($line), 2);
 		}
 		return $pids;
 	}
