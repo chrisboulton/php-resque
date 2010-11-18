@@ -35,7 +35,7 @@ class Resque_Failure
 	 *
 	 * @return object Instance of backend object.
 	 */
-	public function getBackend()
+	public static function getBackend()
 	{
 		if(self::$backend === null) {
 			require  dirname(__FILE__) . '/Failure/Redis.php';
@@ -52,7 +52,7 @@ class Resque_Failure
 	 *
 	 * @param string $backend The class name of the backend to pipe failures to.
 	 */
-	public function setBackend($backend)
+	public static function setBackend($backend)
 	{
 		self::$backend = $backend;
 	}
