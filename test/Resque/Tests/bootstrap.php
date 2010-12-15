@@ -59,7 +59,7 @@ function killRedis($pid)
 
 	$pidFile = TEST_MISC . '/' . $matches[1];
 	$pid = trim(file_get_contents($pidFile));
-	posix_kill($pid, 9);
+	posix_kill((int) $pid, 9);
 
 	if(is_file($pidFile)) {
 		unlink($pidFile);
