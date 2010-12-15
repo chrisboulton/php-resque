@@ -91,7 +91,7 @@ class Resque_Job
 	 */
 	public function updateStatus($status)
 	{
-		if(empty($this->payload->id)) {
+		if(empty($this->payload['id'])) {
 			return;
 		}
 
