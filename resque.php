@@ -1,43 +1,47 @@
 <?php
-if(empty($_ENV)) {
-	die("\$_ENV does not seem to be available. Ensure 'E' is in your variables_order php.ini setting\n");
-}
-
-if(empty($_ENV['QUEUE'])) {
+$QUEUE = getenv('QUEUE');
+if(empty($QUEUE)) {
 	die("Set QUEUE env var containing the list of queues to work.\n");
 }
 
-if(!empty($_ENV['APP_INCLUDE'])) {
-	if(!file_exists($_ENV['APP_INCLUDE'])) {
-		die('APP_INCLUDE ('.$_ENV['APP_INCLUDE'].") does not exist.\n");
+$APP_INCLUDE = getenv('APP_INCLUDE');
+if(!$APP_INCLUDE) {
+	if(!file_exists($APP_INCLUDE)) {
+		die('APP_INCLUDE ('.$APP_INCLUDE.") does not exist.\n");
 	}
 
-	require_once $_ENV['APP_INCLUDE'];
+	require_once $APP_INCLUDE;
 }
 
 require 'lib/Resque.php';
 require 'lib/Resque/Worker.php';
 
-if(!empty($_ENV['REDIS_BACKEND'])) {
-	Resque::setBackend($_ENV['REDIS_BACKEND']);
+$REDIS_BACKEND = getenv('REDIS_BACKEND');
+if(!empty($REDIS_BACKEND)) {
+	Resque::setBackend($REDIS_BACKEND);
 }
 
 $logLevel = 0;
-if(!empty($_ENV['LOGGING']) || !empty($_ENV['VERBOSE'])) {
+$LOGGING = getenv('LOGGING');
+$VERBOSE = getenv('VERBOSE');
+$VVERBOSE = getenv('VVERBOSE');
+if(!empty($LOGGING) || !empty($VERBOSE)) {
 	$logLevel = Resque_Worker::LOG_NORMAL;
 }
-else if(!empty($_ENV['VVERBOSE'])) {
+else if(!empty($VVERBOSE)) {
 	$logLevel = Resque_Worker::LOG_VERBOSE;
 }
 
 $interval = 5;
-if(!empty($_ENV['INTERVAL'])) {
-	$interval = $_ENV['INTERVAL'];
+$INTERVAL = getenv('INTERVAL');
+if(!empty($INTERVAL)) {
+	$interval = $INTERVAL;
 }
 
 $count = 1;
-if(!empty($_ENV['COUNT']) && $_ENV['COUNT'] > 1) {
-	$count = $_ENV['COUNT'];
+$COUNT = getenv('COUNT');
+if(!empty($COUNT) && $COUNT > 1) {
+	$count = $COUNT;
 }
 
 if($count > 1) {
@@ -48,7 +52,7 @@ if($count > 1) {
 		}
 		// Child, start the worker
 		else if(!$pid) {
-			$queues = explode(',', $_ENV['QUEUE']);
+			$queues = explode(',', $QUEUE);
 			$worker = new Resque_Worker($queues);
 			$worker->logLevel = $logLevel;
 			fwrite(STDOUT, '*** Starting worker '.$worker."\n");
@@ -59,7 +63,7 @@ if($count > 1) {
 }
 // Start a single worker
 else {
-	$queues = explode(',', $_ENV['QUEUE']);
+	$queues = explode(',', $QUEUE);
 	$worker = new Resque_Worker($queues);
 	$worker->logLevel = $logLevel;
 	fwrite(STDOUT, '*** Starting worker '.$worker."\n");
