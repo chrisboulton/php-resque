@@ -7,7 +7,7 @@
  * @package Redisent
  */
 
-require dirname(__FILE__) . '/Redisent.php';
+require_once dirname(__FILE__) . '/Redisent.php';
 
 /**
  * A generalized Redisent interface for a cluster of Redis servers
