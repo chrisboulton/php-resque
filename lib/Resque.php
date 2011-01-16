@@ -37,6 +37,8 @@ class Resque
 			require_once dirname(__FILE__) . '/Resque/Redis.php';
 			self::$redis = new Resque_Redis($host, $port);
 		}
+
+        self::redis()->select($database);
 	}
 
 	/**
