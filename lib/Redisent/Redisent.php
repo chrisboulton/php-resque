@@ -20,118 +20,123 @@ class RedisException extends Exception {
  */
 class Redisent {
 
-	/**
-	 * Socket connection to the Redis server
-	 * @var resource
-	 * @access private
-	 */
-	private $__sock;
+    /**
+     * Socket connection to the Redis server
+     * @var resource
+     * @access private
+     */
+    private $__sock;
 
-	/**
-	 * Redis bulk commands, they are sent in a slightly different format to the server
-	 * @var array
-	 * @access private
-	 */
-	private $bulk_cmds = array(
-		'SET',   'GETSET', 'SETNX', 'ECHO',
-		'RPUSH', 'LPUSH',  'LSET',  'LREM',
-		'SADD',  'SREM',   'SMOVE', 'SISMEMBER'
-	);
+    /**
+     * Host of the Redis server
+     * @var string
+     * @access public
+     */
+    public $host;
 
-	/**
-	 * Creates a Redisent connection to the Redis server on host {@link $host} and port {@link $port}.
-	 * @param string $host The hostname of the Redis server
-	 * @param integer $port The port number of the Redis server
-	 */
-	function __construct($host, $port = 6379) {
-		$this->__sock = fsockopen($host, $port, $errno, $errstr);
-		if (!$this->__sock) {
-			throw new Exception("{$errno} - {$errstr}");
-		}
-	}
+    /**
+     * Port on which the Redis server is running
+     * @var integer
+     * @access public
+     */
+    public $port;
 
-	function __destruct() {
-		fclose($this->__sock);
-	}
+    /**
+     * Creates a Redisent connection to the Redis server on host {@link $host} and port {@link $port}.
+     * @param string $host The hostname of the Redis server
+     * @param integer $port The port number of the Redis server
+     */
+    function __construct($host, $port = 6379) {
+        $this->host = $host;
+        $this->port = $port;
+        $this->__sock = fsockopen($this->host, $this->port, $errno, $errstr);
+        if (!$this->__sock) {
+            throw new \Exception("{$errno} - {$errstr}");
+        }
+    }
 
-	function __call($name, $args) {
+    function __destruct() {
+        fclose($this->__sock);
+    }
 
-		/* Build the Redis protocol command */
-		$name = strtoupper($name);
-		if (in_array($name, $this->bulk_cmds)) {
-			$value = array_pop($args);
-			$command = sprintf("%s %s %d%s%s%s", $name, trim(implode(' ', $args)), strlen($value), CRLF, $value, CRLF);
-		}
-		else {
-			$command = sprintf("%s %s%s", $name, trim(implode(' ', $args)), CRLF);
-		}
+    function __call($name, $args) {
 
-		/* Open a Redis connection and execute the command */
-		fwrite($this->__sock, $command);
+        /* Build the Redis unified protocol command */
+        array_unshift($args, strtoupper($name));
+        $command = sprintf('*%d%s%s%s', count($args), CRLF, implode(array_map(function($arg) {
+            return sprintf('$%d%s%s', strlen($arg), CRLF, $arg);
+        }, $args), CRLF), CRLF);
 
-		/* Parse the response based on the reply identifier */
-		$reply = trim(fgets($this->__sock, 512));
-		switch (substr($reply, 0, 1)) {
-			/* Error reply */
-			case '-':
-				echo $command."\n";
-				throw new RedisException(substr(trim($reply), 4));
-				break;
-			/* Inline reply */
-			case '+':
-				$response = substr(trim($reply), 1);
-				break;
-			/* Bulk reply */
-			case '$':
-				$response = null;
-				if ($reply == '$-1') {
-					break;
-				}
-				$read = 0;
-				$size = substr($reply, 1);
-				do {
-					$block_size = ($size - $read) > 1024 ? 1024 : ($size - $read);
-					$response .= fread($this->__sock, $block_size);
-					$read += $block_size;
-				} while ($read < $size);
-				fread($this->__sock, 2); /* discard crlf */
-				break;
-			/* Multi-bulk reply */
-			case '*':
-				$count = substr($reply, 1);
-				if ($count == '-1') {
-					return null;
-				}
-				$response = array();
-				for ($i = 0; $i < $count; $i++) {
-					$bulk_head = trim(fgets($this->__sock, 512));
-					$size = substr($bulk_head, 1);
-					if ($size == '-1') {
-						$response[] = null;
-					}
-					else {
-						$read = 0;
-						$block = "";
-						do {
-							$block_size = ($size - $read) > 1024 ? 1024 : ($size - $read);
-							$block .= fread($this->__sock, $block_size);
-							$read += $block_size;
-						} while ($read < $size);
-						fread($this->__sock, 2); /* discard crlf */
-						$response[] = $block;
-					}
-				}
-				break;
-			/* Integer reply */
-			case ':':
-				$response = substr(trim($reply), 1);
-				break;
-			default:
-				throw new RedisException("invalid server response: {$reply}");
-				break;
-		}
-		/* Party on */
-		return $response;
-	}
+        /* Open a Redis connection and execute the command */
+        for ($written = 0; $written < strlen($command); $written += $fwrite) {
+            $fwrite = fwrite($this->__sock, substr($command, $written));
+            if ($fwrite === FALSE) {
+                throw new \Exception('Failed to write entire command to stream');
+            }
+        }
+
+        /* Parse the response based on the reply identifier */
+        $reply = trim(fgets($this->__sock, 512));
+        switch (substr($reply, 0, 1)) {
+            /* Error reply */
+            case '-':
+                throw new RedisException(substr(trim($reply), 4));
+                break;
+            /* Inline reply */
+            case '+':
+                $response = substr(trim($reply), 1);
+                break;
+            /* Bulk reply */
+            case '$':
+                $response = null;
+                if ($reply == '$-1') {
+                    break;
+                }
+                $read = 0;
+                $size = substr($reply, 1);
+                do {
+                    $block_size = ($size - $read) > 1024 ? 1024 : ($size - $read);
+                    $response .= fread($this->__sock, $block_size);
+                    $read += $block_size;
+                } while ($read < $size);
+                fread($this->__sock, 2); /* discard crlf */
+                break;
+            /* Multi-bulk reply */
+            case '*':
+                $count = substr($reply, 1);
+                if ($count == '-1') {
+                    return null;
+                }
+                $response = array();
+                for ($i = 0; $i < $count; $i++) {
+                    $bulk_head = trim(fgets($this->__sock, 512));
+                    $size = substr($bulk_head, 1);
+                    if ($size == '-1') {
+                        $response[] = null;
+                    }
+                    else {
+                        $read = 0;
+                        $block = "";
+                        do {
+                            $block_size = ($size - $read) > 1024 ? 1024 : ($size - $read);
+                            $block .= fread($this->__sock, $block_size);
+                            $read += $block_size;
+                        } while ($read < $size);
+                        fread($this->__sock, 2); /* discard crlf */
+                        $response[] = $block;
+                    }
+                }
+                break;
+            /* Integer reply */
+            case ':':
+                $response = intval(substr(trim($reply), 1));
+                break;
+            default:
+                throw new RedisException("invalid server response: {$reply}");
+                break;
+        }
+        /* Party on */
+        return $response;
+    }
 
 }
