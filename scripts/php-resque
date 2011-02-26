@@ -1,0 +1,78 @@
+#!/bin/bash
+#
+# chkconfig: 345 80 20
+# description: php-resque
+#
+
+# start of configuration
+RUN_USER=freelancehunt
+RUN_GROUP=$RUN_USER
+APP_DIR=/path/to/php-resque
+APP_INCLUDE=/path/to/additional/include/file.php
+VERBOSE=0
+QUEUE=*
+# // end of configuration
+
+APP_NAME=php-resque
+PID_DIR=/var/run/$APP_NAME                                                                                                                                        
+PID_FILE=$PID_DIR/$APP_NAME.pid
+LOCK_FILE=/var/lock/subsys/$APP_NAME
+LOG_DIR=/var/log/$APP_NAME
+
+if [ "$1" == "daemon" ]; then
+    if [ `whoami` != $RUN_USER ]; then
+        echo "You are not $RUN_USER, bye!"
+        exit 1
+    fi
+    cd $APP_DIR
+    APP_INCLUDE=$APP_INCLUDE VERBOSE=$VERBOSE COUNT=1 QUEUE=$QUEUE nohup /bin/env php $APP_DIR/resque.php >> $LOG_DIR/$APP_NAME.log 2>&1 </dev/null & 
+    echo -n "$!" > $PID_FILE
+    exit
+fi
+
+. /etc/rc.d/init.d/functions
+
+if [ `whoami` != "root" ]; then
+    echo "You are not root, bye!">&2
+    exit 1
+fi
+
+start() {
+    echo -n $"Starting $APP_NAME: "
+    mkdir -p $PID_DIR $LOG_DIR
+    chown -R $RUN_USER:$RUN_GROUP $PID_DIR $LOG_DIR
+    daemon --user=$RUN_USER --pidfile=$PID_FILE --check=$APP_NAME $0 daemon && touch $LOCK_FILE
+}
+
+stop() {
+    echo -n "Shutting down $APP_NAME: "
+    killproc -p $PID_FILE $APP_NAME
+    local RETVAL=$?
+    [ -f $LOCK_FILE ] && rm $LOCK_FILE
+    [ -d $PID_DIR ] && rmdir $PID_DIR
+    return $RETVAL
+}
+
+case "$1" in
+    start)
+        start
+    ;;
+
+    stop)
+        stop
+    ;;
+
+    restart)
+        stop; echo
+        start
+    ;;
+
+    status)
+        echo -n "$APP_NAME" `status -p $PID_FILE`
+    ;;
+
+    *)
+        echo -n "Usage: $0 {start|stop|restart|status}"
+esac
+
+echo
