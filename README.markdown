@@ -36,6 +36,8 @@ not exit with a status code as 0
 * Has built in support for `setUp` and `tearDown` methods, called
 pre and post jobs
 
+Note: php-resque requires at least Redis 2.2.
+
 ## Jobs ##
 
 ### Queueing Jobs ###
@@ -235,3 +237,12 @@ include E.
 
     $ QUEUE=file_serve php -c ./ resque.php
 
+## Contributors ##
+
+* chrisboulton
+* thedotedge
+* hobodave
+* scraton
+* KevBurnsJr
+* jmathai
+* dceballos
