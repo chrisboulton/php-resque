@@ -188,15 +188,6 @@ class Resque_Job
 		catch(Resque_Job_DontPerform $e) {
 			return false;
 		}
-		// Catch any other exception and raise the onFailure event. Rethrow
-		// the exception
-		catch(Exception $e) {
-			Resque_Event::trigger('onFailure', array(
-				'exception' => $e,
-				'job' => $this,
-			));
-			throw $e;
-		}
 		
 		return true;
 	}
@@ -206,6 +197,11 @@ class Resque_Job
 	 */
 	public function fail($exception)
 	{
+		Resque_Event::trigger('onFailure', array(
+			'exception' => $exception,
+			'job' => $this,
+		));
+
 		$this->updateStatus(Resque_Job_Status::STATUS_FAILED);
 		require_once dirname(__FILE__) . '/Failure.php';
 		Resque_Failure::create(
