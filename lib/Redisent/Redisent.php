@@ -51,7 +51,7 @@ class Redisent {
         $this->port = $port;
         $this->__sock = fsockopen($this->host, $this->port, $errno, $errstr);
         if (!$this->__sock) {
-            throw new \Exception("{$errno} - {$errstr}");
+            throw new Exception("{$errno} - {$errstr}");
         }
     }
 
@@ -63,15 +63,13 @@ class Redisent {
 
         /* Build the Redis unified protocol command */
         array_unshift($args, strtoupper($name));
-        $command = sprintf('*%d%s%s%s', count($args), CRLF, implode(array_map(function($arg) {
-            return sprintf('$%d%s%s', strlen($arg), CRLF, $arg);
-        }, $args), CRLF), CRLF);
+        $command = sprintf('*%d%s%s%s', count($args), CRLF, implode(array_map(array($this, 'formatArgument'), $args), CRLF), CRLF);
 
         /* Open a Redis connection and execute the command */
         for ($written = 0; $written < strlen($command); $written += $fwrite) {
             $fwrite = fwrite($this->__sock, substr($command, $written));
             if ($fwrite === FALSE) {
-                throw new \Exception('Failed to write entire command to stream');
+                throw new Exception('Failed to write entire command to stream');
             }
         }
 
@@ -139,4 +137,7 @@ class Redisent {
         return $response;
     }
 
+    private function formatArgument($arg) {
+        return sprintf('$%d%s%s', strlen($arg), CRLF, $arg);
+    }
 }
