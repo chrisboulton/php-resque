@@ -5,7 +5,7 @@ if(empty($QUEUE)) {
 }
 
 $APP_INCLUDE = getenv('APP_INCLUDE');
-if(!$APP_INCLUDE) {
+if($APP_INCLUDE) {
 	if(!file_exists($APP_INCLUDE)) {
 		die('APP_INCLUDE ('.$APP_INCLUDE.") does not exist.\n");
 	}
@@ -66,6 +66,13 @@ else {
 	$queues = explode(',', $QUEUE);
 	$worker = new Resque_Worker($queues);
 	$worker->logLevel = $logLevel;
+	
+	$PIDFILE = getenv('PIDFILE');
+	if ($PIDFILE) {
+		file_put_contents($PIDFILE, getmypid()) or
+			die('Could not write PID information to ' . $PIDFILE);
+	}
+
 	fwrite(STDOUT, '*** Starting worker '.$worker."\n");
 	$worker->work($interval);
 }
