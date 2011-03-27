@@ -52,6 +52,11 @@ class Resque_Worker
 	 * @var Resque_Job Current job, if any, being processed by this worker.
 	 */
 	private $currentJob = null;
+	
+	/**
+	 * @var int Process ID of child worker processes.
+	 */
+	private $child = null;
 
 	/**
 	 * Return all workers known to Resque as instantiated instances.
