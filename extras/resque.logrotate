@@ -1,0 +1,10 @@
+/var/log/resque/*.log {
+        daily
+        missingok
+        rotate 7
+        compress
+        compressoptions -4
+        notifempty
+        create 640 root adm
+        copytruncate
+}
