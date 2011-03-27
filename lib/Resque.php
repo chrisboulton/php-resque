@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__FILE__) . '/Resque/Event.php';
 require_once dirname(__FILE__) . '/Resque/Exception.php';
 
 /**
@@ -103,7 +104,15 @@ class Resque
 	public static function enqueue($queue, $class, $args = null, $trackStatus = false)
 	{
 		require_once dirname(__FILE__) . '/Resque/Job.php';
-		return Resque_Job::create($queue, $class, $args, $trackStatus);
+		$result = Resque_Job::create($queue, $class, $args, $trackStatus);
+		if ($result) {
+			Resque_Event::trigger('afterEnqueue', array(
+				'class' => $class,
+				'args' => $args,
+			));
+		}
+		
+		return $result;
 	}
 
 	/**

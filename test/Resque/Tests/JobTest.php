@@ -152,7 +152,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$this->assertTrue(Test_Job_With_SetUp::$called);
 	}
 	
-	public function testJobWithTearDownCallbackFiresSetUp()
+	public function testJobWithTearDownCallbackFiresTearDown()
 	{
 		$payload = array(
 			'class' => 'Test_Job_With_TearDown',

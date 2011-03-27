@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__FILE__) . '/Stat.php';
+require_once dirname(__FILE__) . '/Event.php';
 require_once dirname(__FILE__) . '/Job.php';
 require_once dirname(__FILE__) . '/Job/DirtyExitException.php';
 
@@ -180,11 +181,12 @@ class Resque_Worker
 				else {
 					$this->updateProcLine('Waiting for ' . implode(',', $this->queues));
 				}
-				usleep($interval*1000000);
+				usleep($interval * 1000000);
 				continue;
 			}
 
 			$this->log('got ' . $job);
+			Resque_Event::trigger('beforeFork', $job);
 			$this->workingOn($job);
 
 			$this->child = $this->fork();
@@ -231,6 +233,7 @@ class Resque_Worker
 	public function perform(Resque_Job $job)
 	{
 		try {
+			Resque_Event::trigger('afterFork', $job);
 			$job->perform();
 		}
 		catch(Exception $e) {
@@ -314,6 +317,7 @@ class Resque_Worker
 	{
 		$this->registerSigHandlers();
 		$this->pruneDeadWorkers();
+		Resque_Event::trigger('beforeFirstFork');
 		$this->registerWorker();
 	}
 

@@ -227,6 +227,96 @@ A PECL module (<http://pecl.php.net/package/proctitle>) exists that
 adds this funcitonality to PHP, so if you'd like process titles updated,
 install the PECL module as well. php-resque will detect and use it.
 
+## Event/Hook System ##
+
+php-resque has a basic event system that can be used by your application
+to customize how some of the php-resque internals behave.
+
+You listen in on events (as listed below) by registering with `Resque_Event`
+and supplying a callback that you would like triggered when the event is
+raised:
+
+	Resque_Event::listen('eventName', [callback]);
+
+`[callback]` may be anything in PHP that is callable by `call_user_func_array`:
+
+* A string with the name of a function
+* An array containing an object and method to call
+* An array containing an object and a static method to call
+* A closure (PHP 5.3)
+
+Events may pass arguments (documented below), so your callback should accept
+these arguments.
+
+You can stop listening to an event by calling `Resque_Event::stopListening`
+with the same arguments supplied to `Resque_Event::listen`.
+
+It is up to your application to register event listeners. When enqueuing events
+in your application, it should be as easy as making sure php-resque is loaded
+and calling `Resque_Event::listen`.
+
+When running workers, if you run workers via the default `resque.php` script,
+your `APP_INCLUDE` script should initialize and register any listeners required
+for operation. If you have rolled your own worker manager, then it is again your
+responsibility to register listeners.
+
+A sample plugin is included in the `extras` directory.
+
+### Events ###
+
+#### beforeFirstFork ####
+
+Called once, as a worker initializes. Argument passed is the instance of `Resque_Worker`
+that was just initialized.
+
+#### beforeFork ####
+
+Called before php-resque forks to run a job. Argument passed contains the instance of
+`Resque_Job` for the job about to be run.
+
+`beforeFork` is triggered in the **parent** process. Any changes made will be permanent
+for as long as the worker lives.
+
+#### afterFork ####
+
+Called after php-resque forks to run a job (but before the job is run). Argument
+passed contains the instance of `Resque_Job` for the job about to be run.
+
+`afterFork` is triggered in the child process after forking out to complete a job. Any
+changes made will only live as long as the job is being processed.
+
+#### beforePerform ####
+
+Called before the `setUp` and `perform` methods on a job are run. Argument passed
+contains the instance of `Resque_Job` about for the job about to be run.
+
+You can prevent execution of the job by throwing an exception of `Resque_Job_DontPerform`.
+Any other exceptions thrown will be treated as if they were thrown in a job, causing the
+job to fail.
+
+#### afterPerform ####
+
+Called after the `perform` and `tearDown` methods on a job are run. Argument passed
+contains the instance of `Resque_Job` that was just run.
+
+Any exceptions thrown will be treated as if they were thrown in a job, causing the job
+to be marked as having failed.
+
+#### onFailure ####
+
+Called whenever a job fails. Arguments passed (in this order) include:
+
+* Exception - The exception that was thrown when the job failed
+* Resque_Job - The job that failed
+
+#### afterEnqueue ####
+
+Called after a job has been queued using the `Resque::enqueue` method. Arguments passed
+(in this order) include:
+
+* Class - string containing the name of the class the job was scheduled in
+* Arguments - array of arguments supplied to the job
+
 ## Contributors ##
 
 * chrisboulton
