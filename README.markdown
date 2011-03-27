@@ -227,16 +227,6 @@ A PECL module (<http://pecl.php.net/package/proctitle>) exists that
 adds this funcitonality to PHP, so if you'd like process titles updated,
 install the PECL module as well. php-resque will detect and use it.
 
-### Errors and troubleshooting ###
-
-**php.ini settings**
-
-If you don't have E in variables_order you can specify @-c ./@ as an 
-option to the PHP cli program. This reverts values to the defaults which 
-include E.
-
-    $ QUEUE=file_serve php -c ./ resque.php
-
 ## Contributors ##
 
 * chrisboulton
