@@ -274,13 +274,15 @@ class Resque_Worker
 	 * when searching for jobs.
 	 *
 	 * If * is found in the list of queues, every queue will be searched in
-	 * alphabetic order.
+	 * alphabetic order. (@see $fetch)
 	 *
+	 * @param boolean $fetch If true, and the queue is set to *, will fetch
+	 * all queue names from redis.
 	 * @return array Array of associated queues.
 	 */
-	public function queues()
+	public function queues($fetch = true)
 	{
-		if(!in_array('*', $this->queues)) {
+		if(!in_array('*', $this->queues) || $fetch == false) {
 			return $this->queues;
 		}
 
@@ -317,7 +319,7 @@ class Resque_Worker
 	{
 		$this->registerSigHandlers();
 		$this->pruneDeadWorkers();
-		Resque_Event::trigger('beforeFirstFork');
+		Resque_Event::trigger('beforeFirstFork', $this);
 		$this->registerWorker();
 	}
 
