@@ -1,4 +1,4 @@
-## 1.1 (2011-02-26) ##
+## 1.1 (2011-03-27) ##
 
 * Update Redisent library for Redis 2.2 compatibility. Redis 2.2 is now required. (thedotedge)
 * Trim output of `ps` to remove any prepended whitespace (KevBurnsJr)
