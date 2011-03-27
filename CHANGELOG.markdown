@@ -10,6 +10,9 @@
 * Fix `APP_INCLUDE` environment variable not loading correctly.
 * Jobs are no longer defined as static methods, and classes are instantiated first. This change is NOT backwards compatible and requires job classes are updated.
 * Job arguments are passed to the job class when it is instantiated, and are accessible by $this->args. This change will break existing job classes that rely on arguments that have not been updated.
+* Bundle sample script for managing php-resque instances using monit
+* Fix undefined variable `$child` when exiting on non-forking operating systems
+* Add `PIDFILE` environment variable to write out a PID for single running workers
 
 ## 1.0 (2010-04-18) ##
 
