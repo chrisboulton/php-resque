@@ -1,5 +1,6 @@
 ## 1.2 (Unreleased) ##
 
+* Allow alternate redis database to be selected when calling setBackend by supplying a second argument (patrickbajao)
 * Use `require_once` when including php-resque after the app has been included in the sample resque.php to prevent include conflicts (andrewjshults)
 
 ## 1.1 (2011-03-27) ##
