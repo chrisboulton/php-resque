@@ -1,3 +1,7 @@
+## 1.2 (Unreleased) ##
+
+* Use `require_once` when including php-resque after the app has been included in the sample resque.php to prevent include conflicts (andrewjshults)
+
 ## 1.1 (2011-03-27) ##
 
 * Update Redisent library for Redis 2.2 compatibility. Redis 2.2 is now required. (thedotedge)
