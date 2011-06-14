@@ -47,7 +47,7 @@ Jobs are queued as follows:
     require_once 'lib/Resque.php';
 
 	// Required if redis is located elsewhere
-	Resque::setBackend('localhost', 6379);
+	Resque::setBackend('localhost:6379');
 
 	$args = array(
 		'name' => 'Chris'
