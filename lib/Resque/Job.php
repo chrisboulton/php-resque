@@ -128,7 +128,7 @@ class Resque_Job
 			return array();
 		}
 		
-		return array_shift($this->payload['args']);
+		return $this->payload['args'][0];
 	}
 	
 	/**
