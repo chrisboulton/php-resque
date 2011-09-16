@@ -65,7 +65,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		Resque::enqueue('jobs', 'Test_Job', $args);
 		$job = Resque_Job::reserve('jobs');
 
-		$this->assertEquals($args, $job->payload['args']);
+		$this->assertEquals($args, $job->getArguments());
 	}
 
 	public function testAfterJobIsReservedItIsRemoved()
@@ -97,7 +97,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 
 		$newJob = Resque_Job::reserve('jobs');
 		$this->assertEquals($job->payload['class'], $newJob->payload['class']);
-		$this->assertEquals($job->payload['args'], $newJob->payload['args']);
+		$this->assertEquals($job->payload['args'], $newJob->getArguments());
 	}
 
 	public function testFailedJobExceptionsAreCaught()
