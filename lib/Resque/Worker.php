@@ -385,7 +385,8 @@ class Resque_Worker
 	 * Signal handler for SIGPIPE, in the event the redis connection has gone away.
 	 * Attempts to reconnect to redis, or raises an Exception.
 	 */
-	public function reestablishRedisConnection() {
+	public function reestablishRedisConnection()
+	{
 		$this->log('SIGPIPE received; attempting to reconnect');
 		Resque::redis()->establishConnection();
 	}
