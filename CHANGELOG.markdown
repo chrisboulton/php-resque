@@ -1,4 +1,11 @@
-## 1.1 (2011-02-26) ##
+## 1.2 (Unreleased) ##
+
+* Allow alternate redis database to be selected when calling setBackend by supplying a second argument (patrickbajao)
+* Use `require_once` when including php-resque after the app has been included in the sample resque.php to prevent include conflicts (andrewjshults)
+* Wrap job arguments in an array to improve compatibility with ruby resque (warezthebeef)
+* Fix a bug where the worker would spin out of control taking the server with it, if the redis connection was interrupted even briefly. Use SIGPIPE to trap this scenario cleanly. (d11wtq)
+
+## 1.1 (2011-03-27) ##
 
 * Update Redisent library for Redis 2.2 compatibility. Redis 2.2 is now required. (thedotedge)
 * Trim output of `ps` to remove any prepended whitespace (KevBurnsJr)

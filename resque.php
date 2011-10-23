@@ -13,8 +13,8 @@ if($APP_INCLUDE) {
 	require_once $APP_INCLUDE;
 }
 
-require 'lib/Resque.php';
-require 'lib/Resque/Worker.php';
+require_once 'lib/Resque.php';
+require_once 'lib/Resque/Worker.php';
 
 $REDIS_BACKEND = getenv('REDIS_BACKEND');
 if(!empty($REDIS_BACKEND)) {

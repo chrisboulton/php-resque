@@ -49,6 +49,10 @@ class Redisent {
     function __construct($host, $port = 6379) {
         $this->host = $host;
         $this->port = $port;
+				$this->establishConnection();
+    }
+
+    function establishConnection() {
         $this->__sock = fsockopen($this->host, $this->port, $errno, $errstr);
         if (!$this->__sock) {
             throw new Exception("{$errno} - {$errstr}");
