@@ -100,6 +100,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$this->assertEquals($job->payload['args'], $newJob->getArguments());
 	}
 
+
 	public function testFailedJobExceptionsAreCaught()
 	{
 		$payload = array(
@@ -165,5 +166,19 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$job->perform();
 		
 		$this->assertTrue(Test_Job_With_TearDown::$called);
+	}
+	
+	public function testJobWithNamespace()
+	{
+	    Resque_Redis::prefix('php');
+	    $queue = 'jobs';
+	    $payload = array('another_value');
+        Resque::enqueue($queue, 'Test_Job_With_TearDown', $payload);
+        
+        $this->assertEquals(Resque::queues(), array('jobs'));
+        $this->assertEquals(Resque::size($queue), 1);
+        
+        Resque_Redis::prefix('resque');
+        $this->assertEquals(Resque::size($queue), 0);        
 	}
 }
