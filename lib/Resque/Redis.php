@@ -1,7 +1,7 @@
 <?php
 // Third- party apps may have already loaded Resident from elsewhere
 // so lets be careful.
-if(!class_exists('Redisent')) {
+if(!class_exists('Redisent', false)) {
 	require_once dirname(__FILE__) . '/../Redisent/Redisent.php';
 }
 
