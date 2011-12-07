@@ -27,7 +27,7 @@ class Resque_Job
 	 * @var object Object containing details of the job.
 	 */
 	public $payload;
-	
+
 	/**
 	 * @var object Instance of the class performing work for this job.
 	 */
@@ -84,7 +84,7 @@ class Resque_Job
 	public static function reserve($queue)
 	{
 		$payload = Resque::pop($queue);
-		if(!$payload) {
+		if(!is_object($payload)) {
 			return false;
 		}
 
@@ -116,7 +116,7 @@ class Resque_Job
 		$status = new Resque_Job_Status($this->payload['id']);
 		return $status->get();
 	}
-	
+
 	/**
 	 * Get the arguments supplied to this job.
 	 *
@@ -127,10 +127,10 @@ class Resque_Job
 		if (!isset($this->payload['args'])) {
 			return array();
 		}
-		
+
 		return $this->payload['args'][0];
 	}
-	
+
 	/**
 	 * Get the instantiated object for this job that will be performing work.
 	 *
@@ -171,7 +171,7 @@ class Resque_Job
 		$instance = $this->getInstance();
 		try {
 			Resque_Event::trigger('beforePerform', $this);
-	
+
 			if(method_exists($instance, 'setUp')) {
 				$instance->setUp();
 			}
@@ -188,7 +188,7 @@ class Resque_Job
 		catch(Resque_Job_DontPerform $e) {
 			return false;
 		}
-		
+
 		return true;
 	}
 
