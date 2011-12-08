@@ -73,7 +73,7 @@ class Resque
 	 * return it.
 	 *
 	 * @param string $queue The name of the queue to fetch an item from.
-	 * @return object Decoded item from the queue.
+	 * @return array Decoded item from the queue.
 	 */
 	public static function pop($queue)
 	{
@@ -113,7 +113,7 @@ class Resque
 				'args' => $args,
 			));
 		}
-		
+
 		return $result;
 	}
 
