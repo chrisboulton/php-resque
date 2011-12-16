@@ -60,7 +60,7 @@ class Resque
 	 * exist, then create it as well.
 	 *
 	 * @param string $queue The name of the queue to add the job to.
-	 * @param object $item Job description as an object to be JSON encoded.
+	 * @param array $item Job description as an array to be JSON encoded.
 	 */
 	public static function push($queue, $item)
 	{
