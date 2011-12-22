@@ -37,7 +37,7 @@ class Resque_Job
 	 * Instantiate a new instance of a job.
 	 *
 	 * @param string $queue The queue that the job belongs to.
-	 * @param object $payload Object containing details of the job.
+	 * @param array $payload array containing details of the job.
 	 */
 	public function __construct($queue, $payload)
 	{
@@ -84,7 +84,7 @@ class Resque_Job
 	public static function reserve($queue)
 	{
 		$payload = Resque::pop($queue);
-		if(!is_object($payload)) {
+		if(!is_array($payload)) {
 			return false;
 		}
 
