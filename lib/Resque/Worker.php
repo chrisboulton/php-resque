@@ -138,7 +138,7 @@ class Resque_Worker
 	 * @param string|array $queues String with a single queue name, array with multiple.
      * @param int $perChild How many jobs to perform per child
 	 */
-	public function __construct($queues, $perChild)
+	public function __construct($queues, $perChild = 1)
 	{
 		if(!is_array($queues)) {
 			$queues = array($queues);
@@ -155,6 +155,8 @@ class Resque_Worker
 		$this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
 
         $this->perChild = $perChild;
+
+        echo "LOG (".getmypid().")-- construct with $perChild per child\n";
 	}
 
 	/**
@@ -331,7 +333,7 @@ class Resque_Worker
 		}
 
         // if we are the child
-        if ($this->child === 0) {
+        if ($this->child === 0 || $this->child === false) {
 
             // if we're meant to carry on in the same fork
             if ($this->processedInChild > 0 && $this->processedInChild < $this->perChild) {
@@ -342,7 +344,6 @@ class Resque_Worker
             // otherwise we die and let the parent deal with the situation below
             exit(0);
         } else {
-            
             // if we pass test above, fork and reset
             $this->processedInChild = 1; // theoretically this is unnecessary, since it's only incremented in the child which doesn't affect the parent
 
