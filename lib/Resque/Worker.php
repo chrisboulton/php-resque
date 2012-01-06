@@ -155,8 +155,6 @@ class Resque_Worker
 		$this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
 
         $this->perChild = $perChild;
-
-        echo "LOG (".getmypid().")-- construct with $perChild per child\n";
 	}
 
 	/**
