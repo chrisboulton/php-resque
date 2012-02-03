@@ -54,6 +54,9 @@ if($count > 1) {//start multiple workers by forking this process
     }
     // Child, start the worker
     else if($pid === 0) {
+      //reconnect to Redis in child to avoid sharing same connection with parent process
+      // leading to race condition reading from the same socket, thus errors
+      Resque::ResetBackend();
       $queues = explode(',', $QUEUE);
       $worker = new Resque_Worker($queues);
       $worker->logLevel = $logLevel;
