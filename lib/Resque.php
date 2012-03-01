@@ -33,7 +33,13 @@ class Resque
 			self::$redis = new Resque_RedisCluster($server);
 		}
 		else {
-			list($host, $port) = explode(':', $server);
+			if (strpos($server, 'unix:') === false) {
+				list($host, $port) = explode(':', $server);
+			}
+			else {
+				$host = $server;
+				$port = null;
+			}
 			require_once dirname(__FILE__) . '/Resque/Redis.php';
 			self::$redis = new Resque_Redis($host, $port);
 		}

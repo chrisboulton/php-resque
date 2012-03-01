@@ -39,7 +39,7 @@ class Resque_Redis extends Redisent
 		'setnx',
 		'incr',
 		'incrby',
-		'decrby',
+		'decr',
 		'decrby',
 		'rpush',
 		'lpush',
