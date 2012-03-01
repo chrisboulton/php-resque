@@ -53,7 +53,7 @@ class Resque_Worker
 	 * @var Resque_Job Current job, if any, being processed by this worker.
 	 */
 	private $currentJob = null;
-	
+
 	/**
 	 * @var int Process ID of child worker processes.
 	 */
@@ -193,6 +193,9 @@ class Resque_Worker
 
 			// Forked and we're the child. Run the job.
 			if($this->child === 0 || $this->child === false) {
+			  //reconnect to Redis in child to avoid sharing same connection with parent process
+			  // leading to race condition reading from the same socket, thus errors
+			  Resque::ResetBackend();
 				$status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
 				$this->updateProcLine($status);
 				$this->log($status, self::LOG_VERBOSE);

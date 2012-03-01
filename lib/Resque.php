@@ -20,6 +20,16 @@ class Resque
 	public static $redis = null;
 
 	/**
+	 * @var redis backend server address
+	 */
+	public static $server = null;
+
+	/**
+	 * @var integer Db on which the Redis backend server is selected
+	 */
+	public static $database = null;
+
+	/**
 	 * Given a host/port combination separated by a colon, set it as
 	 * the redis server that Resque will talk to.
 	 *
@@ -28,6 +38,10 @@ class Resque
 	 */
 	public static function setBackend($server, $database = 0)
 	{
+	  //save the params for later use
+	  self::$server = $server;
+	  self::$database = $database;
+
 		if(is_array($server)) {
 			require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
 			self::$redis = new Resque_RedisCluster($server);
@@ -42,13 +56,31 @@ class Resque
 	}
 
 	/**
+	 * Reconnect to the redis backend specified in during __construct
+	 * @return Resque_Redis Instance of Resque_Redis. (redis ressource handle)
+	 */
+	public static function ResetBackend()
+	{
+	  if(is_array(self::$server)) {
+	    self::$redis = new Resque_RedisCluster(self::$server);
+	  }
+	  else {
+	    list($host, $port) = explode(':', self::$server);
+	    self::$redis = new Resque_Redis($host, $port);
+	  }
+	  self::$redis->select(self::$database);
+	  return self::$redis;
+	}
+
+	/**
 	 * Return an instance of the Resque_Redis class instantiated for Resque.
 	 *
 	 * @return Resque_Redis Instance of Resque_Redis.
 	 */
 	public static function redis()
 	{
-		if(is_null(self::$redis)) {
+	  //try to reset the backend specified during __construct
+		if(is_null(self::$redis) && is_null(self::ResetBackend())) {
 			self::setBackend('localhost:6379');
 		}
 

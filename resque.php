@@ -44,30 +44,48 @@ if(!empty($COUNT) && $COUNT > 1) {
 	$count = $COUNT;
 }
 
-if($count > 1) {
-	for($i = 0; $i < $count; ++$i) {
-		$pid = pcntl_fork();
-		if($pid == -1) {
-			die("Could not fork worker ".$i."\n");
-		}
-		// Child, start the worker
-		else if(!$pid) {
-			$queues = explode(',', $QUEUE);
-			$worker = new Resque_Worker($queues);
-			$worker->logLevel = $logLevel;
-			fwrite(STDOUT, '*** Starting worker '.$worker."\n");
-			$worker->work($interval);
-			break;
-		}
-	}
+$PIDFILE = getenv('PIDFILE');
+if($count > 1) {//start multiple workers by forking this process
+  $pids = '';
+  for($i = 0; $i < $count; ++$i) {
+    $pid = pcntl_fork();
+    if($pid === -1) {
+      die("Could not fork worker ".$i."\n");
+    }
+    // Child, start the worker
+    else if($pid === 0) {
+      //reconnect to Redis in child to avoid sharing same connection with parent process
+      // leading to race condition reading from the same socket, thus errors
+      Resque::ResetBackend();
+      $queues = explode(',', $QUEUE);
+      $worker = new Resque_Worker($queues);
+      $worker->logLevel = $logLevel;
+      fwrite(STDOUT, '*** Starting worker '.$worker."\n");
+      //to kill self before exit()
+      register_shutdown_function(create_function('$pars', 'posix_kill(getmypid(), SIGKILL);'), array());
+      $worker->work($interval);
+      //to avoid foreach loop in child process, exit with its order of creation $i
+      exit($i);
+    }
+  }
+
+  if ($PIDFILE) {
+    file_put_contents($PIDFILE, getmypid()) or
+    die('Could not write PID information to ' . $PIDFILE);
+  }
+
+  //in parent, wait for all child processes to terminate
+  while (pcntl_waitpid(0, $status) != -1) {
+    $status = pcntl_wexitstatus($status);
+    fwrite(STDOUT, '*** Worker '.$status." terminated\n");
+  }
 }
 // Start a single worker
 else {
 	$queues = explode(',', $QUEUE);
 	$worker = new Resque_Worker($queues);
 	$worker->logLevel = $logLevel;
-	
-	$PIDFILE = getenv('PIDFILE');
+
 	if ($PIDFILE) {
 		file_put_contents($PIDFILE, getmypid()) or
 			die('Could not write PID information to ' . $PIDFILE);
