@@ -52,6 +52,8 @@ class Resque_Job
 	 * @param string $class The name of the class that contains the code to execute the job.
 	 * @param array $args Any optional arguments that should be passed when the job is executed.
 	 * @param boolean $monitor Set to true to be able to monitor the status of a job.
+	 *
+	 * @return string
 	 */
 	public static function create($queue, $class, $args = null, $monitor = false)
 	{
@@ -154,7 +156,7 @@ class Resque_Job
 			);
 		}
 
-		$this->instance = new $this->payload['class'];
+		$this->instance = new $this->payload['class']();
 		$this->instance->job = $this;
 		$this->instance->args = $this->getArguments();
 		return $this->instance;
@@ -164,6 +166,7 @@ class Resque_Job
 	 * Actually execute a job by calling the perform method on the class
 	 * associated with the job with the supplied arguments.
 	 *
+	 * @return bool
 	 * @throws Resque_Exception When the job's class could not be found or it does not contain a perform method.
 	 */
 	public function perform()
@@ -194,6 +197,8 @@ class Resque_Job
 
 	/**
 	 * Mark the current job as having failed.
+	 *
+	 * @param $exception
 	 */
 	public function fail($exception)
 	{
@@ -216,6 +221,7 @@ class Resque_Job
 
 	/**
 	 * Re-queue the current job.
+	 * @return string
 	 */
 	public function recreate()
 	{
