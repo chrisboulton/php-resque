@@ -53,7 +53,7 @@ class Resque_Worker
 	 * @var Resque_Job Current job, if any, being processed by this worker.
 	 */
 	private $currentJob = null;
-	
+
 	/**
 	 * @var int Process ID of child worker processes.
 	 */
@@ -61,6 +61,7 @@ class Resque_Worker
 
 	/**
 	 * Return all workers known to Resque as instantiated instances.
+	 * @return array
 	 */
 	public static function all()
 	{
@@ -192,12 +193,12 @@ class Resque_Worker
 			$this->child = $this->fork();
 
 			// Forked and we're the child. Run the job.
-			if($this->child === 0 || $this->child === false) {
+			if ($this->child === 0 || $this->child === false) {
 				$status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
 				$this->updateProcLine($status);
 				$this->log($status, self::LOG_VERBOSE);
 				$this->perform($job);
-				if($this->child === 0) {
+				if ($this->child === 0) {
 					exit(0);
 				}
 			}
@@ -228,11 +229,12 @@ class Resque_Worker
 	/**
 	 * Process a single job.
 	 *
-	 * @param object|null $job The job to be processed.
+	 * @param Resque_Job $job The job to be processed.
 	 */
 	public function perform(Resque_Job $job)
 	{
 		try {
+			$this->log("afterFork being triggered", self::LOG_VERBOSE);
 			Resque_Event::trigger('afterFork', $job);
 			$job->perform();
 		}
