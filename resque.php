@@ -44,6 +44,12 @@ if(!empty($COUNT) && $COUNT > 1) {
 	$count = $COUNT;
 }
 
+$perChild = 1;
+$PERCHILD = getenv('PERCHILD');
+if(!empty($PERCHILD) && $PERCHILD > 1) {
+	$perChild = $PERCHILD;
+}
+
 if($count > 1) {
 	for($i = 0; $i < $count; ++$i) {
 		$pid = pcntl_fork();
@@ -53,7 +59,7 @@ if($count > 1) {
 		// Child, start the worker
 		else if(!$pid) {
 			$queues = explode(',', $QUEUE);
-			$worker = new Resque_Worker($queues);
+			$worker = new Resque_Worker($queues, $perChild);
 			$worker->logLevel = $logLevel;
 			fwrite(STDOUT, '*** Starting worker '.$worker."\n");
 			$worker->work($interval);
@@ -64,7 +70,7 @@ if($count > 1) {
 // Start a single worker
 else {
 	$queues = explode(',', $QUEUE);
-	$worker = new Resque_Worker($queues);
+	$worker = new Resque_Worker($queues, $perChild);
 	$worker->logLevel = $logLevel;
 	
 	$PIDFILE = getenv('PIDFILE');
