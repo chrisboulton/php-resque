@@ -21,6 +21,7 @@ require_once CWD . '/TestCase.php';
 // Include Resque
 require_once RESQUE_LIB . 'Resque.php';
 require_once RESQUE_LIB . 'Resque/Worker.php';
+require_once RESQUE_LIB . 'Resque/Redis.php';
 
 // Attempt to start our own redis instance for tesitng.
 exec('which redis-server', $output, $returnVar);
