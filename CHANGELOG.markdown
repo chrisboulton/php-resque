@@ -4,6 +4,13 @@
 * Use `require_once` when including php-resque after the app has been included in the sample resque.php to prevent include conflicts (andrewjshults)
 * Wrap job arguments in an array to improve compatibility with ruby resque (warezthebeef)
 * Fix a bug where the worker would spin out of control taking the server with it, if the redis connection was interrupted even briefly. Use SIGPIPE to trap this scenario cleanly. (d11wtq)
+* Added support of Redis prefix (namespaces) (hlegius)
+* When reserving jobs, check if the payload received from popping a queue is a valid object (fix bug whereby jobs are reserved based on an erroneous payload) (salimane)
+* Re-enable autoload for class_exists in Job.php (humancopy)
+* Fix lost jobs when there is more than one worker process started by the same parent process (salimane)
+* Move include for resque before APP_INCLUDE is loaded in, so that way resque is available for the app
+* Avoid working with dirty worker IDs (salimane)
+
 
 ## 1.1 (2011-03-27) ##
 

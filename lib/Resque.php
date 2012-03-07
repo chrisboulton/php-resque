@@ -20,6 +20,23 @@ class Resque
 	public static $redis = null;
 
 	/**
+	 * @var mixed Host/port conbination separated by a colon, or a nested
+	 * array of server swith host/port pairs
+	 */
+	protected static $redisServer = null;
+
+	/**
+	 * @var int ID of Redis database to select.
+	 */
+	protected static $redisDatabase = 0;
+
+	/**
+	 * @var int PID of current process. Used to detect changes when forking
+	 *  and implement "thread" safety to avoid race conditions.
+	 */
+	 protected static $pid = null;
+
+	/**
 	 * Given a host/port combination separated by a colon, set it as
 	 * the redis server that Resque will talk to.
 	 *
@@ -29,17 +46,9 @@ class Resque
 	 */
 	public static function setBackend($server, $database = 0)
 	{
-		if(is_array($server)) {
-			require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
-			self::$redis = new Resque_RedisCluster($server);
-		}
-		else {
-			list($host, $port) = explode(':', $server);
-			require_once dirname(__FILE__) . '/Resque/Redis.php';
-			self::$redis = new Resque_Redis($host, $port);
-		}
-
-        self::redis()->select($database);
+		self::$redisServer   = $server;
+		self::$redisDatabase = $database;
+		self::$redis         = null;
 	}
 
 	/**
@@ -49,10 +58,40 @@ class Resque
 	 */
 	public static function redis()
 	{
-		if(is_null(self::$redis)) {
-			self::setBackend('localhost:6379');
+		// Detect when the PID of the current process has changed (from a fork, etc)
+		// and force a reconnect to redis.
+		$pid = getmypid();
+		if (self::$pid !== $pid) {
+			self::$redis = null;
+			self::$pid   = $pid;
 		}
 
+		if(!is_null(self::$redis)) {
+			return self::$redis;
+		}
+
+		$server = self::$redisServer;
+		if (empty($server)) {
+			$server = 'localhost:6379';
+		}
+
+		if(is_array($server)) {
+			require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
+			self::$redis = new Resque_RedisCluster($server);
+		}
+		else {
+			if (strpos($server, 'unix:') === false) {
+				list($host, $port) = explode(':', $server);
+			}
+			else {
+				$host = $server;
+				$port = null;
+			}
+			require_once dirname(__FILE__) . '/Resque/Redis.php';
+			self::$redis = new Resque_Redis($host, $port);
+		}
+
+		self::$redis->select(self::$redisDatabase);
 		return self::$redis;
 	}
 

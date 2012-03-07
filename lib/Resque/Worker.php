@@ -96,7 +96,7 @@ class Resque_Worker
 	 */
 	public static function find($workerId)
 	{
-		if(!self::exists($workerId)) {
+	  if(!self::exists($workerId) || false === strpos($workerId, ":")) {
 			return false;
 		}
 
@@ -449,12 +449,14 @@ class Resque_Worker
 		$workerPids = $this->workerPids();
 		$workers = self::all();
 		foreach($workers as $worker) {
-			list($host, $pid, $queues) = explode(':', (string)$worker, 3);
-			if($host != $this->hostname || in_array($pid, $workerPids) || $pid == getmypid()) {
-				continue;
-			}
-			$this->log('Pruning dead worker: ' . (string)$worker, self::LOG_VERBOSE);
-			$worker->unregisterWorker();
+		  if (is_object($worker)) {
+  			list($host, $pid, $queues) = explode(':', (string)$worker, 3);
+  			if($host != $this->hostname || in_array($pid, $workerPids) || $pid == getmypid()) {
+  				continue;
+  			}
+  			$this->log('Pruning dead worker: ' . (string)$worker, self::LOG_VERBOSE);
+  			$worker->unregisterWorker();
+		  }
 		}
 	}
 
