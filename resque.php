@@ -44,6 +44,7 @@ if(!empty($COUNT) && $COUNT > 1) {
 	$count = $COUNT;
 }
 
+$PIDFILE = getenv('PIDFILE');
 if($count > 1) {
 	for($i = 0; $i < $count; ++$i) {
 		$pid = pcntl_fork();
@@ -60,6 +61,20 @@ if($count > 1) {
 			break;
 		}
 	}
+
+	//write process group pid and process pid to files for monit management
+	if ($PIDFILE) {
+      file_put_contents($PIDFILE.'g', posix_getpgrp()) or
+          die('Could not write PID information to ' . $PIDFILE.'g');
+      file_psut_contents($PIDFILE, getmypid()) or
+          die('Could not write PID information to ' . $PIDFILE);
+	}
+
+	//in parent, wait for all child processes to terminate
+	while (pcntl_waitpid(0, $status) != -1) {
+      $status = pcntl_wexitstatus($status);
+      fwrite(STDOUT, '*** Worker '.$status." terminated\n");
+	}	
 }
 // Start a single worker
 else {
@@ -67,11 +82,13 @@ else {
 	$worker = new Resque_Worker($queues);
 	$worker->logLevel = $logLevel;
 	
-	$PIDFILE = getenv('PIDFILE');
-	if ($PIDFILE) {
-		file_put_contents($PIDFILE, getmypid()) or
-			die('Could not write PID information to ' . $PIDFILE);
-	}
+	//write process group pid and process pid to files for monit management
+  if ($PIDFILE) {
+      file_put_contents($PIDFILE.'g', posix_getpgrp()) or
+          die('Could not write PID information to ' . $PIDFILE.'g');
+      file_put_contents($PIDFILE, getmypid()) or
+         die('Could not write PID information to ' . $PIDFILE);
+  }
 
 	fwrite(STDOUT, '*** Starting worker '.$worker."\n");
 	$worker->work($interval);
