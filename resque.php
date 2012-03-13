@@ -66,7 +66,7 @@ if($count > 1) {
 	if ($PIDFILE) {
       file_put_contents($PIDFILE.'g', posix_getpgrp()) or
           die('Could not write PID information to ' . $PIDFILE.'g');
-      file_psut_contents($PIDFILE, getmypid()) or
+      file_put_contents($PIDFILE, getmypid()) or
           die('Could not write PID information to ' . $PIDFILE);
 	}
 
