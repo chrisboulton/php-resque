@@ -9,7 +9,7 @@ if(!class_exists('Redisent', false)) {
 	
 class PhpRedisApi extends Redis
 {
-	private static $defaultNamespace = 'resque2:';
+	private static $defaultNamespace = 'resque:';
 	
 	public function __construct($host, $port, $timeout = 0)
 	{
