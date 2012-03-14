@@ -4,6 +4,30 @@
 if(!class_exists('Redisent', false)) {
 	require_once dirname(__FILE__) . '/../Redisent/Redisent.php';
 }
+	
+
+	
+class PhpRedisApi extends Redis
+{
+	private static $defaultNamespace = 'resque2:';
+	
+	public function __construct($host, $port, $timeout = 0)
+	{
+		parent::__construct();
+		$this->pconnect($host, $port, $timeout);
+		$this->setOption(Redis::OPT_PREFIX, self::$defaultNamespace);
+	}
+	
+	public static function prefix($namespace)
+	{
+		self::$defaultNamespace = $namespace;
+		if (strpos($namespace, ':') === false) {
+			$namespace .= ':';
+		}
+		$this->setOption(Redis::OPT_PREFIX, self::$defaultNamespace);
+	}
+}
+
 
 /**
  * Extended Redisent class used by Resque for all communication with
@@ -14,7 +38,7 @@ if(!class_exists('Redisent', false)) {
  * @copyright	(c) 2010 Chris Boulton
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Redis extends Redisent
+class RedisentApi extends Redisent
 {
     /**
      * Redis namespace
@@ -115,4 +139,13 @@ class Resque_Redis extends Redisent
 		}
 	}
 }
-?>
+
+if (class_exists('Redis'))
+{
+	class Resque_Redis extends PhpRedisApi {}
+}
+else
+{
+	class Resque_Redis extends RedisentApi {}
+}
+
