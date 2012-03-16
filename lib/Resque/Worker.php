@@ -234,7 +234,6 @@ class Resque_Worker
 	public function perform(Resque_Job $job)
 	{
 		try {
-			$this->log("afterFork being triggered", self::LOG_VERBOSE);
 			Resque_Event::trigger('afterFork', $job);
 			$job->perform();
 		}
