@@ -73,7 +73,7 @@ class Resque_Event
 		
 		$key = array_search($callback, self::$events[$event]);
 		if ($key !== false) {
-			unset(self::$events[$key]);
+			unset(self::$events[$event][$key]);
 		}
 		
 		return true;
