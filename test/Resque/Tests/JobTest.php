@@ -194,11 +194,11 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$instance = $job->getInstance();
 		Resque_Event::stopListening('createInstance', $callback);
 
-		$this->assertEquals($this, $instance);
+		$this->assertInstanceOf('Test_Job_With_TearDown', $instance);
 	}
 
 	public function createInstanceCallback($event)
 	{
-		$event->setInstance($this);
+		$event->setInstance(new Test_Job_With_TearDown());
 	}
 }

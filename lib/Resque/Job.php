@@ -145,25 +145,26 @@ class Resque_Job
 			return $this->instance;
 		}
 
-		if(!class_exists($this->payload['class'])) {
-			throw new Resque_Exception(
-				'Could not find job class ' . $this->payload['class'] . '.'
-			);
-		}
-
-		if(!method_exists($this->payload['class'], 'perform')) {
-			throw new Resque_Exception(
-				'Job class ' . $this->payload['class'] . ' does not contain a perform method.'
-			);
-		}
-
 		$event = new Resque_Event_CreateInstance($this);
 		Resque_Event::trigger('createInstance', $event);
 		if (null === ($this->instance = $event->getInstance())) {
+			if(!class_exists($this->payload['class'])) {
+				throw new Resque_Exception(
+					'Could not find job class ' . $this->payload['class'] . '.'
+				);
+			}
+
 			$this->instance = new $this->payload['class']();
 			$this->instance->job = $this;
 			$this->instance->args = $this->getArguments();
 			$this->instance->queue = $this->queue;
+		}
+
+		if(!method_exists($this->instance, 'perform')) {
+			$this->instance = null;
+			throw new Resque_Exception(
+				'Job class ' . $this->payload['class'] . ' does not contain a perform method.'
+			);
 		}
 		return $this->instance;
 	}
