@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__FILE__) . '/Event.php';
+require_once dirname(__FILE__) . '/Event/CreateInstance.php';
 require_once dirname(__FILE__) . '/Job/Status.php';
 require_once dirname(__FILE__) . '/Job/DontPerform.php';
 
@@ -156,10 +157,14 @@ class Resque_Job
 			);
 		}
 
-		$this->instance = new $this->payload['class']();
-		$this->instance->job = $this;
-		$this->instance->args = $this->getArguments();
-		$this->instance->queue = $this->queue;
+		$event = new Resque_Event_CreateInstance($this);
+		Resque_Event::trigger('createInstance', $event);
+		if (null === ($this->instance = $event->getInstance())) {
+			$this->instance = new $this->payload['class']();
+			$this->instance->job = $this;
+			$this->instance->args = $this->getArguments();
+			$this->instance->queue = $this->queue;
+		}
 		return $this->instance;
 	}
 

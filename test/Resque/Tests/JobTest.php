@@ -181,4 +181,24 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
         Resque_Redis::prefix('resque');
         $this->assertEquals(Resque::size($queue), 0);        
 	}
+
+	public function testCreateInstanceEventOverridesDefault()
+	{
+		$callback = array($this, 'createInstanceCallback');
+		Resque_Event::listen('createInstance', $callback);
+		$payload = array(
+			'class' => 'Test_Job_With_SetUp',
+			'args' => '',
+		);
+		$job = new Resque_Job('jobs', $payload);
+		$instance = $job->getInstance();
+		Resque_Event::stopListening('createInstance', $callback);
+
+		$this->assertEquals($this, $instance);
+	}
+
+	public function createInstanceCallback($event)
+	{
+		$event->setInstance($this);
+	}
 }
