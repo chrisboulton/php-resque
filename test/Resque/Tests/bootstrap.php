@@ -59,11 +59,13 @@ function killRedis($pid)
 	}
 
 	$pidFile = TEST_MISC . '/' . $matches[1];
-	$pid = trim(file_get_contents($pidFile));
-	posix_kill((int) $pid, 9);
-
-	if(is_file($pidFile)) {
-		unlink($pidFile);
+	if (file_exists($pidFile)) {
+		$pid = trim(file_get_contents($pidFile));
+		posix_kill((int) $pid, 9);
+	
+		if(is_file($pidFile)) {
+			unlink($pidFile);
+		}
 	}
 
 	// Remove the redis database
