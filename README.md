@@ -4,31 +4,30 @@ php-resque: PHP Resque Worker (and Enqueue) [![Build Status](https://secure.trav
 Resque is a Redis-backed library for creating background jobs, placing
 those jobs on multiple queues, and processing them later.
 
-Resque was pioneered and is developed by the fine folks at GitHub (yes,
-I am a kiss-ass), and written in Ruby.
+## Background ##
 
-What you're seeing here is an almost direct port of the Resque worker
-and enqueue system to PHP, which I've thrown together because I'm sure
-my PHP developers would have a fit if they had to write a line of Ruby.
+Resque was pioneered and is developed by the fine folks at GitHub (yes,
+I am a kiss-ass), and written in Ruby. What you're seeing here is an
+almost direct port of the Resque worker and enqueue system to PHP.
 
 For more information on Resque, visit the official GitHub project:
  <http://github.com/defunkt/resque/>
 
-And for background information, the launch post on the GitHub blog:
+For further information, see the launch post on the GitHub blog:
  <http://github.com/blog/542-introducing-resque>
 
 The PHP port does NOT include its own web interface for viewing queue
 stats, as the data is stored in the exact same expected format as the
 Ruby version of Resque.
 
-The PHP port allows for much the same as the Ruby version of Rescue:
+The PHP port provides much the same features as the Ruby version:
 
 * Workers can be distributed between multiple machines
 * Includes support for priorities (queues)
 * Resilient to memory leaks (fork)
 * Expects failure
 
-In addition, it also:
+It also supports the following additional features:
 
 * Has the ability to track the status of jobs
 * Will mark a job as failed, if a forked child running a job does
@@ -36,7 +35,10 @@ not exit with a status code as 0
 * Has built in support for `setUp` and `tearDown` methods, called
 pre and post jobs
 
-Note: php-resque requires at least Redis 2.2.
+## Requirements ##
+
+* PHP 5.2+
+* Redis 2.2+
 
 ## Jobs ##
 
