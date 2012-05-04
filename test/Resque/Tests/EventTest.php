@@ -101,6 +101,24 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 		));	
 		$this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
 	}
+
+	public function testStopListeningRemovesListener()
+	{
+		$callback = 'beforePerformEventCallback';
+		$event = 'beforePerform';
+
+		Resque_Event::listen($event, array($this, $callback));
+		Resque_Event::stopListening($event, array($this, $callback));
+
+		$job = $this->getEventTestJob();
+		$this->worker->perform($job);
+		$this->worker->work(0);
+
+		$this->assertNotContains($callback, $this->callbacksHit, 
+			$event . ' callback (' . $callback .') was called though Resque_Event::stopListening was called'
+		);
+	}
+
 	
 	public function beforePerformEventDontPerformCallback($instance)
 	{
