@@ -154,7 +154,8 @@ class Resque
 		if ($result) {
 			Resque_Event::trigger('afterEnqueue', array(
 				'class' => $class,
-				'args' => $args,
+				'args'  => $args,
+				'queue' => $queue,
 			));
 		}
 

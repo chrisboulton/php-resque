@@ -316,8 +316,9 @@ Called whenever a job fails. Arguments passed (in this order) include:
 Called after a job has been queued using the `Resque::enqueue` method. Arguments passed
 (in this order) include:
 
-* Class - string containing the name of the class the job was scheduled in
+* Class - string containing the name of scheduled job
 * Arguments - array of arguments supplied to the job
+* Queue - string containing the name of the queue the job was added to
 
 ## Contributors ##
 
