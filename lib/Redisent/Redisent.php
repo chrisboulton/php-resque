@@ -11,8 +11,11 @@ define('CRLF', sprintf('%s%s', chr(13), chr(10)));
 
 /**
  * Wraps native Redis errors in friendlier PHP exceptions
+ * Only declared if class doesn't already exist to ensure compatibility with php-redis
  */
-class RedisException extends Exception {
+if (! class_exists('RedisException')) {
+    class RedisException extends Exception {
+    }
 }
 
 /**
