@@ -50,6 +50,7 @@ class Resque_RedisCluster extends RedisentCluster
 		'lset',
 		'lrem',
 		'lpop',
+		'blPop',
 		'rpop',
 		'sadd',
 		'srem',
@@ -81,7 +82,7 @@ class Resque_RedisCluster extends RedisentCluster
 	// msetnx
 	// mset
 	// renamenx
-	
+
 	/**
 	 * Set Redis namespace (prefix) default: resque
 	 * @param string $namespace

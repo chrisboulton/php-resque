@@ -117,12 +117,23 @@ class Resque
 	 */
 	public static function pop($queue)
 	{
-		$item = self::redis()->lpop('queue:' . $queue);
+		//add queue: prefix to all queues
+		$queues = array();
+		if(is_array($queue)) {
+			foreach ($queue as $q) {
+				$queues[] = 'queue:' . $q;
+			}
+		} else {
+			$queues[] = 'queue:' . $queue;
+		}
+
+		$item = self::redis()->blPop($queues, 5);
+
 		if(!$item) {
 			return;
 		}
 
-		return json_decode($item, true);
+		return $item;
 	}
 
 	/**
