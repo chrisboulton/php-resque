@@ -76,10 +76,12 @@ class Resque
 		}
 
 		if(is_array($server)) {
+			echo "connecting to redis cluster: ". implode(', ', $server) ."\n";
 			require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
 			self::$redis = new Resque_RedisCluster($server);
 		}
 		else {
+			echo "connecting to redis: $server\n";
 			if (strpos($server, 'unix:') === false) {
 				list($host, $port) = explode(':', $server);
 			}
