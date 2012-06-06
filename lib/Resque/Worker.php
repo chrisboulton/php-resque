@@ -477,7 +477,7 @@ class Resque_Worker
 	 */
 	public function registerWorker()
 	{
-		Resque::redis()->sadd('workers', $this);
+		Resque::redis()->sadd('workers', (string)$this);
 		Resque::redis()->set('worker:' . (string)$this . ':started', strftime('%a %b %d %H:%M:%S %Z %Y'));
 	}
 
@@ -560,7 +560,7 @@ class Resque_Worker
 	 */
 	public function job()
 	{
-		$job = Resque::redis()->get('worker:' . $this);
+		$job = Resque::redis()->get('worker:' . (string)$this);
 		if(!$job) {
 			return array();
 		}
@@ -577,7 +577,7 @@ class Resque_Worker
 	 */
 	public function getStat($stat)
 	{
-		return Resque_Stat::get($stat . ':' . $this);
+		return Resque_Stat::get($stat . ':' . (string)$this);
 	}
 }
 ?>
