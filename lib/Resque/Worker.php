@@ -465,9 +465,15 @@ class Resque_Worker
 	public function workerPids()
 	{
 		$pids = array();
-		exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
-		foreach($cmdOutput as $line) {
-			list($pids[],) = explode(' ', trim($line), 2);
+
+		if(exec('which pgrep')) {
+			$cmd = "pgrep -f [r]esque";
+			exec($cmd, $pids);
+		} else {
+			exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
+			foreach($cmdOutput as $line) {
+				list($pids[],) = explode(' ', trim($line), 2);
+			}
 		}
 		return $pids;
 	}
