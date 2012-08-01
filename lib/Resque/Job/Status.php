@@ -100,6 +100,8 @@ class Resque_Job_Status
 		// Expire the status for completed jobs after 24 hours
 		if(in_array($status, self::$completeStatuses)) {
 			Resque::redis()->expire((string)$this, 86400);
+			Resque::redis()->rpush((string)$this . ':finished', 1);
+			Resque::redis()->expire((string)$this . ':finished', 86400);
 		}
 	}
 

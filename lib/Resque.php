@@ -76,10 +76,12 @@ class Resque
 		}
 
 		if(is_array($server)) {
+			//echo "connecting to redis cluster: ". implode(', ', $server) ."\n";
 			require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
 			self::$redis = new Resque_RedisCluster($server);
 		}
 		else {
+			//echo "connecting to redis: $server\n";
 			if (strpos($server, 'unix:') === false) {
 				list($host, $port) = explode(':', $server);
 			}
@@ -117,12 +119,23 @@ class Resque
 	 */
 	public static function pop($queue)
 	{
-		$item = self::redis()->lpop('queue:' . $queue);
+		//add queue: prefix to all queues
+		$queues = array();
+		if(is_array($queue)) {
+			foreach ($queue as $q) {
+				$queues[] = 'queue:' . $q;
+			}
+		} else {
+			$queues[] = 'queue:' . $queue;
+		}
+
+		$item = self::redis()->blPop($queues, 5);
+
 		if(!$item) {
 			return;
 		}
 
-		return json_decode($item, true);
+		return $item;
 	}
 
 	/**

@@ -163,6 +163,8 @@ class Resque_Worker
 				break;
 			}
 
+			$this->updateProcLine('Waiting for ' . implode(',', $this->queues));
+
 			// Attempt to find and reserve a job
 			$job = false;
 			if(!$this->paused) {
@@ -175,14 +177,10 @@ class Resque_Worker
 					break;
 				}
 				// If no job was found, we sleep for $interval before continuing and checking again
-				$this->log('Sleeping for ' . $interval, true);
 				if($this->paused) {
 					$this->updateProcLine('Paused');
+					usleep($interval * 1000000); //it's paused, so don't hog redis with requests.
 				}
-				else {
-					$this->updateProcLine('Waiting for ' . implode(',', $this->queues));
-				}
-				usleep($interval * 1000000);
 				continue;
 			}
 
@@ -258,13 +256,12 @@ class Resque_Worker
 		if(!is_array($queues)) {
 			return;
 		}
-		foreach($queues as $queue) {
-			$this->log('Checking ' . $queue, self::LOG_VERBOSE);
-			$job = Resque_Job::reserve($queue);
-			if($job) {
-				$this->log('Found job on ' . $queue, self::LOG_VERBOSE);
-				return $job;
-			}
+
+		$this->log('Checking ' . join(',', $queues), self::LOG_VERBOSE);
+		$job = Resque_Job::reserve($queues);
+		if($job) {
+			$this->log('Found job on ' . $job->queue , self::LOG_VERBOSE);
+			return $job;
 		}
 
 		return false;
@@ -468,9 +465,15 @@ class Resque_Worker
 	public function workerPids()
 	{
 		$pids = array();
-		exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
-		foreach($cmdOutput as $line) {
-			list($pids[],) = explode(' ', trim($line), 2);
+
+		if(exec('which pgrep')) {
+			$cmd = "pgrep -f [r]esque";
+			exec($cmd, $pids);
+		} else {
+			exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
+			foreach($cmdOutput as $line) {
+				list($pids[],) = explode(' ', trim($line), 2);
+			}
 		}
 		return $pids;
 	}
@@ -480,7 +483,7 @@ class Resque_Worker
 	 */
 	public function registerWorker()
 	{
-		Resque::redis()->sadd('workers', $this);
+		Resque::redis()->sadd('workers', (string)$this);
 		Resque::redis()->set('worker:' . (string)$this . ':started', strftime('%a %b %d %H:%M:%S %Z %Y'));
 	}
 
@@ -563,7 +566,7 @@ class Resque_Worker
 	 */
 	public function job()
 	{
-		$job = Resque::redis()->get('worker:' . $this);
+		$job = Resque::redis()->get('worker:' . (string)$this);
 		if(!$job) {
 			return array();
 		}
@@ -580,7 +583,7 @@ class Resque_Worker
 	 */
 	public function getStat($stat)
 	{
-		return Resque_Stat::get($stat . ':' . $this);
+		return Resque_Stat::get($stat . ':' . (string)$this);
 	}
 }
 ?>
