@@ -41,7 +41,8 @@ class Resque
 	 * the redis server that Resque will talk to.
 	 *
 	 * @param mixed $server Host/port combination separated by a colon, or
-	 * a nested array of servers with host/port pairs.
+	 *                      a nested array of servers with host/port pairs.
+	 * @param int $database
 	 */
 	public static function setBackend($server, $database = 0)
 	{
@@ -127,6 +128,8 @@ class Resque
 	/**
 	 * Return the size (number of pending jobs) of the specified queue.
 	 *
+	 * @param $queue name of the queue to be checked for pending jobs
+	 *
 	 * @return int The size of the queue.
 	 */
 	public static function size($queue)
@@ -140,7 +143,9 @@ class Resque
 	 * @param string $queue The name of the queue to place the job in.
 	 * @param string $class The name of the class that contains the code to execute the job.
 	 * @param array $args Any optional arguments that should be passed when the job is executed.
-	 * @param boolean $monitor Set to true to be able to monitor the status of a job.
+	 * @param boolean $trackStatus Set to true to be able to monitor the status of a job.
+	 *
+	 * @return string
 	 */
 	public static function enqueue($queue, $class, $args = null, $trackStatus = false)
 	{
@@ -149,7 +154,8 @@ class Resque
 		if ($result) {
 			Resque_Event::trigger('afterEnqueue', array(
 				'class' => $class,
-				'args' => $args,
+				'args'  => $args,
+				'queue' => $queue,
 			));
 		}
 
