@@ -30,6 +30,38 @@ You can easily retrieve logs for a failed jobs in the redis database, their keys
 
 Fresque is shipped by default to manage your workers. See [Fresque Documentation](https://github.com/kamisama/Fresque) for usage.
 
+## Installation
+
+Clone the git repo
+
+	$ git clone git://github.com/kamisama/php-resque-ex.git
+	
+ `cd` into the folder you just cloned
+
+	$ cd ./php-resque-ex
+	
+Download Composer
+
+	$ curl -s https://getcomposer.org/installer | php
+	
+Install dependencies
+
+	$ php composer.phar install
+	
+## Usage
+
+Use the same way as the original port, with two additional ENV :
+
+* `LOGHANDLER` : Specify the handler to use for logging (File, MongoDB, Socket, etc …).  
+ See [Monolog](https://github.com/Seldaek/monolog#handlers) doc for all available handlers.
+`LOGHANDLER` is the name of the handler, without the "Handler" part. To use CubeHandler, just type "Cube".
+* `LOGHANDLERTARGET` : Information used by the handler to connect to the database.  
+Depends on the type of loghandler. If it's the *FileRotateHandler*, the target will be the filename. If it's CubeHandler, target will be a udp address. Refer to each Handler to see what type of argument their `__construct()` method requires.
+
+If one of these two environement variable is missing, it will default to *FileRotating* Handler.
+
+A symlink to **Fresque** is created in the `bin` folder, to manage your workers.
+
 ## Requirements ##
 
 * PHP 5.3+
