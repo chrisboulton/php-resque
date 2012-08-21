@@ -19,6 +19,14 @@ class Resque_Worker
 	const LOG_NORMAL = 1;
 	const LOG_VERBOSE = 2;
 
+
+	const LOG_TYPE_DEBUG = 100;
+	const LOG_TYPE_INFO = 200;
+	const LOG_TYPE_WARNING = 300;
+	const LOG_TYPE_ERROR = 400;
+	const LOG_TYPE_CRITICAL = 500;
+	const LOG_TYPE_ALERT = 550;
+
 	/**
 	 * @var int Current log level of this worker.
 	 */
@@ -51,6 +59,7 @@ class Resque_Worker
 
 	/**
 	 * @var Resque_Job Current job, if any, being processed by this worker.
+	 *
 	 */
 	private $currentJob = null;
 
@@ -58,6 +67,8 @@ class Resque_Worker
 	 * @var int Process ID of child worker processes.
 	 */
 	private $child = null;
+
+	private $logger = null;
 
 	/**
 	 * Return all workers known to Resque as instantiated instances.
@@ -175,7 +186,7 @@ class Resque_Worker
 					break;
 				}
 				// If no job was found, we sleep for $interval before continuing and checking again
-				$this->log('Sleeping for ' . $interval, true);
+				$this->log(array('message' => 'Sleeping for ' . $interval, 'data' => array('type' => 'sleep', 'second' => $interval)), self::LOG_TYPE_DEBUG);
 				if($this->paused) {
 					$this->updateProcLine('Paused');
 				}
@@ -186,28 +197,30 @@ class Resque_Worker
 				continue;
 			}
 
-			$this->log('got ' . $job);
+			$this->log(array('message' => 'got ' . $job, 'data' => array('type' => 'got', 'args' => $job)), self::LOG_TYPE_INFO);
 			Resque_Event::trigger('beforeFork', $job);
 			$this->workingOn($job);
+
+			$workerName = $this->hostname . ':'.getmypid();
 
 			$this->child = $this->fork();
 
 			// Forked and we're the child. Run the job.
-			if ($this->child === 0 || $this->child === false) {
-				$status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
+			if($this->child === 0 || $this->child === false) {
+				$status = 'Processing ID:' . $job->payload['id'] .  ' in ' . $job->queue;
 				$this->updateProcLine($status);
-				$this->log($status, self::LOG_VERBOSE);
+				$this->log(array('message' => $status, 'data' => array('type' => 'process', 'worker' => $workerName, 'job_id' => $job->payload['id'])), self::LOG_TYPE_INFO);
 				$this->perform($job);
-				if ($this->child === 0) {
+				if($this->child === 0) {
 					exit(0);
 				}
 			}
 
 			if($this->child > 0) {
 				// Parent process, sit and wait
-				$status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
+				$status = 'Forked ' . $this->child . ' for ID:' . $job->payload['id'];
 				$this->updateProcLine($status);
-				$this->log($status, self::LOG_VERBOSE);
+				$this->log(array('message' => $status, 'data' => array('type' => 'fork', 'worker' => $workerName, 'job_id' => $job->payload['id'])), self::LOG_TYPE_DEBUG);
 
 				// Wait until the child process finishes before continuing
 				pcntl_wait($status);
@@ -236,15 +249,15 @@ class Resque_Worker
 		try {
 			Resque_Event::trigger('afterFork', $job);
 			$job->perform();
+			$this->log(array('message' => 'done ID:' . $job->payload['id'], 'data' => array('type' => 'done', 'job_id' => $job->payload['id'])), self::LOG_TYPE_INFO);
 		}
 		catch(Exception $e) {
-			$this->log($job . ' failed: ' . $e->getMessage());
+			$this->log(array('message' => $job . ' failed: ' . $e->getMessage(), 'data' => array('type' => 'fail', 'log' => $e->getMessage(), 'job_id' => $job->payload['id'])), self::LOG_TYPE_ERROR);
 			$job->fail($e);
 			return;
 		}
 
 		$job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
-		$this->log('done ' . $job);
 	}
 
 	/**
@@ -259,10 +272,10 @@ class Resque_Worker
 			return;
 		}
 		foreach($queues as $queue) {
-			$this->log('Checking ' . $queue, self::LOG_VERBOSE);
+			$this->log(array('message' => 'Checking ' . $queue, 'data' => array('type' => 'check', 'queue' => $queue)), self::LOG_TYPE_DEBUG);
 			$job = Resque_Job::reserve($queue);
 			if($job) {
-				$this->log('Found job on ' . $queue, self::LOG_VERBOSE);
+				$this->log(array('message' => 'Found job on ' . $queue, 'data' => array('type' => 'found', 'queue' => $queue)), self::LOG_TYPE_DEBUG);
 				return $job;
 			}
 		}
@@ -360,7 +373,7 @@ class Resque_Worker
 		pcntl_signal(SIGUSR2, array($this, 'pauseProcessing'));
 		pcntl_signal(SIGCONT, array($this, 'unPauseProcessing'));
 		pcntl_signal(SIGPIPE, array($this, 'reestablishRedisConnection'));
-		$this->log('Registered signals', self::LOG_VERBOSE);
+		$this->log(array('message' => 'Registered signals', 'data' => array('type' => 'signal', 'action' => 'register')), self::LOG_VERBOSE);
 	}
 
 	/**
@@ -368,7 +381,7 @@ class Resque_Worker
 	 */
 	public function pauseProcessing()
 	{
-		$this->log('USR2 received; pausing job processing');
+		$this->log(array('message' => 'USR2 received; pausing job processing', 'data' => array('type' => 'signal', 'action' => 'pause')), self::LOG_TYPE_INFO);
 		$this->paused = true;
 	}
 
@@ -378,7 +391,7 @@ class Resque_Worker
 	 */
 	public function unPauseProcessing()
 	{
-		$this->log('CONT received; resuming job processing');
+		$this->log(array('message' => 'CONT received; resuming job processing', 'data' => array('type' => 'signal', 'action' => 'unpause')), self::LOG_TYPE_INFO);
 		$this->paused = false;
 	}
 
@@ -388,7 +401,7 @@ class Resque_Worker
 	 */
 	public function reestablishRedisConnection()
 	{
-		$this->log('SIGPIPE received; attempting to reconnect');
+		$this->log(array('message' => 'SIGPIPE received; attempting to reconnect', 'data' => array('type' => 'reconnect')), self::LOG_TYPE_INFO);
 		Resque::redis()->establishConnection();
 	}
 
@@ -399,7 +412,7 @@ class Resque_Worker
 	public function shutdown()
 	{
 		$this->shutdown = true;
-		$this->log('Exiting...');
+		$this->log(array('message' => 'Exiting...', 'data' => array('type' => 'shutdown')), self::LOG_TYPE_INFO);
 	}
 
 	/**
@@ -419,18 +432,18 @@ class Resque_Worker
 	public function killChild()
 	{
 		if(!$this->child) {
-			$this->log('No child to kill.', self::LOG_VERBOSE);
+			$this->log(array('message' => 'No child to kill.', 'data' => array('type' => 'kill', 'child' => null)), self::LOG_TYPE_DEBUG);
 			return;
 		}
 
-		$this->log('Killing child at ' . $this->child, self::LOG_VERBOSE);
+		$this->log(array('message' => 'Killing child at ' . $this->child, 'data' => array('type' => 'kill', 'child' => $this->child)), self::LOG_TYPE_DEBUG);
 		if(exec('ps -o pid,state -p ' . $this->child, $output, $returnCode) && $returnCode != 1) {
-			$this->log('Killing child at ' . $this->child, self::LOG_VERBOSE);
+			$this->log(array('message' => 'Killing child at ' . $this->child, 'data' => array('type' => 'kill', 'child' => $this->child)), self::LOG_TYPE_DEBUG);
 			posix_kill($this->child, SIGKILL);
 			$this->child = null;
 		}
 		else {
-			$this->log('Child ' . $this->child . ' not found, restarting.', self::LOG_VERBOSE);
+			$this->log(array('message' => 'Child ' . $this->child . ' not found, restarting.', 'data' => array('type' => 'kill', 'child' => $this->child)), self::LOG_TYPE_ERROR);
 			$this->shutdown();
 		}
 	}
@@ -453,7 +466,7 @@ class Resque_Worker
   			if($host != $this->hostname || in_array($pid, $workerPids) || $pid == getmypid()) {
   				continue;
   			}
-  			$this->log('Pruning dead worker: ' . (string)$worker, self::LOG_VERBOSE);
+  			$this->log(array('message' => 'Pruning dead worker: ' . (string)$worker, 'data' => array('type' => 'prune')), self::LOG_TYPE_DEBUG);
   			$worker->unregisterWorker();
 		  }
 		}
@@ -470,7 +483,7 @@ class Resque_Worker
 		$pids = array();
 		exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
 		foreach($cmdOutput as $line) {
-			list($pids[],) = explode(' ', trim($line), 2);
+			list($pids[]) = explode(' ', trim($line), 2);
 		}
 		return $pids;
 	}
@@ -480,7 +493,7 @@ class Resque_Worker
 	 */
 	public function registerWorker()
 	{
-		Resque::redis()->sadd('workers', $this);
+		Resque::redis()->sadd('workers', (string)$this);
 		Resque::redis()->set('worker:' . (string)$this . ':started', strftime('%a %b %d %H:%M:%S %Z %Y'));
 	}
 
@@ -546,14 +559,56 @@ class Resque_Worker
 	 *
 	 * @param string $message Message to output.
 	 */
-	public function log($message)
+	public function log($message, $code = self::LOG_TYPE_INFO)
 	{
-		if($this->logLevel == self::LOG_NORMAL) {
-			fwrite(STDOUT, "*** " . $message . "\n");
+		if($this->logger === null)
+		{
+			if($this->logLevel == self::LOG_NORMAL) {
+				fwrite(STDOUT, "*** " . $message['message'] . "\n");
+			}
+			else if($this->logLevel == self::LOG_VERBOSE) {
+				fwrite(STDOUT, "** [" . strftime('%T %Y-%m-%d') . "] " . $message['message'] . "\n");
+			}
 		}
-		else if($this->logLevel == self::LOG_VERBOSE) {
-			fwrite(STDOUT, "** [" . strftime('%T %Y-%m-%d') . "] " . $message . "\n");
+		else
+		{
+			$extra = array();
+
+			if (is_array($message))
+			{
+				$extra = $message['data'];
+				$message = $message['message'];
+			}
+
+			if (!isset($extra['worker']))
+			{
+				if($this->child > 0)
+				{
+					$extra['worker'] = $this->hostname . ':' . getmypid();
+				}
+				else
+				{
+					list($host, $pid, $queues) = explode(':', (string) $this, 3);
+					$extra['worker'] = $host . ':' . $pid;
+				}
+			}
+
+			switch($code)
+			{
+				case self::LOG_TYPE_DEBUG 	: $this->logger->addDebug($message, $extra); break;
+				case self::LOG_TYPE_INFO 	: $this->logger->addInfo($message, $extra); break;
+				case self::LOG_TYPE_WARNING : $this->logger->addWarning($message, $extra); break;
+				case self::LOG_TYPE_ERROR 	: $this->logger->addError($message, $extra); break;
+				case self::LOG_TYPE_CRITICAL : $this->logger->addCritical($message, $extra); break;
+				case self::LOG_TYPE_ALERT 	: $this->logger->addAlert($message, $extra);
+			}
+
 		}
+	}
+
+	public function registerLogger(Monolog\Logger $logger)
+	{
+		$this->logger = $logger;
 	}
 
 	/**
@@ -583,4 +638,4 @@ class Resque_Worker
 		return Resque_Stat::get($stat . ':' . $this);
 	}
 }
-?>
+
