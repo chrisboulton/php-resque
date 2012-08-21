@@ -242,17 +242,12 @@ class Resque_Job
 	 */
 	public function __toString()
 	{
-		$name = array(
-			'Job{' . $this->queue .'}'
-		);
-		if(!empty($this->payload['id'])) {
-			$name[] = 'ID: ' . $this->payload['id'];
-		}
-		$name[] = $this->payload['class'];
-		if(!empty($this->payload['args'])) {
-			$name[] = json_encode($this->payload['args']);
-		}
-		return '(' . implode(' | ', $name) . ')';
+		return json_encode(array(
+					'queue' => $this->queue,
+					'id' => !empty($this->payload['id']) ? $this->payload['id'] : '',
+					'class' => $this->payload['class'],
+					'args' => !empty($this->payload['args']) ? $this->payload['args'] : ''
+				));
 	}
 }
-?>
+
