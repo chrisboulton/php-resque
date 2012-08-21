@@ -112,25 +112,10 @@
 	{
 		if($logger === null)
 		{
-			if ($logLevel == self::LOG_NORMAL)
-			{
-				fwrite(STDOUT, $message['message'] . "\n");
-			}
-			else if ($logLevel == self::LOG_VERBOSE)
-			{
-				fwrite(STDOUT, "[" . strftime('%T %Y-%m-%d') . "] " . $message['message'] . "\n");
-			}
+			fwrite(STDOUT, (($logLevel == self::LOG_NORMAL) ? "" : "[" . strftime('%T %Y-%m-%d') . "] ") . $message['message'] . "\n");
 		}
 		else
 		{
-			$extra = array();
-
-			if (is_array($message))
-			{
-				$extra = $message['data'];
-				$message = $message['message'];
-			}
-
-			$logger->addInfo($message, $extra);
+			$logger->addInfo($message['message'], $message['data']);
 		}
 	}
