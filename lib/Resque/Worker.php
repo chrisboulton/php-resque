@@ -193,7 +193,7 @@ class Resque_Worker
 			$this->child = $this->fork();
 
 			// Forked and we're the child. Run the job.
-			if ($this->child === 0 || $this->child === false) {
+			if ($this->child === 0) {
 				$status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
 				$this->updateProcLine($status);
 				$this->log($status, self::LOG_VERBOSE);
