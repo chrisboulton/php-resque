@@ -13,15 +13,16 @@
 	require_once 'vendor'.DS.'autoload.php';
 
 	$logger = null;
-	$logHandlerTarget = getenv('LOGHANDLERTARGET') ? getenv('LOGHANDLERTARGET') : __DIR__ . DS . 'error.log';
-	$logHandlerClassName = getenv('LOGHANDLER')
-		? 'Monolog\Handler\\' . getenv('LOGHANDLER') . 'Handler'
-		: 'Monolog\Handler\RotatingFileHandler';
-
-	if (class_exists('Monolog\Logger') && class_exists($logHandlerClassName))
+	if (getenv('LOGHANDLERTARGET') !== false && getenv('LOGHANDLER') !== false)
 	{
-		$logger = new Monolog\Logger('main');
-		$logger->pushHandler(new $logHandlerClassName($logHandlerTarget));
+		$logHandlerTarget = getenv('LOGHANDLERTARGET');
+		$logHandlerClassName = 'Monolog\Handler\\' . getenv('LOGHANDLER') . 'Handler';
+
+		if (class_exists('Monolog\Logger') && class_exists($logHandlerClassName))
+		{
+			$logger = new Monolog\Logger('main');
+			$logger->pushHandler(new $logHandlerClassName($logHandlerTarget));
+		}
 	}
 
 	$REDIS_BACKEND = getenv('REDIS_BACKEND');
