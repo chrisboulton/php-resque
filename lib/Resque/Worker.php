@@ -606,7 +606,7 @@ class Resque_Worker
 		}
 	}
 
-	public function registerLogger(Monolog\Logger $logger)
+	public function registerLogger($logger = null)
 	{
 		$this->logger = $logger;
 	}

@@ -5,17 +5,24 @@
 		die("Set QUEUE env var containing the list of queues to work.\n");
 	}
 
-	if (!defined('DS')) {
+	if (!defined('DS'))
+	{
 		define('DS', DIRECTORY_SEPARATOR);
 	}
 
 	require_once 'vendor'.DS.'autoload.php';
 
-	use Monolog\Logger;
-	use Monolog\Handler\CubeHandler;
+	$logger = null;
+	$logHandlerTarget = getenv('LOGHANDLERTARGET') ? getenv('LOGHANDLERTARGET') : __DIR__ . DS . 'error.log';
+	$logHandlerClassName = getenv('LOGHANDLER')
+		? 'Monolog\Handler\\' . getenv('LOGHANDLER') . 'Handler'
+		: 'Monolog\Handler\RotatingFileHandler';
 
-	$logger = new Logger('main');
-	$logger->pushHandler(new CubeHandler('udp://127.0.0.1:1180'));
+	if (class_exists('Monolog\Logger') && class_exists($logHandlerClassName))
+	{
+		$logger = new Monolog\Logger('main');
+		$logger->pushHandler(new $logHandlerClassName($logHandlerTarget));
+	}
 
 	$REDIS_BACKEND = getenv('REDIS_BACKEND');
 	if (!empty($REDIS_BACKEND))
@@ -77,7 +84,7 @@
 				$worker = new Resque_Worker($queues);
 				$worker->registerLogger($logger);
 				$worker->logLevel = $logLevel;
-				$logger->addInfo('*** Starting worker ' . $worker, array('type' => 'start', 'worker' => (string) $worker));
+				logStart($logger, array('message' => '*** Starting worker ' . $worker, 'data' => array('type' => 'start', 'worker' => (string) $worker)));
 				$worker->work($interval);
 				break;
 			}
@@ -97,6 +104,33 @@
 			file_put_contents($PIDFILE, getmypid()) or die('Could not write PID information to ' . $PIDFILE);
 		}
 
-		$logger->addInfo('*** Starting worker ' . $worker, array('type' => 'start', 'worker' => (string) $worker));
+		logStart($logger, array('message' => '*** Starting worker ' . $worker, 'data' => array('type' => 'start', 'worker' => (string) $worker)));
 		$worker->work($interval);
+	}
+
+	function logStart($logger, $message)
+	{
+		if($logger === null)
+		{
+			if ($logLevel == self::LOG_NORMAL)
+			{
+				fwrite(STDOUT, $message['message'] . "\n");
+			}
+			else if ($logLevel == self::LOG_VERBOSE)
+			{
+				fwrite(STDOUT, "[" . strftime('%T %Y-%m-%d') . "] " . $message['message'] . "\n");
+			}
+		}
+		else
+		{
+			$extra = array();
+
+			if (is_array($message))
+			{
+				$extra = $message['data'];
+				$message = $message['message'];
+			}
+
+			$logger->addInfo($message, $extra);
+		}
 	}
