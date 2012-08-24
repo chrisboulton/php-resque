@@ -47,6 +47,7 @@ class Resque_Redis
 		'lset',
 		'lrem',
 		'lpop',
+		'blpop',
 		'rpop',
 		'sadd',
 		'srem',
