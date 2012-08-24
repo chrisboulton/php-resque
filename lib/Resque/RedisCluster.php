@@ -50,6 +50,7 @@ class Resque_RedisCluster extends RedisentCluster
 		'lset',
 		'lrem',
 		'lpop',
+		'blpop',
 		'rpop',
 		'sadd',
 		'srem',

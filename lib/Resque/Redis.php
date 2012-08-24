@@ -50,6 +50,7 @@ class Resque_Redis extends Redisent
 		'lset',
 		'lrem',
 		'lpop',
+		'blpop',
 		'rpop',
 		'sadd',
 		'srem',

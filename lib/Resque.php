@@ -14,6 +14,8 @@ class Resque
 {
 	const VERSION = '1.0';
 
+    const DEFAULT_INTERVAL = 5;
+
 	/**
 	 * @var Resque_Redis Instance of Resque_Redis that talks to redis.
 	 */
@@ -115,14 +117,19 @@ class Resque
 	 * @param string $queue The name of the queue to fetch an item from.
 	 * @return array Decoded item from the queue.
 	 */
-	public static function pop($queue)
+	public static function pop($queue, $interval = null)
 	{
-		$item = self::redis()->lpop('queue:' . $queue);
+        if($interval == null) {
+            $item = self::redis()->lpop('queue:' . $queue);
+        } else {
+            $item = self::redis()->blpop('queue:' . $queue, $interval ?: Resque::DEFAULT_INTERVAL);
+        }
+
 		if(!$item) {
 			return;
 		}
 
-		return json_decode($item, true);
+		return json_decode($interval == 0 ? $item : $item[1], true);
 	}
 
 	/**
@@ -168,10 +175,10 @@ class Resque
 	 * @param string $queue Queue to fetch next available job from.
 	 * @return Resque_Job Instance of Resque_Job to be processed, false if none or error.
 	 */
-	public static function reserve($queue)
+	public static function reserve($queue, $interval = null)
 	{
 		require_once dirname(__FILE__) . '/Resque/Job.php';
-		return Resque_Job::reserve($queue);
+		return Resque_Job::reserve($queue, $interval);
 	}
 
 	/**

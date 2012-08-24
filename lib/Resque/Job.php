@@ -83,9 +83,9 @@ class Resque_Job
 	 * @param string $queue The name of the queue to check for a job in.
 	 * @return null|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
 	 */
-	public static function reserve($queue)
+	public static function reserve($queue, $interval = null)
 	{
-		$payload = Resque::pop($queue);
+		$payload = Resque::pop($queue, $interval);
 		if(!is_array($payload)) {
 			return false;
 		}
@@ -156,7 +156,7 @@ class Resque_Job
 			);
 		}
 
-		$this->instance = new $this->payload['class']();
+		$this->instance = new $this->payload['class'];
 		$this->instance->job = $this;
 		$this->instance->args = $this->getArguments();
 		$this->instance->queue = $this->queue;
