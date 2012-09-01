@@ -1,7 +1,7 @@
 <?php
-require_once dirname(__FILE__) . '/Event.php';
-require_once dirname(__FILE__) . '/Job/Status.php';
-require_once dirname(__FILE__) . '/Job/DontPerform.php';
+include_once dirname(__FILE__) . '/Event.php';
+include_once dirname(__FILE__) . '/Job/Status.php';
+include_once dirname(__FILE__) . '/Job/DontPerform.php';
 
 /**
  * Resque job.
@@ -209,7 +209,7 @@ class Resque_Job
 		));
 
 		$this->updateStatus(Resque_Job_Status::STATUS_FAILED);
-		require_once dirname(__FILE__) . '/Failure.php';
+		include_once dirname(__FILE__) . '/Failure.php';
 		Resque_Failure::create(
 			$this->payload,
 			$exception,

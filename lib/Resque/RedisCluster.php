@@ -2,7 +2,7 @@
 // Third- party apps may have already loaded Resident from elsewhere
 // so lets be careful.
 if(!class_exists('RedisentCluster', false)) {
-	require_once dirname(__FILE__) . '/../Redisent/RedisentCluster.php';
+	include_once dirname(__FILE__) . '/../Redisent/RedisentCluster.php';
 }
 
 /**
@@ -81,7 +81,7 @@ class Resque_RedisCluster extends RedisentCluster
 	// msetnx
 	// mset
 	// renamenx
-	
+
 	/**
 	 * Set Redis namespace (prefix) default: resque
 	 * @param string $namespace

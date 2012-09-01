@@ -1,6 +1,6 @@
 <?php
-require_once dirname(__FILE__) . '/Resque/Event.php';
-require_once dirname(__FILE__) . '/Resque/Exception.php';
+include_once dirname(__FILE__) . '/Resque/Event.php';
+include_once dirname(__FILE__) . '/Resque/Exception.php';
 
 /**
  * Base Resque class.
@@ -76,7 +76,7 @@ class Resque
 		}
 
 		if(is_array($server)) {
-			require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
+			include_once dirname(__FILE__) . '/Resque/RedisCluster.php';
 			self::$redis = new Resque_RedisCluster($server);
 		}
 		else {
@@ -87,7 +87,7 @@ class Resque
 				$host = $server;
 				$port = null;
 			}
-			require_once dirname(__FILE__) . '/Resque/Redis.php';
+			include_once dirname(__FILE__) . '/Resque/Redis.php';
 			self::$redis = new Resque_Redis($host, $port);
 		}
 
@@ -149,7 +149,7 @@ class Resque
 	 */
 	public static function enqueue($queue, $class, $args = null, $trackStatus = false)
 	{
-		require_once dirname(__FILE__) . '/Resque/Job.php';
+		include_once dirname(__FILE__) . '/Resque/Job.php';
 		$result = Resque_Job::create($queue, $class, $args, $trackStatus);
 		if ($result) {
 			Resque_Event::trigger('afterEnqueue', array(
@@ -170,7 +170,7 @@ class Resque
 	 */
 	public static function reserve($queue)
 	{
-		require_once dirname(__FILE__) . '/Resque/Job.php';
+		include_once dirname(__FILE__) . '/Resque/Job.php';
 		return Resque_Job::reserve($queue);
 	}
 
