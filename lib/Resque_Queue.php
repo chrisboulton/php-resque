@@ -32,26 +32,18 @@ class Resque_Queue
 	protected static $redisDatabase = 0;
 
 	/**
-	 * @var bool use phpredis extension or fsockopen to connect to the redis server
-	 */
-	public static $phpredis = null;
-
-	/**
 	 * Given a host/port combination separated by a colon, set it as
 	 * the redis server that Resque will talk to.
 	 *
 	 * @param mixed $server Host/port combination separated by a colon, or
 	 * a nested array of servers with host/port pairs.
 	 * @param integer $database the db to be selected
-	 * @param bool $phpredis use phpredis extension or fsockopen to connect to the server
 	 */
-  public static function setBackend($server, $database = 0, $phpredis = true)
+  public static function setBackend($server, $database = 0)
   {
     self::$redisServer   = $server;
     self::$redisDatabase = $database;
-    self::$phpredis      = $phpredis;
     self::$redis         = null;
-    return self::redis();
   }
 
 
@@ -73,7 +65,7 @@ class Resque_Queue
 
 	  if(is_array($server)) {
 	    include_once dirname(__FILE__) . '/Resque/RedisCluster.php';
-	    self::$redis = new Resque_RedisCluster($server, self::$redisDatabase, self::phpredis);
+	    self::$redis = new Resque_RedisCluster($server);
 	  }
 	  else {
       if (strpos($server, 'unix:') === false) {
@@ -84,23 +76,11 @@ class Resque_Queue
         $port = null;
       }
 	    include_once dirname(__FILE__) . '/Resque/Redis.php';
-	    self::$redis = new Resque_Redis($host, $port, self::$redisDatabase, self::$phpredis);
+	    self::$redis = new Resque_Redis($host, $port);
 	  }
 
+		self::$redis->select(self::$redisDatabase);
 		return self::$redis;
-	}
-
-	/**
-	 * Push a job to the end of a specific queue. If the queue does not
-	 * exist, then create it as well.
-	 *
-	 * @param string $queue The name of the queue to add the job to.
-	 * @param array $item Job description as an array to be JSON encoded.
-	 */
-	public static function push($queue, $item)
-	{
-		self::redis()->sadd('queues', $queue);
-		return (int)self::redis()->rpush('queue:' . $queue, json_encode($item));
 	}
 
 	/**
