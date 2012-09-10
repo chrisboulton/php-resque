@@ -122,7 +122,7 @@ class Resque
         if($interval == null) {
             $item = self::redis()->lpop('queue:' . $queue);
         } else {
-            $item = self::redis()->blpop('queue:' . $queue, $interval ?: Resque::DEFAULT_INTERVAL);
+            $item = self::redis()->blpop('queue:' . $queue, $interval ? $interval : Resque::DEFAULT_INTERVAL);
         }
 
 		if(!$item) {
