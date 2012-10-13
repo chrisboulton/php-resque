@@ -20,6 +20,7 @@
 * Add support for Composer
 * Fix missing and incorrect paths for Resque and Resque_Job_Status classes in demo (jjfrey)
 * Disable autoload for the RedisException class_exists call (scragg0x)
+* General tidyup of comments and files/folders
 
 ## 1.1 (2011-03-27) ##
 
