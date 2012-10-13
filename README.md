@@ -329,3 +329,16 @@ Called after a job has been queued using the `Resque::enqueue` method. Arguments
 * KevBurnsJr
 * jmathai
 * dceballos
+* patrickbajao
+* andrewjshults
+* warezthebeef
+* d11wtq
+* hlegius
+* salimane
+* humancopy
+* pedroarnal
+* chaitanyakuber
+* maetl
+* Matt Heath
+* jjfrey
+* scragg0x
