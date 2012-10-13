@@ -11,7 +11,7 @@ require_once dirname(__FILE__) . '/Resque/Exception.php';
  */
 class Resque
 {
-	const VERSION = '1.0';
+	const VERSION = '1.2';
 
 	/**
 	 * @var Resque_Redis Instance of Resque_Redis that talks to redis.
