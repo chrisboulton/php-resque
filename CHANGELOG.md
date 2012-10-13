@@ -1,4 +1,4 @@
-## 1.2 (Unreleased) ##
+## 1.2 (2012-10-13) ##
 
 * Allow alternate redis database to be selected when calling setBackend by supplying a second argument (patrickbajao)
 * Use `require_once` when including php-resque after the app has been included in the sample resque.php to prevent include conflicts (andrewjshults)
@@ -10,7 +10,16 @@
 * Fix lost jobs when there is more than one worker process started by the same parent process (salimane)
 * Move include for resque before APP_INCLUDE is loaded in, so that way resque is available for the app
 * Avoid working with dirty worker IDs (salimane)
-
+* Allow UNIX socket to be passed to Resque when connecting to Redis (pedroarnal)
+* Fix typographical errors in PHP docblocks (chaitanyakuber)
+* Set the queue name on job instances when jobs are executed (chaitanyakuber)
+* Fix and add tests for Resque_Event::stopListening (ebernhardson)
+* Documentation cleanup (maetl)
+* Pass queue name to afterEvent callback
+* Only declare RedisException if it doesn't already exist (Matt Heath)
+* Add support for Composer
+* Fix missing and incorrect paths for Resque and Resque_Job_Status classes in demo (jjfrey)
+* Disable autoload for the RedisException class_exists call (scragg0x)
 
 ## 1.1 (2011-03-27) ##
 
