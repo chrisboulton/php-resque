@@ -3,8 +3,7 @@
  * Resque test bootstrap file - sets up a test environment.
  *
  * @package		Resque/Tests
- * @author		Chris Boulton <chris.boulton@interspire.com>
- * @copyright	(c) 2010 Chris Boulton
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
 define('CWD', dirname(__FILE__));

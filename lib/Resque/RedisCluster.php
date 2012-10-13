@@ -10,8 +10,7 @@ if(!class_exists('RedisentCluster', false)) {
  * redis. Essentially adds namespace support to Redisent.
  *
  * @package		Resque/Redis
- * @author		Chris Boulton <chris.boulton@interspire.com>
- * @copyright	(c) 2010 Chris Boulton
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
 class Resque_RedisCluster extends RedisentCluster
