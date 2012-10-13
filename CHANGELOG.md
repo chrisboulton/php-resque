@@ -1,5 +1,7 @@
 ## 1.2 (2012-10-13) ##
 
+**Note:** This release is largely backwards compatible with php-resque 1.1. The next release will introduce backwards incompatible changes (moving from Redisent to Credis), and will drop compatibility with PHP 5.2.
+
 * Allow alternate redis database to be selected when calling setBackend by supplying a second argument (patrickbajao)
 * Use `require_once` when including php-resque after the app has been included in the sample resque.php to prevent include conflicts (andrewjshults)
 * Wrap job arguments in an array to improve compatibility with ruby resque (warezthebeef)
