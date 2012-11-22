@@ -7,7 +7,7 @@
  * @package Redisent
  */
 
-define('CRLF', sprintf('%s%s', chr(13), chr(10)));
+if ( !defined('CRLF') ) define('CRLF', sprintf('%s%s', chr(13), chr(10)));
 
 /**
  * Wraps native Redis errors in friendlier PHP exceptions
