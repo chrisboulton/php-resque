@@ -113,5 +113,20 @@ class Resque_Redis extends Redisent
 			return false;
 		}
 	}
+
+    public static function getPrefix()
+    {
+        return self::$defaultNamespace;
+    }
+
+    public static function removePrefix($string)
+    {
+        $prefix=self::getPrefix();
+
+        if (substr($string, 0, strlen($prefix)) == $prefix) {
+            $string = substr($string, strlen($prefix), strlen($string) );
+        }
+        return $string;
+    }
 }
 ?>
