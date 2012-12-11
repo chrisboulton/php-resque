@@ -49,11 +49,6 @@ class Resque_Worker
 	private $currentJob = null;
 
 	/**
-	 * @var int Process ID of child worker processes.
-	 */
-	private $child = null;
-
-	/**
 	 * Return all workers known to Resque as instantiated instances.
 	 * @return array
 	 */
@@ -137,6 +132,23 @@ class Resque_Worker
 		}
 		$this->hostname = $hostname;
 		$this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
+
+		if (function_exists('pcntl_fork')) {
+			$this->setJobStrategy(new Resque_JobStrategy_Fork);
+		} else {
+			$this->setJobStrategy(new Resque_JobStrategy_InProcess);
+		}
+	}
+
+	/**
+	 * Set the JobStrategy used to seperate the job execution context from the worker
+	 *
+	 * @param Resque_JobStrategy_Interface
+	 */
+	public function setJobStrategy(Resque_JobStrategy_Interface $jobStrategy)
+	{
+		$this->jobStrategy = $jobStrategy;
+		$this->jobStrategy->setWorker($this);
 	}
 
 	/**
@@ -184,36 +196,8 @@ class Resque_Worker
 			Resque_Event::trigger('beforeFork', $job);
 			$this->workingOn($job);
 
-			$this->child = Resque::fork();
+			$this->jobStrategy->perform($job);
 
-			// Forked and we're the child. Run the job.
-			if ($this->child === 0 || $this->child === false) {
-				$status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
-				$this->updateProcLine($status);
-				$this->log($status, self::LOG_VERBOSE);
-				$this->perform($job);
-				if ($this->child === 0) {
-					exit(0);
-				}
-			}
-
-			if($this->child > 0) {
-				// Parent process, sit and wait
-				$status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
-				$this->updateProcLine($status);
-				$this->log($status, self::LOG_VERBOSE);
-
-				// Wait until the child process finishes before continuing
-				pcntl_wait($status);
-				$exitStatus = pcntl_wexitstatus($status);
-				if($exitStatus !== 0) {
-					$job->fail(new Resque_Job_DirtyExitException(
-						'Job exited with exit code ' . $exitStatus
-					));
-				}
-			}
-
-			$this->child = null;
 			$this->doneWorking();
 		}
 
@@ -304,7 +288,7 @@ class Resque_Worker
 	 *
 	 * @param string $status The updated process title.
 	 */
-	private function updateProcLine($status)
+	public function updateProcLine($status)
 	{
 		if(function_exists('setproctitle')) {
 			setproctitle('resque-' . Resque::VERSION . ': ' . $status);
@@ -391,21 +375,7 @@ class Resque_Worker
 	 */
 	public function killChild()
 	{
-		if(!$this->child) {
-			$this->log('No child to kill.', self::LOG_VERBOSE);
-			return;
-		}
-
-		$this->log('Killing child at ' . $this->child, self::LOG_VERBOSE);
-		if(exec('ps -o pid,state -p ' . $this->child, $output, $returnCode) && $returnCode != 1) {
-			$this->log('Killing child at ' . $this->child, self::LOG_VERBOSE);
-			posix_kill($this->child, SIGKILL);
-			$this->child = null;
-		}
-		else {
-			$this->log('Child ' . $this->child . ' not found, restarting.', self::LOG_VERBOSE);
-			$this->shutdown();
-		}
+		$this->jobStrategy->shutdown();
 	}
 
 	/**
