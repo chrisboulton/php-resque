@@ -88,6 +88,7 @@ class Redisent {
                 	throw new Exception('Failed to write entire command to stream');
             	}else{
             		fclose($this->__sock);
+            		sleep(1);
             		$this->establishConnection();
             		$reconnects++;
             	}
