@@ -43,6 +43,13 @@ class Redisent {
      * @access public
      */
     public $port;
+    
+    /**
+     * Number of times to attempt a reconnect
+     * 
+     * @var int
+     */
+    public $max_reconnects = 3;
 
     /**
      * Creates a Redisent connection to the Redis server on host {@link $host} and port {@link $port}.
@@ -73,10 +80,17 @@ class Redisent {
         $command = sprintf('*%d%s%s%s', count($args), CRLF, implode(array_map(array($this, 'formatArgument'), $args), CRLF), CRLF);
 
         /* Open a Redis connection and execute the command */
+        $reconnects = 0;
         for ($written = 0; $written < strlen($command); $written += $fwrite) {
-            $fwrite = fwrite($this->__sock, substr($command, $written));
-            if ($fwrite === FALSE) {
-                throw new Exception('Failed to write entire command to stream');
+            $fwrite = @fwrite($this->__sock, substr($command, $written));
+            if ($fwrite === FALSE || $fwrite === 0) {
+            	if ($reconnects >= (int)$this->max_reconnects) {
+                	throw new Exception('Failed to write entire command to stream');
+            	}else{
+            		fclose($this->__sock);
+            		$this->establishConnection();
+            		$reconnects++;
+            	}
             }
         }
 
