@@ -230,9 +230,8 @@ class Resque_Job
 		if($status->isTracking()) {
 			$monitor = true;
 		}
-		$args = count($this->payload['args'])? $this->payload['args'][0] : $this->payload['args'];
-		
-		return self::create($this->queue, $this->payload['class'], $args, $monitor);
+
+		return self::create($this->queue, $this->payload['class'], $this->payload['args'][0], $monitor);
 	}
 
 	/**
