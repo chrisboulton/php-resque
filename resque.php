@@ -8,6 +8,7 @@ require_once 'lib/Resque.php';
 require_once 'lib/Resque/Worker.php';
 
 $REDIS_BACKEND = getenv('REDIS_BACKEND');
+$DATABASE = getenv('DATABASE');
 if(!empty($REDIS_BACKEND)) {
 	Resque::setBackend($REDIS_BACKEND, $DATABASE);
 }
