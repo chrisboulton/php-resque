@@ -33,6 +33,7 @@ class Resque_Redis extends Redisent
 		'ttl',
 		'move',
 		'set',
+		'setex',
 		'get',
 		'getset',
 		'setnx',
