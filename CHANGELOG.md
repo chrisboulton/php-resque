@@ -1,3 +1,24 @@
+## 1.3 (2013-??-??) - Current Master ##
+
+**Note:** This release introduces backwards incompatible changes with all previous versions of php-resque. Please see below for details.
+
+### Composer Support
+
+Composer support has been improved and is now the recommended method for including php-resque in your project. Details on Composer support can be found in the Getting Started section of the readme.
+
+### Other Improvements/Changes
+
+* **COMPATIBILITY BREAKING**: The bundled worker manager `resque.php` has been moved to `bin/resque`, and is available as `vendor/bin/resque` when php-resque is installed as a Composer package.
+
+* Restructure tests and test bootstrapping. Autoload tests via Composer (install test dependencies with `composer install --dev`)
+
+* Add `SETEX` to list of commands which supply a key as the first argument in Redisent (danhunsaker)
+
+* Fix an issue where a lost connection to Redis could cause an infinite loop (atorres757)
+
+* Add a helper method to `Resque_Redis` to remove the namespace applied to Redis keys (tonypiper)
+
+
 ## 1.2 (2012-10-13) ##
 
 **Note:** This release is largely backwards compatible with php-resque 1.1. The next release will introduce backwards incompatible changes (moving from Redisent to Credis), and will drop compatibility with PHP 5.2.
@@ -22,7 +43,7 @@
 * Add support for Composer
 * Fix missing and incorrect paths for Resque and Resque_Job_Status classes in demo (jjfrey)
 * Disable autoload for the RedisException class_exists call (scragg0x)
-* General tidyup of comments and files/folders
+* General tidy up of comments and files/folders
 
 ## 1.1 (2011-03-27) ##
 
