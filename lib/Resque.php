@@ -27,12 +27,6 @@ class Resque
 	protected static $redisDatabase = 0;
 
 	/**
-	 * @var int PID of current process. Used to detect changes when forking
-	 *  and implement "thread" safety to avoid race conditions.
-	 */
-	 protected static $pid = null;
-
-	/**
 	 * Given a host/port combination separated by a colon, set it as
 	 * the redis server that Resque will talk to.
 	 *
@@ -54,15 +48,7 @@ class Resque
 	 */
 	public static function redis()
 	{
-		// Detect when the PID of the current process has changed (from a fork, etc)
-		// and force a reconnect to redis.
-		$pid = getmypid();
-		if (self::$pid !== $pid) {
-			self::$redis = null;
-			self::$pid   = $pid;
-		}
-
-		if(!is_null(self::$redis)) {
+		if (self::$redis !== null) {
 			return self::$redis;
 		}
 
@@ -73,6 +59,33 @@ class Resque
 
 		self::$redis = new Resque_Redis($server, self::$redisDatabase);
 		return self::$redis;
+	}
+
+	/**
+	 * fork() helper method for php-resque that handles issues PHP socket
+	 * and phpredis have with passing around sockets between child/parent
+	 * processes.
+	 *
+	 * Will close connection to Redis before forking.
+	 *
+	 * @return int Return vars as per pcntl_fork()
+	 */
+	public static function fork()
+	{
+		if(!function_exists('pcntl_fork')) {
+			return -1;
+		}
+
+		// Close the connection to Redis before forking.
+		// This is a workaround for issues phpredis has.
+		self::$redis = null;
+
+		$pid = pcntl_fork();
+		if($pid === -1) {
+			throw new RuntimeException('Unable to fork child worker.');
+		}
+
+		return $pid;
 	}
 
 	/**

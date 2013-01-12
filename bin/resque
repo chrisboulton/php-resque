@@ -68,7 +68,7 @@ if(!empty($COUNT) && $COUNT > 1) {
 
 if($count > 1) {
 	for($i = 0; $i < $count; ++$i) {
-		$pid = pcntl_fork();
+		$pid = Resque::fork();
 		if($pid == -1) {
 			die("Could not fork worker ".$i."\n");
 		}
