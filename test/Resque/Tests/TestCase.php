@@ -15,7 +15,7 @@ class Resque_Tests_TestCase extends PHPUnit_Framework_TestCase
 	{
 		$config = file_get_contents(REDIS_CONF);
 		preg_match('#^\s*port\s+([0-9]+)#m', $config, $matches);
-		$this->redis = new Redisent('localhost', $matches[1]);
+		$this->redis = new Credis_Client('localhost', $matches[1]);
 
 		// Flush redis
 		$this->redis->flushAll();

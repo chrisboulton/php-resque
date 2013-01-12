@@ -1,25 +1,22 @@
 <?php
-// Third- party apps may have already loaded Resident from elsewhere
-// so lets be careful.
-if(!class_exists('Redisent', false)) {
-	require_once __DIR__ . '/../Redisent/Redisent.php';
-}
-
 /**
- * Extended Redisent class used by Resque for all communication with
- * redis. Essentially adds namespace support to Redisent.
+ * Wrap Credis to add namespace support and various helper methods.
  *
  * @package		Resque/Redis
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Redis extends Redisent
+class Resque_Redis
 {
     /**
      * Redis namespace
      * @var string
      */
     private static $defaultNamespace = 'resque:';
+
+    private $server;
+    private $database;
+
 	/**
 	 * @var array List of all commands in Redis that supply a key as their
 	 *	first argument. Used to prefix keys with the Resque namespace.
@@ -81,7 +78,7 @@ class Resque_Redis extends Redisent
 	// msetnx
 	// mset
 	// renamenx
-	
+
 	/**
 	 * Set Redis namespace (prefix) default: resque
 	 * @param string $namespace
@@ -93,7 +90,36 @@ class Resque_Redis extends Redisent
 	    }
 	    self::$defaultNamespace = $namespace;
 	}
-	
+
+	public function __construct($server, $database = null)
+	{
+		$this->server = $server;
+		$this->database = $database;
+
+		if (is_array($this->server)) {
+			$this->driver = new Credis_Cluster($server);
+		}
+		else {
+			$port = null;
+			$host = $server;
+
+			// If not a UNIX socket path or tcp:// formatted connections string
+			// assume host:port combination.
+			if (strpos($server, '/') === false) {
+				$parts = explode(':', $server);
+				if (isset($parts[1])) {
+					$port = $parts[1];
+				}
+				$host = $parts[0];
+			}
+			$this->driver = new Credis_Client($host, $port);
+		}
+
+		if ($this->database !== null) {
+			$this->driver->select($database);
+		}
+	}
+
 	/**
 	 * Magic method to handle all function requests and prefix key based
 	 * operations with the {self::$defaultNamespace} key prefix.
@@ -103,14 +129,13 @@ class Resque_Redis extends Redisent
 	 * @return mixed Return value from Resident::call() based on the command.
 	 */
 	public function __call($name, $args) {
-		$args = func_get_args();
 		if(in_array($name, $this->keyCommands)) {
-		    $args[1][0] = self::$defaultNamespace . $args[1][0];
+		    $args[0] = self::$defaultNamespace . $args[0];
 		}
 		try {
-			return parent::__call($name, $args[1]);
+			return $this->driver->__call($name, $args);
 		}
-		catch(RedisException $e) {
+		catch(CredisException $e) {
 			return false;
 		}
 	}

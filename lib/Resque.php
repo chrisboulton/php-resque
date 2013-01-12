@@ -71,21 +71,7 @@ class Resque
 			$server = 'localhost:6379';
 		}
 
-		if(is_array($server)) {
-			self::$redis = new Resque_RedisCluster($server);
-		}
-		else {
-			if (strpos($server, 'unix:') === false) {
-				list($host, $port) = explode(':', $server);
-			}
-			else {
-				$host = $server;
-				$port = null;
-			}
-			self::$redis = new Resque_Redis($host, $port);
-		}
-
-		self::$redis->select(self::$redisDatabase);
+		self::$redis = new Resque_Redis($server, self::$redisDatabase);
 		return self::$redis;
 	}
 
