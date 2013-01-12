@@ -1,11 +1,33 @@
+#!/usr/bin/env php
 <?php
+
+// Find and initialize Composer
+$files = array(
+  __DIR__ . '/../../vendor/autoload.php',
+  __DIR__ . '/../../../../autoload.php',
+  __DIR__ . '/../vendor/autoload.php',
+);
+
+$found = false;
+foreach ($files as $file) {
+	if (file_exists($file)) {
+		require_once $file;
+		break;
+	}
+}
+
+if (!class_exists('Composer\Autoload\ClassLoader', false)) {
+	die(
+		'You need to set up the project dependencies using the following commands:' . PHP_EOL .
+		'curl -s http://getcomposer.org/installer | php' . PHP_EOL .
+		'php composer.phar install' . PHP_EOL
+	);
+}
+
 $QUEUE = getenv('QUEUE');
 if(empty($QUEUE)) {
 	die("Set QUEUE env var containing the list of queues to work.\n");
 }
-
-require_once 'lib/Resque.php';
-require_once 'lib/Resque/Worker.php';
 
 $REDIS_BACKEND = getenv('REDIS_BACKEND');
 if(!empty($REDIS_BACKEND)) {
@@ -66,7 +88,7 @@ else {
 	$queues = explode(',', $QUEUE);
 	$worker = new Resque_Worker($queues);
 	$worker->logLevel = $logLevel;
-	
+
 	$PIDFILE = getenv('PIDFILE');
 	if ($PIDFILE) {
 		file_put_contents($PIDFILE, getmypid()) or

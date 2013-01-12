@@ -17,6 +17,9 @@
 	"require-dev": {
 		"phpunit/phpunit": "3.7.*"
 	},
+	"bin": [
+		"bin/resque"
+	],
 	"autoload": {
 		"psr-0": {
 			"Resque": "lib"
