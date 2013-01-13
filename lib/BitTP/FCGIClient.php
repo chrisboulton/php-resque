@@ -394,7 +394,7 @@ class BitTP_FCGIClient
     /**
      * FCGIClient::formatResponse()
      *
-     * Format the response into an array with separate headers and body.
+     * Format the response into an array with separate statusCode, headers, body, and error output.
      *
      * @param $stdout The plain, unformatted response.
      * @param $stderr The plain, unformatted error output.
@@ -415,14 +415,33 @@ class BitTP_FCGIClient
         foreach ($headerLines as $line) {
             if (preg_match('/([\w-]+):\s*(.*)$/', $line, $matches)) {
                 // ['Content-type'] => 'text/plain'
-                $header[$matches[1]] = $matches[2];
+                $header[strtolower($matches[1])] = $matches[2];
+            }
+        }
+        if (isset($header['status'])) {
+            $code = $header['status'];
+            if (false !== ($pos = strpos($code, ' '))) {
+                $code = substr($code, 0, $pos);
+            }
+        } else {
+            if (isset($header['location'])) {
+                $header['status'] = '302 Moved Temporarily';
+                $code = '302';
+            }  else {
+                $header['status'] = '200 OK';
+                $code = '200';
             }
         }
 
+        if (false === ctype_digit($code)) {
+            throw new BitTP_Exception("Unrecognizable status code returned from fastcgi: $code");
+        }
+
         return array(
-            'headers' => $header,
-            'body'    => trim($rawBody),
-            'stderr'  => $stderr,
+            'statusCode' => (int) $code,
+            'headers'    => $header,
+            'body'       => trim($rawBody),
+            'stderr'     => $stderr,
         );
     }
 
