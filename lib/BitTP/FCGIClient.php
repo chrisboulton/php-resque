@@ -396,16 +396,17 @@ class BitTP_FCGIClient
      *
      * Format the response into an array with separate headers and body.
      *
-     * @param $response The plain, unformatted response.
+     * @param $stdout The plain, unformatted response.
+     * @param $stderr The plain, unformatted error output.
      *
      * @return array An array containing the headers and body content.
      */
-    private static function formatResponse($response) {
+    private static function formatResponse($stdout, $stderr) {
 
         // Split the header from the body.  Split on \n\n.
-        $doubleCr = strpos($response, "\r\n\r\n");
-        $rawHeader = substr($response, 0, $doubleCr);
-        $rawBody = substr($response, $doubleCr, strlen($response));
+        $doubleCr = strpos($stdout, "\r\n\r\n");
+        $rawHeader = substr($stdout, 0, $doubleCr);
+        $rawBody = substr($stdout, $doubleCr, strlen($stdout));
 
         // Format the header.
         $header = array();
@@ -420,7 +421,8 @@ class BitTP_FCGIClient
 
         return array(
             'headers' => $header,
-            'body'    => trim($rawBody)
+            'body'    => trim($rawBody),
+            'stderr'  => $stderr,
         );
     }
 
@@ -446,7 +448,7 @@ class BitTP_FCGIClient
      */
     protected function doResponse()
     {
-        $response = '';
+        $stdout = $stderr = '';
 
         while ($this->_awaitingResponse) {
 
@@ -456,8 +458,10 @@ class BitTP_FCGIClient
             if ($resp['type'] == self::END_REQUEST) {
                 $this->_awaitingResponse = false;
             // Check for response content.
-            } elseif ($resp['type'] == self::STDOUT || $resp['type'] == self::STDERR) {
-                $response .= $resp['content'];
+            } elseif ($resp['type'] == self::STDOUT) {
+                $stdout .= $resp['content'];
+            } elseif ($resp['type'] == self::STDERR) {
+                $stderr .= $resp['content'];
             }
         }
 
@@ -476,7 +480,7 @@ class BitTP_FCGIClient
                 throw new BitTP_Exception('Role value not known [UNKNOWN_ROLE]');
                 break;
             case self::REQUEST_COMPLETE:
-                return static::formatResponse($response);
+                return static::formatResponse($stdout, $stderr);
         }
     }
 }
