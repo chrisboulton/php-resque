@@ -14,14 +14,17 @@
  * See the GNU Lesser General Public License for more details.
  */
 
+require_once dirname(__FILE__).'/Exception.php';
+
 /**
  * Handles communication with a FastCGI application
  *
  * @author      Pierrick Charron <pierrick@webstart.fr>
  * @author      Daniel Aharon <dan@danielaharon.com>
+ * @author      Erik Bernhardson <bernhardsonerik@gmail.com>
  * @version     2.0
  */
-class FCGIClient
+class BitTP_FCGIClient
 {
     const VERSION_1            = 1;
 
@@ -98,8 +101,11 @@ class FCGIClient
     /**
      * Destructor
      */
-    public function __destruct() {
-        socket_close($this->_sock);
+    public function __destruct()
+    {
+        if ($this->_sock) {
+           socket_close($this->_sock);
+        }
     }
 
     /**
@@ -112,7 +118,7 @@ class FCGIClient
     {
         $this->_keepAlive = (boolean)$b;
         if (!$this->_keepAlive && $this->_sock) {
-            socket_close($this->_sock);
+            $this->close();
         }
     }
 
@@ -127,22 +133,31 @@ class FCGIClient
     }
 
     /**
+     * Close the fastcgi connection
+     */
+    public function close()
+    {
+        if ($this->_sock) {
+            socket_close($this->_sock);
+            $this->_sock = null;
+        }
+    }
+
+    /**
      * Create a connection to the FastCGI application
      */
     private function connect()
     {
         if (!$this->_sock) {
 
-            $this->_sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-            socket_set_nonblock($this->_sock);
-            @socket_connect($this->_sock, $this->_host, $this->_port);  // Block the "Operation now in progress" warning.
-
+            $this->_sock = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
             if (!$this->_sock) {
-                throw new Exception(
-                    'Unable to connect to FastCGI application - ' .
-                    socket_strerror(socket_last_error($this->_sock))
-                );
+                throw BitTP_Exception::socketCreate();
             }
+            if (false === @socket_connect($this->_sock, $this->_host, $this->_port)) {
+                throw BitTP_Exception::socketConnect($this->_sock, $this->_host, $this->_port);
+            }
+
         }
     }
 
@@ -260,19 +275,24 @@ class FCGIClient
      */
     private function readPacket()
     {
-        if ($packet = socket_read($this->_sock, self::HEADER_LEN)) {
-
-            $resp = $this->decodePacketHeader($packet);
-
-            if ($len = $resp['contentLength'] + $resp['paddingLength']) {
-                $resp['content'] = substr(socket_read($this->_sock, $len), 0, $resp['contentLength']);
-            } else {
-                $resp['content'] = '';
-            }
-            return $resp;
-        } else {
-            return false;
+        $packet = @socket_read($this->_sock, self::HEADER_LEN);
+        if ($packet === false) {
+            throw BitTP_Exception::socketRead($this->_sock);
         }
+
+        $resp = $this->decodePacketHeader($packet);
+
+        if ($len = $resp['contentLength'] + $resp['paddingLength']) {
+            $content = @socket_read($this->_sock, $len);
+            if ($content === false) {
+                throw BitTP_Exception::socketRead($this->_sock);
+            }
+            $resp['content'] = substr($content, 0, $resp['contentLength']);
+        } else {
+            $resp['content'] = '';
+        }
+
+        return $resp;
     }
 
     /**
@@ -283,6 +303,22 @@ class FCGIClient
      */
     public function getValues(array $requestedInfo)
     {
+        try {
+            return $this->doGetValues($requestedInfo);
+        } catch (BitTP_Exception $e) {
+            $this->close();
+            throw $e;
+        }
+    }
+
+    /**
+     * Get Informations on the FastCGI application
+     *
+     * @param array $requestedInfo information to retrieve
+     * @return array
+     */
+    protected function doGetValues(array $requestedInfo)
+    {
         $this->connect();
 
         $request = '';
@@ -290,25 +326,18 @@ class FCGIClient
             $request .= $this->buildNvpair($info, '');
         }
 
-        socket_write($this->_sock, $this->buildPacket(self::GET_VALUES, $request, 0));
-        $this->_awaitingResponse = true;
-
-        // Block on this call.
-        while ($this->_awaitingResponse) {
-
-            $resp = $this->readPacket();
-
-            if ($resp) {
-                $this->_awaitingResponse = false;
-            } else {
-                usleep(10);
-            }
+        if (false === @socket_write($this->_sock, $this->buildPacket(self::GET_VALUES, $request, 0))) {
+            throw BitTP_Exception::socketWrite($this->_sock);
         }
+
+        $this->_awaitingResponse = true;
+        $resp = $this->readPacket();
+        $this->_awaitingResponse = false;
 
         if ($resp['type'] == self::GET_VALUES_RESULT) {
             return $this->readNvpair($resp['content'], $resp['length']);
         } else {
-            throw new Exception('Unexpected response type, expecting GET_VALUES_RESULT');
+            throw new BitTP_Exception('Unexpected response type, expecting GET_VALUES_RESULT');
         }
     }
 
@@ -317,9 +346,24 @@ class FCGIClient
      *
      * @param array $params Array of parameters
      * @param String $stdin Content
-     * @return Boolean Return true on success, false on failure.
      */
     public function request(array $params, $stdin)
+    {
+        try {
+            $this->doRequest($params, $stdin);
+        } catch (BitTP_Exception $e) {
+            $this->close();
+            throw $e;
+        }
+    }
+
+    /**
+     * Execute a request to the FastCGI application
+     *
+     * @param array $params Array of parameters
+     * @param String $stdin Content
+     */
+    protected function doRequest(array $params, $stdin)
     {
         $this->connect();
 
@@ -340,9 +384,11 @@ class FCGIClient
         $request .= $this->buildPacket(self::STDIN, '');
 
         // Write the request and break.
-        $this->_awaitingResponse = (boolean) socket_write($this->_sock, $request);
-        return $this->_awaitingResponse;
+        if (false === @socket_write($this->_sock, $request)) {
+            throw BitTP_Exception::socketWrite($this->_sock);
+        }
 
+        $this->_awaitingResponse = true;
     }
 
     /**
@@ -383,40 +429,51 @@ class FCGIClient
      *
      * @return String Return response.
      */
-    public function response() {
+    public function response()
+    {
+        try {
+            return $this->doResponse();
+        } catch (BitTP_Exception $e) {
+            $this->close();
+            throw $e;
+        }
+    }
 
+    /**
+     * Collect the response from a FastCGI request.
+     *
+     * @return String Return response.
+     */
+    protected function doResponse()
+    {
         $response = '';
 
         while ($this->_awaitingResponse) {
 
             $resp = $this->readPacket();
 
-            if ($resp) {
-                // Check for the end of the response.
-                if ($resp['type'] == self::END_REQUEST) {
-                    $this->_awaitingResponse = false;
-                // Check for response content.
-                } elseif ($resp['type'] == self::STDOUT || $resp['type'] == self::STDERR) {
-                    $response .= $resp['content'];
-                }
-            } else {
-                usleep(10);
+            // Check for the end of the response.
+            if ($resp['type'] == self::END_REQUEST) {
+                $this->_awaitingResponse = false;
+            // Check for response content.
+            } elseif ($resp['type'] == self::STDOUT || $resp['type'] == self::STDERR) {
+                $response .= $resp['content'];
             }
         }
 
         if (!is_array($resp)) {
-            throw new Exception('Bad request');
+            throw new BitTP_Exception("Bad Request");
         }
 
         switch (ord($resp['content']{4})) {
             case self::CANT_MPX_CONN:
-                throw new Exception('This app can\'t multiplex [CANT_MPX_CONN]');
+                throw new BitTP_Exception('This app can\'t multiplex [CANT_MPX_CONN]');
                 break;
             case self::OVERLOADED:
-                throw new Exception('New request rejected; too busy [OVERLOADED]');
+                throw new BitTP_Exception('New request rejected; too busy [OVERLOADED]');
                 break;
             case self::UNKNOWN_ROLE:
-                throw new Exception('Role value not known [UNKNOWN_ROLE]');
+                throw new BitTP_Exception('Role value not known [UNKNOWN_ROLE]');
                 break;
             case self::REQUEST_COMPLETE:
                 return static::formatResponse($response);
