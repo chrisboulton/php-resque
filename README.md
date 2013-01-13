@@ -223,7 +223,15 @@ the `COUNT` environment variable:
 
 	$ COUNT=5 bin/resque
 
-### Forking ###
+### Job Srategys ###
+
+Php-resque implements multiple ways to seperate the worker process
+from the job process to improce resilience.  Supported platforms
+default to the fork strategy, falling back to in-process execution.
+Specific strategys can be chosen by supplyingthe `JOB_STRATEGY`
+environment variable.
+
+#### Forking ####
 
 Similarly to the Ruby versions, supported platforms will immediately
 fork after picking up a job. The forked child will exit as soon as
@@ -232,6 +240,29 @@ the job finishes.
 The difference with php-resque is that if a forked child does not
 exit nicely (PHP error or such), php-resque will automatically fail
 the job.
+
+	$ JOB_STRATEGY=fork php resque.php
+
+#### Fastcgi ####
+
+The fastcgi strategy executes jobs over a fastcgi connection to php-fpm.
+It may offer a lower overhead per job in environments with lots of very short
+jobs.
+
+	$ JOB_STRATEGY=fastcgi php resque.php
+
+Fastcgi accepts two additional parameters.  `FASTCGI_LOCATION` sets the
+location of the php-fpm server. This can either be a host:port combination 
+or a path to a unix socket. `FASTCGI_SCRIPT` sets the path to the script used
+to receive and run the job in the php-fpm process.
+
+#### In Process ####
+
+For cases when the other two strategys are not available the in-process
+strategy will run jobs in the same process as the worker.  This is not
+recommended as failures in the job may turn into failures in the worker.
+
+	$ JOB_STRATEGY=inprocess php resque.php
 
 ### Signals ###
 
