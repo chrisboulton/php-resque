@@ -17,6 +17,11 @@ class Resque_Worker
 	public $logger;
 
 	/**
+	 * @var bool Whether this worker is running in a forked child process.
+	 */
+	public $hasParent = false;
+
+	/**
 	 * @var array Array of all associated queues for this worker.
 	 */
 	private $queues = array();
@@ -219,6 +224,14 @@ class Resque_Worker
 						'Job exited with exit code ' . $exitStatus
 					));
 				}
+				else
+				{
+					if (in_array($job->getStatus(), array(Resque_Job_Status::STATUS_WAITING, Resque_Job_Status::STATUS_RUNNING)))
+					{
+						$job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
+						$this->log('done ' . $job);
+					}
+				}
 			}
 
 			$this->child = null;
@@ -256,6 +269,12 @@ class Resque_Worker
 	 */
 	public function reserve($blocking = false, $timeout = null)
 	{
+		if ($this->hasParent && !posix_kill(posix_getppid(), 0))
+		{
+			$this->shutdown();
+			return false;
+		}
+
 		$queues = $this->queues();
 		if(!is_array($queues)) {
 			return;

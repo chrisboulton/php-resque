@@ -93,29 +93,83 @@ if(!empty($PREFIX)) {
     Resque_Redis::prefix($PREFIX);
 }
 
+function cleanup_children($signal){
+	$GLOBALS['send_signal'] = $signal;
+}
+
 if($count > 1) {
-    for($i = 0; $i < $count; ++$i) {
-        $pid = Resque::fork();
-        if($pid === false || pid === -1) {
-            $logger->log(Psr\Log\LogLevel::EMERGENCY, 'Could not fork worker {count}', array('count' => $i));
-            die();
-        }
-        // Child, start the worker
-        else if(!$pid) {
-            $queues = explode(',', $QUEUE);
-            $worker = new Resque_Worker($queues);
-            $worker->setLogger($logger);
-            $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
-            $worker->work($interval, $BLOCKING);
-            break;
-        }
-    }
+	$children = array();
+	$GLOBALS['send_signal'] = FALSE;
+	
+	$die_signals = array(SIGTERM, SIGINT, SIGQUIT);
+	$all_signals = array_merge($die_signals, array(SIGUSR1, SIGUSR2, SIGCONT, SIGPIPE));
+	
+	for($i = 0; $i < $count; ++$i) {
+		$pid = Resque::fork();
+		if($pid == -1) {
+			die("Could not fork worker ".$i."\n");
+		}
+		// Child, start the worker
+		elseif(!$pid) {
+			$queues = explode(',', $QUEUE);
+			$worker = new Resque_Worker($queues);
+			$worker->logLevel = $logLevel;
+			$worker->hasParent = TRUE;
+			fwrite(STDOUT, '*** Starting worker '.$worker."\n");
+			$worker->work($interval);
+			break;
+		}
+		else {
+			$children[$pid] = 1;
+			while (count($children) == $count){
+				if (!isset($registered)) {
+					declare(ticks = 1);
+					foreach ($all_signals as $signal) {
+						pcntl_signal($signal,  "cleanup_children");
+					}
+					
+					$PIDFILE = getenv('PIDFILE');
+					if ($PIDFILE) {
+						file_put_contents($PIDFILE, getmypid()) or
+							die('Could not write PID information to ' . $PIDFILE);
+					}
+					
+					$registered = TRUE;
+				}
+				
+				if(function_exists('setproctitle')) {
+					setproctitle('resque-' . Resque::VERSION . ": Monitoring {$count} children: [".implode(',', array_keys($children))."]");
+				}
+				
+				$childPID = pcntl_waitpid(-1, $childStatus, WNOHANG);
+				if ($childPID != 0) {
+					fwrite(STDOUT, "\033[01;31m*** A child worker died: {$childPID}\033[00m\n");
+					unset($children[$childPID]);
+					$i--;					
+				}
+				usleep(250000);
+				if ($GLOBALS['send_signal'] !== FALSE){
+					foreach ($children as $k => $v){
+						posix_kill($k, $GLOBALS['send_signal']);
+						if (in_array($GLOBALS['send_signal'], $die_signals)) {
+							pcntl_waitpid($k, $childStatus);
+						}
+					}
+					if (in_array($GLOBALS['send_signal'], $die_signals)) {
+						exit;
+					}
+					$GLOBALS['send_signal'] = FALSE;
+				}
+			}
+		}
+	}
 }
 // Start a single worker
 else {
-    $queues = explode(',', $QUEUE);
-    $worker = new Resque_Worker($queues);
-    $worker->setLogger($logger);
+	$queues = explode(',', $QUEUE);
+	$worker = new Resque_Worker($queues);
+	$worker->logLevel = $logLevel;
+	$worker->hasParent = FALSE;
 
     $PIDFILE = getenv('PIDFILE');
     if ($PIDFILE) {
