@@ -3,9 +3,9 @@
 // NOTE: You should NOT use this when developing against php-resque.
 // The autoload code below is specifically for this demo.
 $files = array(
-  __DIR__ . '/../../vendor/autoload.php',
-  __DIR__ . '/../../../../autoload.php',
-  __DIR__ . '/../vendor/autoload.php',
+	__DIR__ . '/../../vendor/autoload.php',
+	__DIR__ . '/../../../../autoload.php',
+	__DIR__ . '/../vendor/autoload.php',
 );
 
 $found = false;

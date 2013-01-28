@@ -51,20 +51,20 @@ If you're not familiar with Composer, please see <http://getcomposer.org/>.
 
 1. Add php-resque to your application's composer.json.
 
-        {
-            ...
-            "require": {
-                "php": ">=5.3.0"
-            },
-            ...
-        }
+				{
+						...
+						"require": {
+								"php": ">=5.3.0"
+						},
+						...
+				}
 
 2. Run `composer install`.
 
 3. If you haven't already, add the Composer autoload to your project's
-   initialization file. (example)
+	 initialization file. (example)
 
-        require 'vendor/autoload.php';
+				require 'vendor/autoload.php';
 
 ## Jobs ##
 
@@ -171,13 +171,13 @@ not having a single environment such as with Ruby, the PHP port makes
 
 To start a worker, it's very similar to the Ruby version:
 
-    $ QUEUE=file_serve php bin/resque
+		$ QUEUE=file_serve php bin/resque
 
 It's your responsibility to tell the worker which file to include to get
 your application underway. You do so by setting the `APP_INCLUDE` environment
 variable:
 
-    $ QUEUE=file_serve APP_INCLUDE=../application/init.php php bin/resque
+		$ QUEUE=file_serve APP_INCLUDE=../application/init.php php bin/resque
 
 *Pro tip: Using Composer? More than likely, you don't need to worry about
 `APP_INCLUDE`, because hopefully Composer is responsible for autoloading
@@ -192,8 +192,8 @@ The port supports the same environment variables for logging to STDOUT.
 Setting `VERBOSE` will print basic debugging information and `VVERBOSE`
 will print detailed information.
 
-    $ VERBOSE QUEUE=file_serve bin/resque
-    $ VVERBOSE QUEUE=file_serve bin/resque
+		$ VERBOSE QUEUE=file_serve bin/resque
+		$ VVERBOSE QUEUE=file_serve bin/resque
 
 ### Priorities and Queue Lists ###
 
@@ -214,7 +214,7 @@ iteration before the `warm_cache` queue is checked.
 All queues are supported in the same manner and processed in alphabetical
 order:
 
-    $ QUEUE=* bin/resque
+		$ QUEUE=* bin/resque
 
 ### Running Multiple Workers ###
 
