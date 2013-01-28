@@ -31,14 +31,14 @@ class Resque
 	 * the redis server that Resque will talk to.
 	 *
 	 * @param mixed $server Host/port combination separated by a colon, or
-	 *                      a nested array of servers with host/port pairs.
+	 *											a nested array of servers with host/port pairs.
 	 * @param int $database
 	 */
 	public static function setBackend($server, $database = 0)
 	{
-		self::$redisServer   = $server;
+		self::$redisServer	 = $server;
 		self::$redisDatabase = $database;
-		self::$redis         = null;
+		self::$redis				 = null;
 	}
 
 	/**
@@ -146,7 +146,7 @@ class Resque
 		if ($result) {
 			Resque_Event::trigger('afterEnqueue', array(
 				'class' => $class,
-				'args'  => $args,
+				'args'	=> $args,
 				'queue' => $queue,
 			));
 		}

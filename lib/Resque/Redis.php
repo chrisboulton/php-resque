@@ -8,14 +8,14 @@
  */
 class Resque_Redis
 {
-    /**
-     * Redis namespace
-     * @var string
-     */
-    private static $defaultNamespace = 'resque:';
+		/**
+		 * Redis namespace
+		 * @var string
+		 */
+		private static $defaultNamespace = 'resque:';
 
-    private $server;
-    private $database;
+		private $server;
+		private $database;
 
 	/**
 	 * @var array List of all commands in Redis that supply a key as their
@@ -85,10 +85,10 @@ class Resque_Redis
 	 */
 	public static function prefix($namespace)
 	{
-	    if (strpos($namespace, ':') === false) {
-	        $namespace .= ':';
-	    }
-	    self::$defaultNamespace = $namespace;
+			if (strpos($namespace, ':') === false) {
+					$namespace .= ':';
+			}
+			self::$defaultNamespace = $namespace;
 	}
 
 	public function __construct($server, $database = null)
@@ -130,7 +130,7 @@ class Resque_Redis
 	 */
 	public function __call($name, $args) {
 		if(in_array($name, $this->keyCommands)) {
-		    $args[0] = self::$defaultNamespace . $args[0];
+				$args[0] = self::$defaultNamespace . $args[0];
 		}
 		try {
 			return $this->driver->__call($name, $args);
@@ -140,19 +140,19 @@ class Resque_Redis
 		}
 	}
 
-    public static function getPrefix()
-    {
-        return self::$defaultNamespace;
-    }
+		public static function getPrefix()
+		{
+				return self::$defaultNamespace;
+		}
 
-    public static function removePrefix($string)
-    {
-        $prefix=self::getPrefix();
+		public static function removePrefix($string)
+		{
+				$prefix=self::getPrefix();
 
-        if (substr($string, 0, strlen($prefix)) == $prefix) {
-            $string = substr($string, strlen($prefix), strlen($string) );
-        }
-        return $string;
-    }
+				if (substr($string, 0, strlen($prefix)) == $prefix) {
+						$string = substr($string, strlen($prefix), strlen($string) );
+				}
+				return $string;
+		}
 }
 ?>
