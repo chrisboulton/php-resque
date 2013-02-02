@@ -247,7 +247,8 @@ the job.
 
 The fastcgi strategy executes jobs over a fastcgi connection to php-fpm.
 It may offer a lower overhead per job in environments with lots of very short
-jobs.
+jobs.  To use fastcgi you must install the suggested composer package 
+`ebernhardson/fastcgi`
 
 	$ JOB_STRATEGY=fastcgi php resque.php
 

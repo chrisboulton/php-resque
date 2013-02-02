@@ -1,6 +1,7 @@
 <?php
 
-require_once dirname(__FILE__) . '/../../BitTP/FCGIClient.php';
+use EBernhardson\FastCGI\Client;
+use EBernhardson\FastCGI\CommunicationException;
 
 /**
  * @package Resque/JobStrategy
@@ -43,7 +44,7 @@ class Resque_JobStrategy_Fastcgi implements Resque_JobStrategy_Interface
 			list($location, $port) = explode(':', $location, 2);
 		}
 
-		$this->fcgi = new BitTP_FCGIClient($location, $port);
+		$this->fcgi = new Client($location, $port);
 		$this->fcgi->setKeepAlive(true);
 
 		$this->requestData = $environment + $this->requestData + array(
@@ -81,7 +82,7 @@ class Resque_JobStrategy_Fastcgi implements Resque_JobStrategy_Interface
 
 			$response = $this->fcgi->response();
 			$this->waiting = false;
-		} catch (BitTP_Exception $e) {
+		} catch (CommunicationException $e) {
 			$this->waiting = false;
 			$job->fail($e);
 			return;
