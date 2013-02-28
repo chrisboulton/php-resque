@@ -169,7 +169,7 @@ class Resque_Worker
 					break;
 				}
 				// If no job was found, we sleep for $interval before continuing and checking again
-				$this->log('Sleeping for ' . $interval, true);
+				$this->log('Sleeping for ' . $interval, self::LOG_VERBOSE);
 				if($this->paused) {
 					$this->updateProcLine('Paused');
 				}
@@ -517,16 +517,21 @@ class Resque_Worker
 	/**
 	 * Output a given log message to STDOUT.
 	 *
-	 * @param string $message Message to output.
+	 * @param	string	$message 	Message to output.
+	 * @param	int		$logLevel	The logging level to capture
 	 */
-	public function log($message)
+	public function log($message, $logLevel = self::LOG_NORMAL)
 	{
-		if($this->logLevel == self::LOG_NORMAL) {
+		if ($logLevel > $this->logLevel) {
+			return;
+		}
+
+		if ($this->logLevel == self::LOG_NORMAL) {
 			fwrite(STDOUT, "*** " . $message . "\n");
+			return;
 		}
-		else if($this->logLevel == self::LOG_VERBOSE) {
-			fwrite(STDOUT, "** [" . strftime('%T %Y-%m-%d') . "] " . $message . "\n");
-		}
+
+		fwrite(STDOUT, "** [" . strftime('%T %Y-%m-%d') . "] " . $message . "\n");
 	}
 
 	/**
