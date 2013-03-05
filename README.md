@@ -54,7 +54,7 @@ If you're not familiar with Composer, please see <http://getcomposer.org/>.
         {
             ...
             "require": {
-                "php": ">=5.3.0"
+                "chrisboulton/php-resque": "dev-master"
             },
             ...
         }
