@@ -143,7 +143,7 @@ if($count > 1) {
 				
 				$childPID = pcntl_waitpid(-1, $childStatus, WNOHANG);
 				if ($childPID != 0) {
-					fwrite(STDOUT, "\033[01;31m*** A child worker died: {$childPID}\033[00m\n");
+					fwrite(STDOUT, "*** A child worker died: {$childPID}\n");
 					unset($children[$childPID]);
 					$i--;					
 				}
