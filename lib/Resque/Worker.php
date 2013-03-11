@@ -1,16 +1,10 @@
 <?php
-require_once dirname(__FILE__) . '/Stat.php';
-require_once dirname(__FILE__) . '/Event.php';
-require_once dirname(__FILE__) . '/Job.php';
-require_once dirname(__FILE__) . '/Job/DirtyExitException.php';
-
 /**
  * Resque worker that handles checking queues for jobs, fetching them
  * off the queues, running them and handling the result.
  *
  * @package		Resque/Worker
- * @author		Chris Boulton <chris.boulton@interspire.com>
- * @copyright	(c) 2010 Chris Boulton
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
 class Resque_Worker
@@ -190,7 +184,7 @@ class Resque_Worker
 			Resque_Event::trigger('beforeFork', $job);
 			$this->workingOn($job);
 
-			$this->child = $this->fork();
+			$this->child = Resque::fork();
 
 			// Forked and we're the child. Run the job.
 			if ($this->child === 0 || $this->child === false) {
@@ -290,27 +284,6 @@ class Resque_Worker
 		$queues = Resque::queues();
 		sort($queues);
 		return $queues;
-	}
-
-	/**
-	 * Attempt to fork a child process from the parent to run a job in.
-	 *
-	 * Return values are those of pcntl_fork().
-	 *
-	 * @return int -1 if the fork failed, 0 for the forked child, the PID of the child for the parent.
-	 */
-	private function fork()
-	{
-		if(!function_exists('pcntl_fork')) {
-			return false;
-		}
-
-		$pid = pcntl_fork();
-		if($pid === -1) {
-			throw new RuntimeException('Unable to fork child worker.');
-		}
-
-		return $pid;
 	}
 
 	/**
@@ -480,7 +453,7 @@ class Resque_Worker
 	 */
 	public function registerWorker()
 	{
-		Resque::redis()->sadd('workers', $this);
+		Resque::redis()->sadd('workers', (string)$this);
 		Resque::redis()->set('worker:' . (string)$this . ':started', strftime('%a %b %d %H:%M:%S %Z %Y'));
 	}
 
@@ -544,16 +517,21 @@ class Resque_Worker
 	/**
 	 * Output a given log message to STDOUT.
 	 *
-	 * @param string $message Message to output.
+	 * @param	string	$message 	Message to output.
+	 * @param	int		$logLevel	The logging level to capture
 	 */
-	public function log($message)
+	public function log($message, $logLevel = self::LOG_NORMAL)
 	{
-		if($this->logLevel == self::LOG_NORMAL) {
+		if ($logLevel > $this->logLevel) {
+			return;
+		}
+
+		if ($this->logLevel == self::LOG_NORMAL) {
 			fwrite(STDOUT, "*** " . $message . "\n");
+			return;
 		}
-		else if($this->logLevel == self::LOG_VERBOSE) {
-			fwrite(STDOUT, "** [" . strftime('%T %Y-%m-%d') . "] " . $message . "\n");
-		}
+
+		fwrite(STDOUT, "** [" . strftime('%T %Y-%m-%d') . "] " . $message . "\n");
 	}
 
 	/**

@@ -3,25 +3,15 @@
  * Resque test bootstrap file - sets up a test environment.
  *
  * @package		Resque/Tests
- * @author		Chris Boulton <chris.boulton@interspire.com>
- * @copyright	(c) 2010 Chris Boulton
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-define('CWD', dirname(__FILE__));
-define('RESQUE_LIB', CWD . '/../../../lib/');
 
-define('TEST_MISC', realpath(CWD . '/../../misc/'));
+$loader = require __DIR__ . '/../vendor/autoload.php';
+$loader->add('Resque_Tests', __DIR__);
+
+define('TEST_MISC', realpath(__DIR__ . '/misc/'));
 define('REDIS_CONF', TEST_MISC . '/redis.conf');
-
-// Change to the directory this file lives in. This is important, due to
-// how we'll be running redis.
-
-require_once CWD . '/TestCase.php';
-
-// Include Resque
-require_once RESQUE_LIB . 'Resque.php';
-require_once RESQUE_LIB . 'Resque/Worker.php';
-require_once RESQUE_LIB . 'Resque/Redis.php';
 
 // Attempt to start our own redis instance for tesitng.
 exec('which redis-server', $output, $returnVar);
@@ -62,7 +52,7 @@ function killRedis($pid)
 	if (file_exists($pidFile)) {
 		$pid = trim(file_get_contents($pidFile));
 		posix_kill((int) $pid, 9);
-	
+
 		if(is_file($pidFile)) {
 			unlink($pidFile);
 		}

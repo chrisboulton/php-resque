@@ -37,16 +37,40 @@ pre and post jobs
 
 ## Requirements ##
 
-* PHP 5.2+
+* PHP 5.3+
 * Redis 2.2+
+* Optional but Recommended: Composer
+
+## Getting Started ##
+
+The easiest way to work with php-resque is when it's installed as a
+Composer package inside your project. Composer isn't strictly
+required, but makes life a lot easier.
+
+If you're not familiar with Composer, please see <http://getcomposer.org/>.
+
+1. Add php-resque to your application's composer.json.
+
+        {
+            ...
+            "require": {
+                "chrisboulton/php-resque": "1.2.x"
+            },
+            ...
+        }
+
+2. Run `composer install`.
+
+3. If you haven't already, add the Composer autoload to your project's
+   initialization file. (example)
+
+        require 'vendor/autoload.php';
 
 ## Jobs ##
 
 ### Queueing Jobs ###
 
 Jobs are queued as follows:
-
-    require_once 'lib/Resque.php';
 
 	// Required if redis is located elsewhere
 	Resque::setBackend('localhost:6379');
@@ -87,12 +111,12 @@ The `tearDown` method if defined, will be called after the job finishes.
 		{
 			// ... Set up environment for this job
 		}
-		
+
 		public function perform()
 		{
 			// .. Run job
 		}
-		
+
 		public function tearDown()
 		{
 			// ... Remove environment for this job
@@ -136,8 +160,9 @@ class.
 Workers work in the exact same way as the Ruby workers. For complete
 documentation on workers, see the original documentation.
 
-A basic "up-and-running" resque.php file is included that sets up a
-running worker environment is included in the root directory.
+A basic "up-and-running" `bin/resque` file is included that sets up a
+running worker environment is included. (`vendor/bin/resque` when installed
+via Composer)
 
 The exception to the similarities with the Ruby version of resque is
 how a worker is initially setup. To work under all environments,
@@ -146,13 +171,17 @@ not having a single environment such as with Ruby, the PHP port makes
 
 To start a worker, it's very similar to the Ruby version:
 
-    $ QUEUE=file_serve php resque.php
+    $ QUEUE=file_serve php bin/resque
 
 It's your responsibility to tell the worker which file to include to get
 your application underway. You do so by setting the `APP_INCLUDE` environment
 variable:
 
-   $ QUEUE=file_serve APP_INCLUDE=../application/init.php php resque.php
+    $ QUEUE=file_serve APP_INCLUDE=../application/init.php php bin/resque
+
+*Pro tip: Using Composer? More than likely, you don't need to worry about
+`APP_INCLUDE`, because hopefully Composer is responsible for autoloading
+your application too!*
 
 Getting your application underway also includes telling the worker your job
 classes, by means of either an autoloader or including them.
@@ -163,8 +192,8 @@ The port supports the same environment variables for logging to STDOUT.
 Setting `VERBOSE` will print basic debugging information and `VVERBOSE`
 will print detailed information.
 
-    $ VERBOSE QUEUE=file_serve php resque.php
-    $ VVERBOSE QUEUE=file_serve php resque.php
+    $ VERBOSE QUEUE=file_serve bin/resque
+    $ VVERBOSE QUEUE=file_serve bin/resque
 
 ### Priorities and Queue Lists ###
 
@@ -175,7 +204,7 @@ checked in.
 
 As per the original example:
 
-	$ QUEUE=file_serve,warm_cache php resque.php
+	$ QUEUE=file_serve,warm_cache bin/resque
 
 The `file_serve` queue will always be checked for new jobs on each
 iteration before the `warm_cache` queue is checked.
@@ -185,14 +214,14 @@ iteration before the `warm_cache` queue is checked.
 All queues are supported in the same manner and processed in alphabetical
 order:
 
-    $ QUEUE=* php resque.php
+    $ QUEUE=* bin/resque
 
 ### Running Multiple Workers ###
 
 Multiple workers ca be launched and automatically worked by supplying
 the `COUNT` environment variable:
 
-	$ COUNT=5 php resque.php
+	$ COUNT=5 bin/resque
 
 ### Forking ###
 
@@ -257,7 +286,7 @@ It is up to your application to register event listeners. When enqueuing events
 in your application, it should be as easy as making sure php-resque is loaded
 and calling `Resque_Event::listen`.
 
-When running workers, if you run workers via the default `resque.php` script,
+When running workers, if you run workers via the default `bin/resque` script,
 your `APP_INCLUDE` script should initialize and register any listeners required
 for operation. If you have rolled your own worker manager, then it is again your
 responsibility to register listeners.
@@ -329,3 +358,16 @@ Called after a job has been queued using the `Resque::enqueue` method. Arguments
 * KevBurnsJr
 * jmathai
 * dceballos
+* patrickbajao
+* andrewjshults
+* warezthebeef
+* d11wtq
+* hlegius
+* salimane
+* humancopy
+* pedroarnal
+* chaitanyakuber
+* maetl
+* Matt Heath
+* jjfrey
+* scragg0x

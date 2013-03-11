@@ -1,18 +1,14 @@
 <?php
-require_once dirname(__FILE__) . '/Resque/Event.php';
-require_once dirname(__FILE__) . '/Resque/Exception.php';
-
 /**
  * Base Resque class.
  *
  * @package		Resque
- * @author		Chris Boulton <chris.boulton@interspire.com>
- * @copyright	(c) 2010 Chris Boulton
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
 class Resque
 {
-	const VERSION = '1.0';
+	const VERSION = '1.2';
 
     const DEFAULT_INTERVAL = 5;
 
@@ -31,12 +27,6 @@ class Resque
 	 * @var int ID of Redis database to select.
 	 */
 	protected static $redisDatabase = 0;
-
-	/**
-	 * @var int PID of current process. Used to detect changes when forking
-	 *  and implement "thread" safety to avoid race conditions.
-	 */
-	 protected static $pid = null;
 
 	/**
 	 * Given a host/port combination separated by a colon, set it as
@@ -60,15 +50,7 @@ class Resque
 	 */
 	public static function redis()
 	{
-		// Detect when the PID of the current process has changed (from a fork, etc)
-		// and force a reconnect to redis.
-		$pid = getmypid();
-		if (self::$pid !== $pid) {
-			self::$redis = null;
-			self::$pid   = $pid;
-		}
-
-		if(!is_null(self::$redis)) {
+		if (self::$redis !== null) {
 			return self::$redis;
 		}
 
@@ -77,24 +59,35 @@ class Resque
 			$server = 'localhost:6379';
 		}
 
-		if(is_array($server)) {
-			require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
-			self::$redis = new Resque_RedisCluster($server);
-		}
-		else {
-			if (strpos($server, 'unix:') === false) {
-				list($host, $port) = explode(':', $server);
-			}
-			else {
-				$host = $server;
-				$port = null;
-			}
-			require_once dirname(__FILE__) . '/Resque/Redis.php';
-			self::$redis = new Resque_Redis($host, $port);
+		self::$redis = new Resque_Redis($server, self::$redisDatabase);
+		return self::$redis;
+	}
+	
+	/**
+	 * fork() helper method for php-resque that handles issues PHP socket
+	 * and phpredis have with passing around sockets between child/parent
+	 * processes.
+	 *
+	 * Will close connection to Redis before forking.
+	 *
+	 * @return int Return vars as per pcntl_fork()
+	 */
+	public static function fork()
+	{
+		if(!function_exists('pcntl_fork')) {
+			return -1;
 		}
 
-		self::$redis->select(self::$redisDatabase);
-		return self::$redis;
+		// Close the connection to Redis before forking.
+		// This is a workaround for issues phpredis has.
+		self::$redis = null;
+
+		$pid = pcntl_fork();
+		if($pid === -1) {
+			throw new RuntimeException('Unable to fork child worker.');
+		}
+
+		return $pid;
 	}
 
 	/**
@@ -156,7 +149,6 @@ class Resque
 	 */
 	public static function enqueue($queue, $class, $args = null, $trackStatus = false)
 	{
-		require_once dirname(__FILE__) . '/Resque/Job.php';
 		$result = Resque_Job::create($queue, $class, $args, $trackStatus);
 		if ($result) {
 			Resque_Event::trigger('afterEnqueue', array(
@@ -177,7 +169,6 @@ class Resque
 	 */
 	public static function reserve($queue, $interval = null)
 	{
-		require_once dirname(__FILE__) . '/Resque/Job.php';
 		return Resque_Job::reserve($queue, $interval);
 	}
 

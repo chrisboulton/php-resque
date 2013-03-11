@@ -1,4 +1,35 @@
-## 1.2 (Unreleased) ##
+## 1.3 (2013-??-??) - Current Master ##
+
+**Note:** This release introduces backwards incompatible changes with all previous versions of php-resque. Please see below for details.
+
+### Redisent (Redis Library) Replaced with Credis
+
+Redisent has always been the Redis backend for php-resque because of its lightweight nature. Unfortunately, Redisent is largely unmaintained.
+
+[Credis](http://example.com/) is a fork of Redisent, which among other improvements will automatically use the [phpredis](https://github.com/nicolasff/phpredis) native PHP extension if it is available. (you want this for speed, trust me)
+
+php-resque now utilizes Credis for all Redis based operations. Credis automatically required and installed as a Composer dependency.
+
+### Composer Support
+
+Composer support has been improved and is now the recommended method for including php-resque in your project. Details on Composer support can be found in the Getting Started section of the readme.
+
+### Other Improvements/Changes
+
+* **COMPATIBILITY BREAKING**: The bundled worker manager `resque.php` has been moved to `bin/resque`, and is available as `vendor/bin/resque` when php-resque is installed as a Composer package.
+
+* Restructure tests and test bootstrapping. Autoload tests via Composer (install test dependencies with `composer install --dev`)
+
+* Add `SETEX` to list of commands which supply a key as the first argument in Redisent (danhunsaker)
+
+* Fix an issue where a lost connection to Redis could cause an infinite loop (atorres757)
+
+* Add a helper method to `Resque_Redis` to remove the namespace applied to Redis keys (tonypiper)
+
+
+## 1.2 (2012-10-13) ##
+
+**Note:** This release is largely backwards compatible with php-resque 1.1. The next release will introduce backwards incompatible changes (moving from Redisent to Credis), and will drop compatibility with PHP 5.2.
 
 * Allow alternate redis database to be selected when calling setBackend by supplying a second argument (patrickbajao)
 * Use `require_once` when including php-resque after the app has been included in the sample resque.php to prevent include conflicts (andrewjshults)
@@ -10,7 +41,17 @@
 * Fix lost jobs when there is more than one worker process started by the same parent process (salimane)
 * Move include for resque before APP_INCLUDE is loaded in, so that way resque is available for the app
 * Avoid working with dirty worker IDs (salimane)
-
+* Allow UNIX socket to be passed to Resque when connecting to Redis (pedroarnal)
+* Fix typographical errors in PHP docblocks (chaitanyakuber)
+* Set the queue name on job instances when jobs are executed (chaitanyakuber)
+* Fix and add tests for Resque_Event::stopListening (ebernhardson)
+* Documentation cleanup (maetl)
+* Pass queue name to afterEvent callback
+* Only declare RedisException if it doesn't already exist (Matt Heath)
+* Add support for Composer
+* Fix missing and incorrect paths for Resque and Resque_Job_Status classes in demo (jjfrey)
+* Disable autoload for the RedisException class_exists call (scragg0x)
+* General tidy up of comments and files/folders
 
 ## 1.1 (2011-03-27) ##
 

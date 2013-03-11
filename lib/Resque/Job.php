@@ -1,14 +1,9 @@
 <?php
-require_once dirname(__FILE__) . '/Event.php';
-require_once dirname(__FILE__) . '/Job/Status.php';
-require_once dirname(__FILE__) . '/Job/DontPerform.php';
-
 /**
  * Resque job.
  *
  * @package		Resque/Job
- * @author		Chris Boulton <chris.boulton@interspire.com>
- * @copyright	(c) 2010 Chris Boulton
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
 class Resque_Job
@@ -209,7 +204,6 @@ class Resque_Job
 		));
 
 		$this->updateStatus(Resque_Job_Status::STATUS_FAILED);
-		require_once dirname(__FILE__) . '/Failure.php';
 		Resque_Failure::create(
 			$this->payload,
 			$exception,

@@ -3,8 +3,8 @@ if(empty($argv[1])) {
 	die('Specify the ID of a job to monitor the status of.');
 }
 
-require '../lib/Resque/Job/Status.php';
-require '../lib/Resque.php';
+require __DIR__ . '/init.php';
+
 date_default_timezone_set('GMT');
 Resque::setBackend('127.0.0.1:6379');
 

@@ -1,12 +1,10 @@
 <?php
-require_once dirname(__FILE__) . '/bootstrap.php';
 
 /**
  * Resque_Job tests.
  *
  * @package		Resque/Tests
- * @author		Chris Boulton <chris.boulton@interspire.com>
- * @copyright	(c) 2010 Chris Boulton
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
 class Resque_Tests_JobTest extends Resque_Tests_TestCase
