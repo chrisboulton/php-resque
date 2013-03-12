@@ -441,9 +441,18 @@ class Resque_Worker
 	public function workerPids()
 	{
 		$pids = array();
-		exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
-		foreach($cmdOutput as $line) {
-			list($pids[],) = explode(' ', trim($line), 2);
+		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+			exec('WMIC path win32_process get Processid,Commandline | findstr resque | findstr /V findstr', $cmdOutput);
+			foreach($cmdOutput as $line) {
+				$line = preg_replace('/\s+/m', ' ', $line);
+				list(,,$pids[]) = explode(' ', trim($line), 3);
+			}
+		}
+		else {
+			exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
+			foreach($cmdOutput as $line) {
+				list($pids[],) = explode(' ', trim($line), 2);
+			}
 		}
 		return $pids;
 	}
