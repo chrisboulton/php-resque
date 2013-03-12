@@ -114,20 +114,39 @@ class Resque
 	 * @param string $queue The name of the queue to fetch an item from.
 	 * @return array Decoded item from the queue.
 	 */
-	public static function pop($queue, $interval = null)
+	public static function pop($queue)
 	{
-        if($interval == null) {
-            $item = self::redis()->lpop('queue:' . $queue);
-        } else {
-            $item = self::redis()->blpop('queue:' . $queue, $interval ? $interval : Resque::DEFAULT_INTERVAL);
-        }
+        $item = self::redis()->lpop('queue:' . $queue);
 
 		if(!$item) {
 			return;
 		}
 
-		return json_decode($interval == 0 ? $item : $item[1], true);
+		return json_decode($item, true);
 	}
+
+    /**
+     * Pop an item off the end of the specified queue, decode it and
+     * return it.
+     *
+     * @param string $queue The name of the queue to fetch an item from.
+     * @return array Decoded item from the queue.
+     */
+    public static function blpop($queues, $interval = null)
+    {
+        $list = array();
+        foreach($queues AS $queue) {
+            $list[] = 'queue:' . $queue;
+        }
+
+        $item = self::redis()->blpop($list, $interval ? (int)$interval : Resque::DEFAULT_INTERVAL);
+
+        if(!$item) {
+            return;
+        }
+
+        return json_decode($item[1], true);
+    }
 
 	/**
 	 * Return the size (number of pending jobs) of the specified queue.

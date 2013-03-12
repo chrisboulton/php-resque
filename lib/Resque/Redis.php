@@ -143,7 +143,13 @@ class Resque_Redis
 	 */
 	public function __call($name, $args) {
 		if(in_array($name, $this->keyCommands)) {
-		    $args[0] = self::$defaultNamespace . $args[0];
+            if(is_array($args[0])) {
+                foreach($args[0] AS $i => $v) {
+                    $args[0][$i] = self::$defaultNamespace . $v;
+                }
+            } else {
+                $args[0] = self::$defaultNamespace . $args[0];
+            }
 		}
 		try {
 			return $this->driver->__call($name, $args);

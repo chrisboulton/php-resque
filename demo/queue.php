@@ -14,6 +14,6 @@ $args = array(
 	),
 );
 
-$jobId = Resque::enqueue('default', $argv[1], $args, true);
+$jobId = Resque::enqueue($argv[1], $argv[2], $args, true);
 echo "Queued job ".$jobId."\n\n";
 ?>

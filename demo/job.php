@@ -3,8 +3,9 @@ class PHP_Job
 {
 	public function perform()
 	{
-		sleep(120);
-		fwrite(STDOUT, 'Hello!');
+        fwrite(STDOUT, 'Start job! -> ');
+		sleep(1);
+		fwrite(STDOUT, 'Job ended!' . PHP_EOL);
 	}
 }
 ?>
