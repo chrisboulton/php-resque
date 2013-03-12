@@ -486,7 +486,7 @@ class Resque_Worker
 		$job->updateStatus(Resque_Job_Status::STATUS_RUNNING);
 		$data = json_encode(array(
 			'queue' => $job->queue,
-			'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
+			'run_at' => date('c'),
 			'payload' => $job->payload
 		));
 		Resque::redis()->set('worker:' . $job->worker, $data);
