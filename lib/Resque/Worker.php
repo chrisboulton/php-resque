@@ -164,7 +164,6 @@ class Resque_Worker
                     $this->log('Starting blocking with timeout of ' . $interval, self::LOG_VERBOSE);
                     $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with blocking timeout ' . $interval);
                 } else {
-                    $this->log('Starting with interval of ' . $interval, self::LOG_VERBOSE);
                     $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $interval);
                 }
 

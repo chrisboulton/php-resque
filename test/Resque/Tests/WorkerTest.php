@@ -257,7 +257,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
         Resque::enqueue('jobs', 'Test_Job_2');
 
         $i = 1;
-        while($job = $worker->reserve(60))
+        while($job = $worker->reserve(true, 1))
         {
             $this->assertEquals('Test_Job_' . $i, $job->payload['class']);
 
