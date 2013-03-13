@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 
 // Find and initialize Composer

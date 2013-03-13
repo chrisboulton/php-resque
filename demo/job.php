@@ -8,4 +8,3 @@ class PHP_Job
 		fwrite(STDOUT, 'Job ended!' . PHP_EOL);
 	}
 }
-?>

@@ -126,20 +126,21 @@ class Resque
 	}
 
     /**
-     * Pop an item off the end of the specified queue, decode it and
-     * return it.
+     * Pop an item off the end of the specified queues, using blocking list pop,
+     * decode it and return it.
      *
-     * @param string $queue The name of the queue to fetch an item from.
-     * @return array Decoded item from the queue.
+     * @param array         $queues
+     * @param int           $timeout
+     * @return null|array   Decoded item from the queue.
      */
-    public static function blpop($queues, $interval = null)
+    public static function blpop(array $queues, $timeout)
     {
         $list = array();
         foreach($queues AS $queue) {
             $list[] = 'queue:' . $queue;
         }
 
-        $item = self::redis()->blpop($list, $interval ? (int)$interval : Resque::DEFAULT_INTERVAL);
+        $item = self::redis()->blpop($list, (int)$timeout);
 
         if(!$item) {
             return;
@@ -190,9 +191,8 @@ class Resque
 	 * @param string $queue Queue to fetch next available job from.
 	 * @return Resque_Job Instance of Resque_Job to be processed, false if none or error.
 	 */
-	public static function reserve($queue, $interval = null)
+	public static function reserve($queue)
 	{
-		require_once dirname(__FILE__) . '/Resque/Job.php';
 		return Resque_Job::reserve($queue);
 	}
 

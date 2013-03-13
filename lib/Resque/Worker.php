@@ -147,13 +147,52 @@ class Resque_Worker
 	 *
 	 * @param int $interval How often to check for new jobs across the queues.
 	 */
-	public function work($interval = Resque::DEFAULT_INTERVAL)
+	public function work($interval = Resque::DEFAULT_INTERVAL, $blocking = false)
 	{
 		$this->updateProcLine('Starting');
 		$this->startup();
 
-        while($job = $this->reserveBlocking($interval)) {
-            $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $interval);
+        while(true) {
+            if($this->shutdown) {
+                break;
+            }
+
+            // Attempt to find and reserve a job
+            $job = false;
+            if(!$this->paused) {
+                if($blocking === true) {
+                    $this->log('Starting blocking with timeout of ' . $interval, self::LOG_VERBOSE);
+                    $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with blocking timeout ' . $interval);
+                } else {
+                    $this->log('Starting with interval of ' . $interval, self::LOG_VERBOSE);
+                    $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $interval);
+                }
+
+                $job = $this->reserve($blocking, $interval);
+            }
+
+            if(!$job) {
+                // For an interval of 0, break now - helps with unit testing etc
+                if($interval == 0) {
+                    break;
+                }
+
+                if($blocking === false)
+                {
+                    // If no job was found, we sleep for $interval before continuing and checking again
+                    $this->log('Sleeping for ' . $interval, self::LOG_VERBOSE);
+                    if($this->paused) {
+                        $this->updateProcLine('Paused');
+                    }
+                    else {
+                        $this->updateProcLine('Waiting for ' . implode(',', $this->queues));
+                    }
+
+                    usleep($interval * 1000000);
+                }
+
+                continue;
+            }
 
             $this->log('got ' . $job);
             Resque_Event::trigger('beforeFork', $job);
@@ -190,14 +229,6 @@ class Resque_Worker
 
             $this->child = null;
             $this->doneWorking();
-
-            if($this->shutdown) {
-                break;
-            }
-
-            if($this->paused) {
-                break;
-            }
         }
 
 		$this->unregisterWorker();
@@ -225,44 +256,32 @@ class Resque_Worker
 	}
 
     /**
-     * Attempt to find a job from the top of one of the queues for this worker.
-     *
-     * @return object|boolean Instance of Resque_Job if a job is found, false if not.
+     * @param  bool            $blocking
+     * @param  int             $timeout
+     * @return object|boolean               Instance of Resque_Job if a job is found, false if not.
      */
-    public function reserve()
+    public function reserve($blocking = false, $timeout = null)
     {
         $queues = $this->queues();
         if(!is_array($queues)) {
             return;
         }
-        foreach($queues as $queue) {
-            $this->log('Checking ' . $queue, self::LOG_VERBOSE);
-            $job = Resque_Job::reserve($queue);
+
+        if($blocking === true) {
+            $job = Resque_Job::reserveBlocking($queues, $timeout);
             if($job) {
-                $this->log('Found job on ' . $queue, self::LOG_VERBOSE);
+                $this->log('Found job on ' . $job->queue, self::LOG_VERBOSE);
                 return $job;
             }
-        }
-
-        return false;
-    }
-
-    /**
-     * Attempt to find a job from the top of one of the queues for this worker.
-     *
-     * @return object|boolean Instance of Resque_Job if a job is found, false if not.
-     */
-    public function reserveBlocking($interval = null)
-    {
-        $queues = $this->queues();
-        if(!is_array($queues)) {
-            return;
-        }
-
-        $job = Resque_Job::reserveBlocking($queues, $interval);
-        if($job) {
-            $this->log('Found job on ' . $job->queue, self::LOG_VERBOSE);
-            return $job;
+        } else {
+            foreach($queues as $queue) {
+                $this->log('Checking ' . $queue, self::LOG_VERBOSE);
+                $job = Resque_Job::reserve($queue);
+                if($job) {
+                    $this->log('Found job on ' . $queue, self::LOG_VERBOSE);
+                    return $job;
+                }
+            }
         }
 
         return false;
