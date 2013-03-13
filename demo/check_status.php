@@ -18,4 +18,3 @@ while(true) {
 	fwrite(STDOUT, "Status of ".$argv[1]." is: ".$status->get()."\n");
 	sleep(1);
 }
-?>
