@@ -132,12 +132,6 @@ class Resque_Worker
 		}
 		$this->hostname = $hostname;
 		$this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
-
-		if (function_exists('pcntl_fork')) {
-			$this->setJobStrategy(new Resque_JobStrategy_Fork);
-		} else {
-			$this->setJobStrategy(new Resque_JobStrategy_InProcess);
-		}
 	}
 
 	/**
@@ -196,12 +190,25 @@ class Resque_Worker
 			Resque_Event::trigger('beforeFork', $job);
 			$this->workingOn($job);
 
-			$this->jobStrategy->perform($job);
+			$this->getJobStrategy()->perform($job);
 
 			$this->doneWorking();
 		}
 
 		$this->unregisterWorker();
+	}
+
+	public function getJobStrategy()
+	{
+		if (! $this->jobStrategy) {
+			if (function_exists('pcntl_fork')) {
+				$this->setJobStrategy(new Resque_JobStrategy_Fork);
+			} else {
+				$this->setJobStrategy(new Resque_JobStrategy_InProcess);
+			}
+		}
+
+		return $this->jobStrategy;
 	}
 
 	/**
@@ -492,6 +499,10 @@ class Resque_Worker
 	 */
 	public function log($message, $logLevel = self::LOG_NORMAL)
 	{
+		if (! defined('STDOUT')) {
+			return;
+		}
+
 		if ($logLevel > $this->logLevel) {
 			return;
 		}
