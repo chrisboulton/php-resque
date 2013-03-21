@@ -49,6 +49,11 @@ class Resque_Worker
 	private $currentJob = null;
 
 	/**
+	 * @var Strategy to use for job execution.
+	 */
+	private $jobStrategy;
+
+	/**
 	 * Return all workers known to Resque as instantiated instances.
 	 * @return array
 	 */
