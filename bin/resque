@@ -71,6 +71,12 @@ if(!empty($COUNT) && $COUNT > 1) {
 	$count = $COUNT;
 }
 
+$PREFIX = getenv('PREFIX');
+if(!empty($PREFIX)) {
+    fwrite(STDOUT, '*** Prefix set to '.$PREFIX."\n");
+    Resque_Redis::prefix($PREFIX);
+}
+
 if($count > 1) {
 	for($i = 0; $i < $count; ++$i) {
 		$pid = Resque::fork();

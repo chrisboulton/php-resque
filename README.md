@@ -223,6 +223,13 @@ the `COUNT` environment variable:
 
 	$ COUNT=5 bin/resque
 
+### Custom prefix ###
+
+When you have multiple apps using the same Redis database it is better to
+use a custom prefix to separate the Resque data:
+
+	$ PREFIX=my-app-name bin/resque
+
 ### Forking ###
 
 Similarly to the Ruby versions, supported platforms will immediately
@@ -371,3 +378,4 @@ Called after a job has been queued using the `Resque::enqueue` method. Arguments
 * Matt Heath
 * jjfrey
 * scragg0x
+* ruudk
