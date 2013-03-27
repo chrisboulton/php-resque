@@ -20,7 +20,7 @@ class Resque_Failure_Redis implements Resque_Failure_Interface
 	public function __construct($payload, $exception, $worker, $queue)
 	{
 		$data = new stdClass;
-		$data->failed_at = strftime('%a %b %d %H:%M:%S %Z %Y');
+		$data->failed_at = date('c');
 		$data->payload = $payload;
 		$data->exception = get_class($exception);
 		$data->error = $exception->getMessage();
