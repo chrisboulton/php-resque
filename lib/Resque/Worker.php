@@ -187,7 +187,7 @@ class Resque_Worker
 			$this->child = Resque::fork();
 
 			// Forked and we're the child. Or PCNTL is not installed. Run the job.
-			if ($this->child === 0 || $this->child === false || !function_exists('pcntl_fork')) {
+			if ($this->child === 0 || $this->child === false || $this->child === -1) {
 				$status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
 				$this->updateProcLine($status);
 				$this->log($status, self::LOG_VERBOSE);
