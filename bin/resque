@@ -71,6 +71,40 @@ if(!empty($COUNT) && $COUNT > 1) {
 	$count = $COUNT;
 }
 
+$jobStrategy=null;
+$JOB_STRATEGY = getenv('JOB_STRATEGY');
+switch($JOB_STRATEGY) {
+	case 'inprocess':
+		$jobStrategy = new Resque_JobStrategy_InProcess;
+		break;
+	case 'fork':
+		$jobStrategy = new Resque_JobStrategy_Fork;
+		break;
+	case 'fastcgi':
+		$fastcgiLocation = '127.0.0.1:9000';
+		$FASTCGI_LOCATION = getenv('FASTCGI_LOCATION');
+		if (!empty($FASTCGI_LOCATION)) {
+			$fastcgiLocation = $FASTCGI_LOCATION;
+		}
+
+		$fastcgiScript = dirname(__FILE__).'/extras/fastcgi_worker.php';
+		$FASTCGI_SCRIPT = getenv('FASTCGI_SCRIPT');
+		if (!empty($FASTCGI_SCRIPT)) {
+			$fastcgiScript = $FASTCGI_SCRIPT;
+		}
+
+		require_once dirname(__FILE__).'/lib/Resque/JobStrategy/Fastcgi.php';
+		$jobStrategy = new Resque_JobStrategy_Fastcgi(
+			$fastcgiLocation,
+			$fastcgiScript,
+			array(
+				'APP_INCLUDE'   => $APP_INCLUDE,
+				'REDIS_BACKEND' => $REDIS_BACKEND,
+			)
+		);
+		break;
+}
+
 if($count > 1) {
 	for($i = 0; $i < $count; ++$i) {
 		$pid = Resque::fork();
@@ -82,6 +116,9 @@ if($count > 1) {
 			$queues = explode(',', $QUEUE);
 			$worker = new Resque_Worker($queues);
 			$worker->logLevel = $logLevel;
+			if ($jobStrategy) {
+				$worker->setJobStrategy($jobStrategy);
+			}
 			fwrite(STDOUT, '*** Starting worker '.$worker."\n");
 			$worker->work($interval);
 			break;
@@ -93,6 +130,9 @@ else {
 	$queues = explode(',', $QUEUE);
 	$worker = new Resque_Worker($queues);
 	$worker->logLevel = $logLevel;
+	if ($jobStrategy) {
+		$worker->setJobStrategy($jobStrategy);
+	}
 
 	$PIDFILE = getenv('PIDFILE');
 	if ($PIDFILE) {

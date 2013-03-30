@@ -72,26 +72,26 @@ If you're not familiar with Composer, please see <http://getcomposer.org/>.
 
 Jobs are queued as follows:
 
-	// Required if redis is located elsewhere
-	Resque::setBackend('localhost:6379');
+    // Required if redis is located elsewhere
+    Resque::setBackend('localhost:6379');
 
-	$args = array(
-		'name' => 'Chris'
-	);
-	Resque::enqueue('default', 'My_Job', $args);
+    $args = array(
+        'name' => 'Chris'
+    );
+    Resque::enqueue('default', 'My_Job', $args);
 
 ### Defining Jobs ###
 
 Each job should be in it's own class, and include a `perform` method.
 
-	class My_Job
-	{
-		public function perform()
-		{
-			// Work work work
-			echo $this->args['name'];
-		}
-	}
+    class My_Job
+    {
+        public function perform()
+        {
+            // Work work work
+            echo $this->args['name'];
+        }
+    }
 
 When the job is run, the class will be instantiated and any arguments
 will be set as an array on the instantiated object, and are accessible
@@ -105,23 +105,23 @@ Jobs can also have `setUp` and `tearDown` methods. If a `setUp` method
 is defined, it will be called before the `perform` method is run.
 The `tearDown` method if defined, will be called after the job finishes.
 
-	class My_Job
-	{
-		public function setUp()
-		{
-			// ... Set up environment for this job
-		}
+    class My_Job
+    {
+        public function setUp()
+        {
+            // ... Set up environment for this job
+        }
 
-		public function perform()
-		{
-			// .. Run job
-		}
+        public function perform()
+        {
+            // .. Run job
+        }
 
-		public function tearDown()
-		{
-			// ... Remove environment for this job
-		}
-	}
+        public function tearDown()
+        {
+            // ... Remove environment for this job
+        }
+    }
 
 ### Tracking Job Statuses ###
 
@@ -133,13 +133,13 @@ To track the status of a job, pass `true` as the fourth argument to
 `Resque::enqueue`. A token used for tracking the job status will be
 returned:
 
-	$token = Resque::enqueue('default', 'My_Job', $args, true);
-	echo $token;
+    $token = Resque::enqueue('default', 'My_Job', $args, true);
+    echo $token;
 
 To fetch the status of a job:
 
-	$status = new Resque_Job_Status($token);
-	echo $status->get(); // Outputs the status
+    $status = new Resque_Job_Status($token);
+    echo $status->get(); // Outputs the status
 
 Job statuses are defined as constants in the `Resque_Job_Status` class.
 Valid statuses include:
@@ -204,7 +204,7 @@ checked in.
 
 As per the original example:
 
-	$ QUEUE=file_serve,warm_cache bin/resque
+    $ QUEUE=file_serve,warm_cache bin/resque
 
 The `file_serve` queue will always be checked for new jobs on each
 iteration before the `warm_cache` queue is checked.
@@ -221,9 +221,17 @@ order:
 Multiple workers ca be launched and automatically worked by supplying
 the `COUNT` environment variable:
 
-	$ COUNT=5 bin/resque
+    $ COUNT=5 bin/resque
 
-### Forking ###
+### Job Strategies ###
+
+Php-resque implements multiple ways to seperate the worker process
+from the job process to impose resilience.  Supported platforms
+default to the fork strategy, falling back to in-process execution.
+Specific strategies can be chosen by supplying the `JOB_STRATEGY`
+environment variable.
+
+#### Forking ####
 
 Similarly to the Ruby versions, supported platforms will immediately
 fork after picking up a job. The forked child will exit as soon as
@@ -232,6 +240,30 @@ the job finishes.
 The difference with php-resque is that if a forked child does not
 exit nicely (PHP error or such), php-resque will automatically fail
 the job.
+
+    $ JOB_STRATEGY=fork php resque.php
+
+#### Fastcgi ####
+
+The fastcgi strategy executes jobs over a fastcgi connection to php-fpm.
+It may offer a lower overhead per job in environments with lots of very short
+jobs.  To use fastcgi you must install the suggested composer package
+`ebernhardson/fastcgi`
+
+    $ JOB_STRATEGY=fastcgi php resque.php
+
+Fastcgi accepts two additional parameters.  `FASTCGI_LOCATION` sets the
+location of the php-fpm server. This can either be a host:port combination
+or a path to a unix socket. `FASTCGI_SCRIPT` sets the path to the script used
+to receive and run the job in the php-fpm process.
+
+#### In Process ####
+
+For cases when the other two strategies are not available the in-process
+strategy will run jobs in the same process as the worker.  This is not
+recommended as failures in the job may turn into failures in the worker.
+
+    $ JOB_STRATEGY=inprocess php resque.php
 
 ### Signals ###
 
@@ -267,7 +299,7 @@ You listen in on events (as listed below) by registering with `Resque_Event`
 and supplying a callback that you would like triggered when the event is
 raised:
 
-	Resque_Event::listen('eventName', [callback]);
+    Resque_Event::listen('eventName', [callback]);
 
 `[callback]` may be anything in PHP that is callable by `call_user_func_array`:
 

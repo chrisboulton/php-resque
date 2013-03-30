@@ -11,6 +11,14 @@
 			"email": "chris@bigcommerce.com"
 		}
 	],
+	"bin": [
+		"bin/resque"
+	],
+	"autoload": {
+		"psr-0": {
+			"Resque": "lib"
+		}
+	},
 	"repositories": [
 		{
 			"type": "vcs",
@@ -21,19 +29,12 @@
 		"php": ">=5.3.0",
 		"colinmollenhour/credis": "dev-master"
 	},
-	"suggest": {
-		"ext-proctitle": "Allows php-resque to rename the title of UNIX processes to show the status of a worker.",
-		"ext-redis": "Native PHP extension for Redis connectivity. Credis will automatically utilize when available."
-	},
 	"require-dev": {
 		"phpunit/phpunit": "3.7.*"
 	},
-	"bin": [
-		"bin/resque"
-	],
-	"autoload": {
-		"psr-0": {
-			"Resque": "lib"
-		}
+	"suggest": {
+		"ext-proctitle": "Allows php-resque to rename the title of UNIX processes to show the status of a worker.",
+		"ext-redis": "Native PHP extension for Redis connectivity. Credis will automatically utilize when available.",
+		"ebernhardson/fastcgi": "Allows php-resque to execute jobs via php-fpm."
 	}
 }
