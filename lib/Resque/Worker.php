@@ -54,6 +54,11 @@ class Resque_Worker
     private $jobStrategy;
 
     /**
+     * @var integer processed job count
+     */
+    private $processed = 0;
+
+    /**
      * Return all workers known to Resque as instantiated instances.
      * @return array
      */
@@ -196,6 +201,8 @@ class Resque_Worker
             $this->workingOn($job);
 
             $this->getJobStrategy()->perform($job);
+
+            $this->processed++;
 
             $this->doneWorking();
         }
@@ -548,5 +555,13 @@ class Resque_Worker
     public function getStat($stat)
     {
         return Resque_Stat::get($stat . ':' . $this);
+    }
+
+    /**
+     * @return int
+     */
+    public function getProcessed()
+    {
+        return $this->processed;
     }
 }
