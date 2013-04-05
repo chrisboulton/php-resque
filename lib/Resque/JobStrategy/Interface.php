@@ -9,23 +9,23 @@
  */
 interface Resque_JobStrategy_Interface
 {
-	/**
-	 * Set the Resque_Worker instance
-	 *
-	 * @param Resque_Worker $worker
-	 */
-	function setWorker(Resque_Worker $worker);
+    /**
+     * Set the Resque_Worker instance
+     *
+     * @param Resque_Worker $worker
+     */
+    public function setWorker(Resque_Worker $worker);
 
-	/**
-	 * Seperates the job execution context from the worker and calls $worker->perform($job).
-	 *
-	 * @param Resque_Job $job
-	 */
-	function perform(Resque_Job $job);
+    /**
+     * Seperates the job execution context from the worker and calls $worker->perform($job).
+     *
+     * @param Resque_Job $job
+     */
+    public function perform(Resque_Job $job);
 
-	/**
-	 * Force an immediate shutdown of the worker, killing any child jobs
-	 * currently working
-	 */
-	function shutdown();
+    /**
+     * Force an immediate shutdown of the worker, killing any child jobs
+     * currently working
+     */
+    public function shutdown();
 }
