@@ -48,7 +48,7 @@ class Resque_JobStrategy_Fork extends Resque_JobStrategy_InProcess
         if ($this->child > 0) {
             $status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
             $this->worker->updateProcLine($status);
-            $this->worker->log($status, Resque_Worker::LOG_VERBOSE);
+            $this->worker->log($status);
 
             // Wait until the child process finishes before continuing
             pcntl_wait($status);
@@ -70,18 +70,18 @@ class Resque_JobStrategy_Fork extends Resque_JobStrategy_InProcess
     public function shutdown()
     {
         if (!$this->child) {
-            $this->worker->log('No child to kill.', Resque_Worker::LOG_VERBOSE);
+            $this->worker->log('No child to kill.');
 
             return;
         }
 
-        $this->worker->log('Killing child at '.$this->child, Resque_Worker::LOG_VERBOSE);
+        $this->worker->log('Killing child at '.$this->child);
         if (exec('ps -o pid,state -p ' . $this->child, $output, $returnCode) && $returnCode != 1) {
-            $this->worker->log('Killing child at ' . $this->child, Resque_Worker::LOG_VERBOSE);
+            $this->worker->log('Killing child at ' . $this->child);
             posix_kill($this->child, SIGKILL);
             $this->child = null;
         } else {
-            $this->worker->log('Child ' . $this->child . ' not found, restarting.', Resque_Worker::LOG_VERBOSE);
+            $this->worker->log('Child ' . $this->child . ' not found, restarting.');
             $this->worker->shutdown();
         }
     }

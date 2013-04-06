@@ -32,7 +32,7 @@ class Resque_JobStrategy_BatchFork extends Resque_JobStrategy_Fork
         if (! $this->perChild || ($this->worker->getProcessed() > 0 && $this->worker->getProcessed() % $this->perChild !== 0)) {
             $status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
             $this->worker->updateProcLine($status);
-            $this->worker->log($status, Resque_Worker::LOG_VERBOSE);
+            $this->worker->log($status);
             $this->worker->perform($job);
         } else {
             parent::perform($job);

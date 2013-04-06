@@ -33,7 +33,7 @@ class Resque_JobStrategy_InProcess implements Resque_JobStrategy_Interface
     {
         $status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
         $this->worker->updateProcLine($status);
-        $this->worker->log($status, Resque_Worker::LOG_VERBOSE);
+        $this->worker->log($status);
         $this->worker->perform($job);
     }
 
@@ -43,6 +43,6 @@ class Resque_JobStrategy_InProcess implements Resque_JobStrategy_Interface
      */
     public function shutdown()
     {
-        $this->worker->log('No child to kill.', Resque_Worker::LOG_VERBOSE);
+        $this->worker->log('No child to kill');
     }
 }

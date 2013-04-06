@@ -25,10 +25,7 @@ if (!class_exists('Composer\Autoload\ClassLoader', false)) {
     );
 }
 
-$QUEUE = getenv('QUEUE');
-if (empty($QUEUE)) {
-    die("Set QUEUE env var containing the list of queues to work.\n");
-}
+$QUEUE = getenv('QUEUE') ?: '*';
 
 $REDIS_BACKEND = getenv('REDIS_BACKEND');
 $REDIS_BACKEND_DB = getenv('REDIS_BACKEND_DB');
@@ -38,16 +35,6 @@ if (!empty($REDIS_BACKEND)) {
     } else {
         Resque::setBackend($REDIS_BACKEND, $REDIS_BACKEND_DB);
     }
-}
-
-$logLevel = 0;
-$LOGGING = getenv('LOGGING');
-$VERBOSE = getenv('VERBOSE');
-$VVERBOSE = getenv('VVERBOSE');
-if (!empty($LOGGING) || !empty($VERBOSE)) {
-    $logLevel = Resque_Worker::LOG_NORMAL;
-} else if (!empty($VVERBOSE)) {
-    $logLevel = Resque_Worker::LOG_VERBOSE;
 }
 
 $APP_INCLUDE = getenv('APP_INCLUDE');
@@ -117,7 +104,7 @@ if ($count > 1) {
             // Child, start the worker
             $queues = explode(',', $QUEUE);
             $worker = new Resque_Worker($queues);
-            $worker->logLevel = $logLevel;
+            $worker->setLogLevel(getenv('LOGLEVEL') ?: 'info');
             if ($jobStrategy) {
                 $worker->setJobStrategy($jobStrategy);
             }
@@ -130,7 +117,7 @@ if ($count > 1) {
     // Start a single worker
     $queues = explode(',', $QUEUE);
     $worker = new Resque_Worker($queues);
-    $worker->logLevel = $logLevel;
+    $worker->setLogLevel(getenv('LOGLEVEL') ?: 'info');
     if ($jobStrategy) {
         $worker->setJobStrategy($jobStrategy);
     }

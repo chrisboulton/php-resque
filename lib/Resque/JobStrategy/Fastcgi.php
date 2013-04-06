@@ -71,7 +71,7 @@ class Resque_JobStrategy_Fastcgi implements Resque_JobStrategy_Interface
     {
         $status = 'Requested fcgi job execution from ' . $this->location . ' at ' . strftime('%F %T');
         $this->worker->updateProcLine($status);
-        $this->worker->log($status, Resque_Worker::LOG_VERBOSE);
+        $this->worker->log($status);
 
         $this->waiting = true;
 
@@ -105,9 +105,9 @@ class Resque_JobStrategy_Fastcgi implements Resque_JobStrategy_Interface
     public function shutdown()
     {
         if ($this->waiting === false) {
-            $this->worker->log('No child to kill.', Resque_Worker::LOG_VERBOSE);
+            $this->worker->log('No child to kill.');
         } else {
-            $this->worker->log('Closing fcgi connection with job in progress.', Resque_Worker::LOG_VERBOSE);
+            $this->worker->log('Closing fcgi connection with job in progress.');
         }
         $this->fcgi->close();
     }

@@ -9,26 +9,18 @@
  */
 class Resque_Worker
 {
-    const LOG_NONE = 0;
-    const LOG_NORMAL = 1;
-    const LOG_VERBOSE = 2;
-
-    const LOG_TYPE_DEBUG = 100;
-    const LOG_TYPE_INFO = 200;
-    const LOG_TYPE_WARNING = 300;
-    const LOG_TYPE_ERROR = 400;
-    const LOG_TYPE_CRITICAL = 500;
-    const LOG_TYPE_ALERT = 550;
+    const LOG_DEBUG = 100;
+    const LOG_INFO = 200;
+    const LOG_NOTICE = 250;
+    const LOG_WARNING = 400;
+    const LOG_ERROR = 400;
+    const LOG_CRITICAL = 500;
+    const LOG_ALERT = 550;
 
     /**
      * @var int Current log level of this worker.
      */
     public $logLevel = 0;
-
-    /**
-     * @var Psr\Log\LoggerInterface
-     */
-    private $logger = null;
 
     /**
      * @var array Array of all associated queues for this worker.
@@ -131,6 +123,16 @@ class Resque_Worker
     }
 
     /**
+     * Logging level to use
+     *
+     * @param string $level String representing the end-half of a LOG_ const
+     */
+    public function setLogLevel($level)
+    {
+        $this->logLevel = constant('Resque_Worker::LOG_' . strtoupper($level));
+    }
+
+    /**
      * Instantiate a new worker, given a list of queues that it should be working
      * on. The list of queues should be supplied in the priority that they should
      * be checked for jobs (first come, first served)
@@ -198,7 +200,7 @@ class Resque_Worker
                     break;
                 }
                 // If no job was found, we sleep for $interval before continuing and checking again
-                $this->log('Sleeping for ' . $interval, self::LOG_VERBOSE);
+                $this->log('Sleeping for ' . $interval);
                 if ($this->paused) {
                     $this->updateProcLine('Paused');
                 } else {
@@ -268,10 +270,10 @@ class Resque_Worker
             return;
         }
         foreach ($queues as $queue) {
-            $this->log('Checking ' . $queue, self::LOG_VERBOSE);
+            $this->log('Checking ' . $queue);
             $job = Resque_Job::reserve($queue);
             if ($job) {
-                $this->log('Found job on ' . $queue, self::LOG_VERBOSE);
+                $this->log('Found job on ' . $queue);
 
                 return $job;
             }
@@ -350,7 +352,7 @@ class Resque_Worker
         pcntl_signal(SIGUSR2, array($this, 'pauseProcessing'));
         pcntl_signal(SIGCONT, array($this, 'unPauseProcessing'));
         pcntl_signal(SIGPIPE, array($this, 'reestablishRedisConnection'));
-        $this->log('Registered signals', self::LOG_VERBOSE);
+        $this->log('Registered signals');
     }
 
     /**
@@ -431,7 +433,7 @@ class Resque_Worker
               if ($host != $this->hostname || in_array($pid, $workerPids) || $pid == getmypid()) {
                   continue;
               }
-              $this->log('Pruning dead worker: ' . (string) $worker, self::LOG_VERBOSE);
+              $this->log('Pruning dead worker: ' . (string) $worker);
               $worker->unregisterWorker();
           }
         }
@@ -526,7 +528,7 @@ class Resque_Worker
      * @param string $message  Message to output.
      * @param int    $logLevel The logging level to capture
      */
-    public function log($message, $logLevel = self::LOG_NORMAL)
+    public function log($message, $logLevel = self::LOG_DEBUG)
     {
         if (! defined('STDOUT')) {
             return;
@@ -536,13 +538,16 @@ class Resque_Worker
             return;
         }
 
-        if ($this->logLevel == self::LOG_NORMAL) {
-            fwrite(STDOUT, "*** " . $message . "\n");
-
-            return;
+        switch ($logLevel) {
+            case self::LOG_DEBUG    : fwrite(STDOUT, $message . PHP_EOL); break;
+            case self::LOG_INFO     : fwrite(STDOUT, $message . PHP_EOL); break;
+            case self::LOG_NOTICE   : fwrite(STDOUT, $message . PHP_EOL); break;
+            case self::LOG_WARNING  : fwrite(STDOUT, $message . PHP_EOL); break;
+            case self::LOG_ERROR    : fwrite(STDOUT, $message . PHP_EOL); break;
+            case self::LOG_CRITICAL : fwrite(STDOUT, $message . PHP_EOL); break;
+            case self::LOG_ALERT    : fwrite(STDOUT, $message . PHP_EOL); break;
+            default: break;
         }
-
-        fwrite(STDOUT, "** [" . strftime('%T %Y-%m-%d') . "] " . $message . "\n");
     }
 
     /**
