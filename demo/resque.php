@@ -5,4 +5,3 @@ require 'job.php';
 require 'php_error_job.php';
 
 require '../bin/resque';
-?>

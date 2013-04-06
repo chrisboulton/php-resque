@@ -59,9 +59,9 @@ class Resque_Job
         }
         $id = md5(uniqid('', true));
         Resque::push($queue, array(
-            'class'	=> $class,
-            'args'	=> array($args),
-            'id'	=> $id,
+            'class' => $class,
+            'args'  => array($args),
+            'id'    => $id,
         ));
 
         if ($monitor) {
