@@ -408,7 +408,9 @@ class Resque_Worker
      */
     public function killChild()
     {
-        $this->jobStrategy->shutdown();
+        if ($this->jobStrategy) {
+            $this->jobStrategy->shutdown();
+        }
     }
 
     /**
