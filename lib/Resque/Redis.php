@@ -152,7 +152,7 @@ class Redis
         }
         try {
             return $this->driver->__call($name, $args);
-        } catch (CredisException $e) {
+        } catch (\CredisException $e) {
             return false;
         }
     }

@@ -89,7 +89,7 @@ class Status
     /**
      * Update the status indicator for the current job with a new status.
      *
-     * @param int The status of the job (see constants)
+     * @param int $status The status of the job (see constants)
      */
     public function update($status)
     {

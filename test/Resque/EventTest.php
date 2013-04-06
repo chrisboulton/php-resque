@@ -121,7 +121,7 @@ class EventTest extends TestCase
         );
     }
 
-    public function beforePerformEventDontPerformCallback($instance)
+    public function beforePerformEventDontPerformCallback()
     {
         $this->callbacksHit[] = __FUNCTION__;
         throw new Job\DontPerform;

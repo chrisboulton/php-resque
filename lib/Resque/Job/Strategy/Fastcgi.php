@@ -7,6 +7,7 @@ use EBernhardson\FastCGI\CommunicationException;
 
 use Resque\Worker;
 use Resque\Job;
+use Resque\Exception;
 
 /**
  * @package Resque/JobStrategy
@@ -15,6 +16,8 @@ use Resque\Job;
  */
 class Fastcgi implements StrategyInterface
 {
+    protected $worker;
+
     /**
      * @var bool True when waiting for a response from fcgi server
      */

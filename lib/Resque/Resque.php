@@ -73,6 +73,7 @@ class Resque
      * Will close connection to Redis before forking.
      *
      * @return int Return vars as per pcntl_fork()
+     * @throws \RuntimeException
      */
     public static function fork()
     {
@@ -86,7 +87,7 @@ class Resque
 
         $pid = pcntl_fork();
         if ($pid === -1) {
-            throw new RuntimeException('Unable to fork child worker.');
+            throw new \RuntimeException('Unable to fork child worker.');
         }
 
         return $pid;
@@ -116,7 +117,7 @@ class Resque
     {
         $item = self::redis()->lpop('queue:' . $queue);
         if (!$item) {
-            return;
+            return null;
         }
 
         return json_decode($item, true);
@@ -125,7 +126,7 @@ class Resque
     /**
      * Return the size (number of pending jobs) of the specified queue.
      *
-     * @param $queue name of the queue to be checked for pending jobs
+     * @param $queue string name of the queue to be checked for pending jobs
      *
      * @return int The size of the queue.
      */
@@ -144,7 +145,7 @@ class Resque
      *
      * @return string
      */
-    public static function enqueue($queue, $class, $args = null, $trackStatus = false)
+    public static function enqueue($queue, $class, $args = array(), $trackStatus = false)
     {
         $result = Job::create($queue, $class, $args, $trackStatus);
         if ($result) {

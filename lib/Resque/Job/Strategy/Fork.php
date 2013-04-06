@@ -22,7 +22,7 @@ class Fork extends InProcess
     protected $child;
 
     /**
-     * @param Worker Instance that is starting jobs
+     * @param Worker $worker Instance that is starting jobs
      */
     protected $worker;
 

@@ -54,6 +54,7 @@ class Job
      * @param boolean $monitor Set to true to be able to monitor the status of a job.
      *
      * @return string
+     * @throws \InvalidArgumentException
      */
     public static function create($queue, $class, $args = null, $monitor = false)
     {
@@ -83,7 +84,7 @@ class Job
      * @param  string      $queue The name of the queue to check for a job in.
      * @return null|object Null when there aren't any waiting jobs, instance of Job when a job was found.
      */
-    public static function reserve($queue)
+    public static function reserve($queue = '*')
     {
         $payload = Resque::pop($queue);
         if (!is_array($payload)) {
@@ -138,6 +139,7 @@ class Job
      * Get the instantiated object for this job that will be performing work.
      *
      * @return object Instance of the object that this job belongs to.
+     * @throws \Resque\Exception
      */
     public function getInstance()
     {

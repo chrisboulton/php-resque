@@ -16,7 +16,7 @@ use Resque\Job;
 class InProcess implements StrategyInterface
 {
     /**
-     * @param Worker Instance of Worker that is starting jobs
+     * @param Worker $worker Instance of Worker that is starting jobs
      */
     protected $worker;
 

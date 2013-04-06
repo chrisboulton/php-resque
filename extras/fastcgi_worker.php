@@ -6,11 +6,11 @@ if (!isset($_SERVER['RESQUE_JOB'])) {
     return;
 }
 
-require_once dirname(__FILE__).'/../lib/Resque.php';
+require_once dirname(__FILE__).'/../lib/Resque/Resque.php';
 require_once dirname(__FILE__).'/../lib/Resque/Worker.php';
 
 if (isset($_SERVER['REDIS_BACKEND'])) {
-    Resque::setBackend($_SERVER['REDIS_BACKEND']);
+    Resque\Resque::setBackend($_SERVER['REDIS_BACKEND']);
 }
 
 try {

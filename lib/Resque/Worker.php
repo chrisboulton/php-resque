@@ -60,7 +60,7 @@ class Worker
     private $currentJob = null;
 
     /**
-     * @var Strategy to use for job execution.
+     * @var @jobStrategy to use for job execution.
      */
     private $jobStrategy;
 
@@ -167,9 +167,9 @@ class Worker
     }
 
     /**
-     * Set the JobStrategy used to seperate the job execution context from the worker
+     * Set the JobStrategy used to separate the job execution context from the worker
      *
-     * @param \Resque\Job\StrategyInterface
+     * @param StrategyInterface $jobStrategy
      */
     public function setJobStrategy(StrategyInterface $jobStrategy)
     {
@@ -274,7 +274,7 @@ class Worker
     {
         $queues = $this->queues();
         if (!is_array($queues)) {
-            return;
+            return null;
         }
         foreach ($queues as $queue) {
             $this->log('Checking ' . $queue);
@@ -492,7 +492,7 @@ class Worker
     /**
      * Tell Redis which job we're currently working on.
      *
-     * @param object $job Job instance containing the job we're working on.
+     * @param Job $job Job instance containing the job we're working on.
      */
     public function workingOn(Job $job)
     {

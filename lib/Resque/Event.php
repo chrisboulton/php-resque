@@ -21,7 +21,7 @@ class Event
      *
      * @param  string $event Name of event to be raised.
      * @param  mixed  $data  Optional, any data that should be passed to each callback.
-     * @return true
+     * @return boolean
      */
     public static function trigger($event, $data = null)
     {
@@ -48,7 +48,7 @@ class Event
      *
      * @param  string $event    Name of event to listen on.
      * @param  mixed  $callback Any callback callable by call_user_func_array.
-     * @return true
+     * @return boolean
      */
     public static function listen($event, $callback)
     {
@@ -66,7 +66,7 @@ class Event
      *
      * @param  string $event    Name of event.
      * @param  mixed  $callback The callback as defined when listen() was called.
-     * @return true
+     * @return boolean
      */
     public static function stopListening($event, $callback)
     {

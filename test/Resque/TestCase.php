@@ -13,6 +13,7 @@ use Credis_Client;
  */
 class TestCase extends \PHPUnit_Framework_TestCase
 {
+    protected $worker;
     protected $resque;
     protected $redis;
 
