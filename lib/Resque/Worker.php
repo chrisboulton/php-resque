@@ -100,7 +100,7 @@ class Resque_Worker
             return false;
         }
 
-        list($hostname, $pid, $queues) = explode(':', $workerId, 3);
+        list(,,$queues) = explode(':', $workerId, 3);
         $queues = explode(',', $queues);
         $worker = new self($queues);
         $worker->setId($workerId);
@@ -413,7 +413,7 @@ class Resque_Worker
         $workers = self::all();
         foreach ($workers as $worker) {
           if (is_object($worker)) {
-              list($host, $pid, $queues) = explode(':', (string) $worker, 3);
+              list($host, $pid) = explode(':', (string) $worker, 2);
               if ($host != $this->hostname || in_array($pid, $workerPids) || $pid == getmypid()) {
                   continue;
               }
