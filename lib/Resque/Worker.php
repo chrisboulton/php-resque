@@ -196,7 +196,7 @@ class Resque_Worker
                 continue;
             }
 
-            $this->log('got ' . $job);
+            $this->log('Received ' . $job);
             Resque_Event::trigger('beforeFork', $job);
             $this->workingOn($job);
 
@@ -241,7 +241,7 @@ class Resque_Worker
         }
 
         $job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
-        $this->log('done ' . $job);
+        $this->log('Done ' . $job);
     }
 
     /**
