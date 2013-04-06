@@ -13,10 +13,22 @@ class Resque_Worker
     const LOG_NORMAL = 1;
     const LOG_VERBOSE = 2;
 
+    const LOG_TYPE_DEBUG = 100;
+    const LOG_TYPE_INFO = 200;
+    const LOG_TYPE_WARNING = 300;
+    const LOG_TYPE_ERROR = 400;
+    const LOG_TYPE_CRITICAL = 500;
+    const LOG_TYPE_ALERT = 550;
+
     /**
      * @var int Current log level of this worker.
      */
     public $logLevel = 0;
+
+    /**
+     * @var Psr\Log\LoggerInterface
+     */
+    private $logger = null;
 
     /**
      * @var array Array of all associated queues for this worker.
@@ -538,7 +550,7 @@ class Resque_Worker
      */
     public function job()
     {
-        $job = Resque::redis()->get('worker:' . $this);
+        $job = Resque::redis()->get('worker:' . (string) $this);
         if (!$job) {
             return array();
         } else {
@@ -554,7 +566,7 @@ class Resque_Worker
      */
     public function getStat($stat)
     {
-        return Resque_Stat::get($stat . ':' . $this);
+        return Resque_Stat::get($stat . ':' . (string) $this);
     }
 
     /**
