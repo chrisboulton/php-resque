@@ -1,4 +1,10 @@
 <?php
+
+namespace Resque;
+
+use Credis_Client;
+use Credis_Cluster;
+
 /**
  * Wrap Credis to add namespace support and various helper methods.
  *
@@ -6,7 +12,7 @@
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Redis
+class Redis
 {
     /**
      * Redis namespace

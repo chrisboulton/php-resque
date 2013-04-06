@@ -8,7 +8,7 @@
  */
 
 $loader = require __DIR__ . '/../vendor/autoload.php';
-$loader->add('Resque_Tests', __DIR__);
+$loader->add('Resque', __DIR__);
 
 define('TEST_MISC', realpath(__DIR__ . '/misc/'));
 define('REDIS_CONF', TEST_MISC . '/redis.conf');
@@ -35,7 +35,7 @@ if (!preg_match('#^\s*port\s+([0-9]+)#m', $config, $matches)) {
     exit(1);
 }
 
-Resque::setBackend('localhost:' . $matches[1]);
+\Resque\Resque::setBackend('localhost:' . $matches[1]);
 
 // Shutdown
 function killRedis($pid)

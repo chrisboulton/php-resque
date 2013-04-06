@@ -1,4 +1,9 @@
 <?php
+
+namespace Resque\Job\Strategy;
+
+use Resque\Job;
+
 /**
  * Same as Fork, except that it processed batches of jobs before forking
  *
@@ -7,7 +12,7 @@
  * @author      Erik Bernharsdon <bernhardsonerik@gmail.com>
  * @license     http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_JobStrategy_BatchFork extends Resque_JobStrategy_Fork
+class BatchFork extends Fork
 {
     /**
      * @var int How many to process per child.
@@ -25,9 +30,9 @@ class Resque_JobStrategy_BatchFork extends Resque_JobStrategy_Fork
     /**
      * Seperate the job from the worker via pcntl_fork
      *
-     * @param Resque_Job $job
+     * @param \Resque\Job $job
      */
-    public function perform(Resque_Job $job)
+    public function perform(Job $job)
     {
         if (! $this->perChild || ($this->worker->getProcessed() > 0 && $this->worker->getProcessed() % $this->perChild !== 0)) {
             $status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');

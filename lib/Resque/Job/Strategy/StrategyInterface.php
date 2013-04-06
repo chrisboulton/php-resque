@@ -1,4 +1,10 @@
 <?php
+
+namespace Resque\Job\Strategy;
+
+use Resque\Worker;
+use Resque\Job;
+
 /**
  * Interface that all job strategy backends should implement.
  *
@@ -7,21 +13,21 @@
  * @author		Erik Bernharsdon <bernhardsonerik@gmail.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-interface Resque_JobStrategy_Interface
+interface StrategyInterface
 {
     /**
-     * Set the Resque_Worker instance
+     * Set the Worker instance
      *
-     * @param Resque_Worker $worker
+     * @param Worker $worker
      */
-    public function setWorker(Resque_Worker $worker);
+    public function setWorker(Worker $worker);
 
     /**
      * Seperates the job execution context from the worker and calls $worker->perform($job).
      *
-     * @param Resque_Job $job
+     * @param Job $job
      */
-    public function perform(Resque_Job $job);
+    public function perform(Job $job);
 
     /**
      * Force an immediate shutdown of the worker, killing any child jobs

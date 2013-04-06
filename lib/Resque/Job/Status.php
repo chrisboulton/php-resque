@@ -1,4 +1,9 @@
 <?php
+
+namespace Resque\Job;
+
+use Resque\Resque;
+
 /**
  * Status tracker/information for a job.
  *
@@ -6,7 +11,7 @@
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Job_Status
+class Status
 {
     const STATUS_WAITING = 1;
     const STATUS_RUNNING = 2;
@@ -84,7 +89,7 @@ class Resque_Job_Status
     /**
      * Update the status indicator for the current job with a new status.
      *
-     * @param int The status of the job (see constants in Resque_Job_Status)
+     * @param int The status of the job (see constants)
      */
     public function update($status)
     {
@@ -108,7 +113,7 @@ class Resque_Job_Status
      * Fetch the status for the job being monitored.
      *
      * @return mixed False if the status is not being monitored, otherwise the status as
-     * 	as an integer, based on the Resque_Job_Status constants.
+     * 	as an integer, based on the constants.
      */
     public function get()
     {

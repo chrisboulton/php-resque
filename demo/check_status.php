@@ -8,7 +8,7 @@ require __DIR__ . '/init.php';
 date_default_timezone_set('GMT');
 Resque::setBackend('127.0.0.1:6379');
 
-$status = new Resque_Job_Status($argv[1]);
+$status = new Resque\Job\Status($argv[1]);
 if (!$status->isTracking()) {
     die("Resque is not tracking the status of this job.\n");
 }

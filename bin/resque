@@ -62,13 +62,13 @@ $jobStrategy=null;
 $JOB_STRATEGY = getenv('JOB_STRATEGY');
 switch($JOB_STRATEGY) {
     case 'inprocess':
-        $jobStrategy = new Resque_JobStrategy_InProcess;
+        $jobStrategy = new Resque\JobStrategy\InProcess;
         break;
     case 'fork':
-        $jobStrategy = new Resque_JobStrategy_Fork;
+        $jobStrategy = new Resque\JobStrategy\Fork;
         break;
     case 'batchfork':
-        $jobStrategy = new Resque_JobStrategy_BatchFork(getenv('PER_CHILD') ?: 1);
+        $jobStrategy = new Resque\JobStrategy\BatchFork(getenv('PER_CHILD') ?: 1);
         break;
     case 'fastcgi':
         $fastcgiLocation = '127.0.0.1:9000';
@@ -84,7 +84,7 @@ switch($JOB_STRATEGY) {
         }
 
         require_once dirname(__FILE__).'/lib/Resque/JobStrategy/Fastcgi.php';
-        $jobStrategy = new Resque_JobStrategy_Fastcgi(
+        $jobStrategy = new Resque\JobStrategy\Fastcgi(
             $fastcgiLocation,
             $fastcgiScript,
             array(
@@ -103,7 +103,7 @@ if ($count > 1) {
         } else if (!$pid) {
             // Child, start the worker
             $queues = explode(',', $QUEUE);
-            $worker = new Resque_Worker($queues);
+            $worker = new Resque\Worker($queues);
             $worker->setLogLevel(getenv('LOGLEVEL') ?: 'info');
             if ($jobStrategy) {
                 $worker->setJobStrategy($jobStrategy);
@@ -116,7 +116,7 @@ if ($count > 1) {
 } else {
     // Start a single worker
     $queues = explode(',', $QUEUE);
-    $worker = new Resque_Worker($queues);
+    $worker = new Resque\Worker($queues);
     $worker->setLogLevel(getenv('LOGLEVEL') ?: 'info');
     if ($jobStrategy) {
         $worker->setJobStrategy($jobStrategy);

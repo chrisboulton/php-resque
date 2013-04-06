@@ -1,14 +1,19 @@
 <?php
 
+namespace Resque\Job\Strategy;
+
 use EBernhardson\FastCGI\Client;
 use EBernhardson\FastCGI\CommunicationException;
+
+use Resque\Worker;
+use Resque\Job;
 
 /**
  * @package Resque/JobStrategy
  * @author  Erik Bernhardson <bernhardsonerik@gmail.com>
  * @license http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_JobStrategy_Fastcgi implements Resque_JobStrategy_Interface
+class Fastcgi implements StrategyInterface
 {
     /**
      * @var bool True when waiting for a response from fcgi server
@@ -55,9 +60,9 @@ class Resque_JobStrategy_Fastcgi implements Resque_JobStrategy_Interface
     }
 
     /**
-     * @param Resque_Worker $worker
+     * @param Worker $worker
      */
-    public function setWorker(Resque_Worker $worker)
+    public function setWorker(Worker $worker)
     {
         $this->worker = $worker;
     }
@@ -65,9 +70,9 @@ class Resque_JobStrategy_Fastcgi implements Resque_JobStrategy_Interface
     /**
      * Executes the provided job over a fastcgi connection
      *
-     * @param Resque_Job $job
+     * @param Job $job
      */
-    public function perform(Resque_Job $job)
+    public function perform(Job $job)
     {
         $status = 'Requested fcgi job execution from ' . $this->location . ' at ' . strftime('%F %T');
         $this->worker->updateProcLine($status);

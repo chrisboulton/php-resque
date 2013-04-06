@@ -1,4 +1,11 @@
 <?php
+
+namespace Resque;
+
+use Resque\Job\Strategy\Fork;
+use Resque\Job\Strategy\InProcess;
+use Resque\Job\Strategy\StrategyInterface;
+
 /**
  * Resque worker that handles checking queues for jobs, fetching them
  * off the queues, running them and handling the result.
@@ -7,7 +14,7 @@
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Worker
+class Worker
 {
     const LOG_DEBUG = 100;
     const LOG_INFO = 200;
@@ -48,7 +55,7 @@ class Resque_Worker
     private $id;
 
     /**
-     * @var Resque_Job Current job, if any, being processed by this worker.
+     * @var Job Current job, if any, being processed by this worker.
      */
     private $currentJob = null;
 
@@ -95,8 +102,8 @@ class Resque_Worker
     /**
      * Given a worker ID, find it and return an instantiated worker class for it.
      *
-     * @param  string        $workerId The ID of the worker.
-     * @return Resque_Worker Instance of the worker. False if the worker does not exist.
+     * @param  string $workerId The ID of the worker.
+     * @return Worker Instance of the worker. False if the worker does not exist.
      */
     public static function find($workerId)
     {
@@ -129,7 +136,7 @@ class Resque_Worker
      */
     public function setLogLevel($level)
     {
-        $this->logLevel = constant('Resque_Worker::LOG_' . strtoupper($level));
+        $this->logLevel = constant('\Resque\Worker::LOG_' . strtoupper($level));
     }
 
     /**
@@ -156,15 +163,15 @@ class Resque_Worker
             $hostname = php_uname('n');
         }
         $this->hostname = $hostname;
-        $this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
+        $this->id = $this->hostname . ':' . getmypid() . ':' . implode(',', $this->queues);
     }
 
     /**
      * Set the JobStrategy used to seperate the job execution context from the worker
      *
-     * @param Resque_JobStrategy_Interface
+     * @param \Resque\Job\StrategyInterface
      */
-    public function setJobStrategy(Resque_JobStrategy_Interface $jobStrategy)
+    public function setJobStrategy(StrategyInterface $jobStrategy)
     {
         $this->jobStrategy = $jobStrategy;
         $this->jobStrategy->setWorker($this);
@@ -211,7 +218,7 @@ class Resque_Worker
             }
 
             $this->log('Received ' . $job);
-            Resque_Event::trigger('beforeFork', $job);
+            Event::trigger('beforeFork', $job);
             $this->workingOn($job);
 
             $this->getJobStrategy()->perform($job);
@@ -228,9 +235,9 @@ class Resque_Worker
     {
         if (! $this->jobStrategy) {
             if (function_exists('pcntl_fork')) {
-                $this->setJobStrategy(new Resque_JobStrategy_Fork);
+                $this->setJobStrategy(new Fork);
             } else {
-                $this->setJobStrategy(new Resque_JobStrategy_InProcess);
+                $this->setJobStrategy(new InProcess);
             }
         }
 
@@ -240,28 +247,28 @@ class Resque_Worker
     /**
      * Process a single job.
      *
-     * @param Resque_Job $job The job to be processed.
+     * @param Job $job The job to be processed.
      */
-    public function perform(Resque_Job $job)
+    public function perform(Job $job)
     {
         try {
-            Resque_Event::trigger('afterFork', $job);
+            Event::trigger('afterFork', $job);
             $job->perform();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->log($job . ' failed: ' . $e->getMessage());
             $job->fail($e);
 
             return;
         }
 
-        $job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
+        $job->updateStatus(Job\Status::STATUS_COMPLETE);
         $this->log('Done ' . $job);
     }
 
     /**
      * Attempt to find a job from the top of one of the queues for this worker.
      *
-     * @return object|boolean Instance of Resque_Job if a job is found, false if not.
+     * @return object|boolean Instance of Job if a job is found, false if not.
      */
     public function reserve()
     {
@@ -271,7 +278,7 @@ class Resque_Worker
         }
         foreach ($queues as $queue) {
             $this->log('Checking ' . $queue);
-            $job = Resque_Job::reserve($queue);
+            $job = Job::reserve($queue);
             if ($job) {
                 $this->log('Found job on ' . $queue);
 
@@ -312,7 +319,7 @@ class Resque_Worker
     {
         $this->registerSigHandlers();
         $this->pruneDeadWorkers();
-        Resque_Event::trigger('beforeFirstFork', $this);
+        Event::trigger('beforeFirstFork', $this);
         $this->registerWorker();
     }
 
@@ -471,27 +478,27 @@ class Resque_Worker
     public function unregisterWorker()
     {
         if (is_object($this->currentJob)) {
-            $this->currentJob->fail(new Resque_Job_DirtyExitException);
+            $this->currentJob->fail(new Job\DirtyExitException);
         }
 
         $id = (string) $this;
         Resque::redis()->srem('workers', $id);
         Resque::redis()->del('worker:' . $id);
         Resque::redis()->del('worker:' . $id . ':started');
-        Resque_Stat::clear('processed:' . $id);
-        Resque_Stat::clear('failed:' . $id);
+        Stat::clear('processed:' . $id);
+        Stat::clear('failed:' . $id);
     }
 
     /**
      * Tell Redis which job we're currently working on.
      *
-     * @param object $job Resque_Job instance containing the job we're working on.
+     * @param object $job Job instance containing the job we're working on.
      */
-    public function workingOn(Resque_Job $job)
+    public function workingOn(Job $job)
     {
         $job->worker = $this;
         $this->currentJob = $job;
-        $job->updateStatus(Resque_Job_Status::STATUS_RUNNING);
+        $job->updateStatus(Job\Status::STATUS_RUNNING);
         $data = json_encode(array(
             'queue' => $job->queue,
             'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
@@ -507,8 +514,8 @@ class Resque_Worker
     public function doneWorking()
     {
         $this->currentJob = null;
-        Resque_Stat::incr('processed');
-        Resque_Stat::incr('processed:' . (string) $this);
+        Stat::incr('processed');
+        Stat::incr('processed:' . (string) $this);
         Resque::redis()->del('worker:' . (string) $this);
     }
 
@@ -573,7 +580,7 @@ class Resque_Worker
      */
     public function getStat($stat)
     {
-        return Resque_Stat::get($stat . ':' . (string) $this);
+        return Stat::get($stat . ':' . (string) $this);
     }
 
     /**

@@ -1,4 +1,11 @@
 <?php
+
+namespace Resque\Job\Strategy;
+
+use Resque\Resque;
+use Resque\Worker;
+use Resque\Job;
+
 /**
  * Seperates the job execution environment from the worker via pcntl_fork
  *
@@ -7,7 +14,7 @@
  * @author		Erik Bernharsdon <bernhardsonerik@gmail.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_JobStrategy_Fork extends Resque_JobStrategy_InProcess
+class Fork extends InProcess
 {
     /**
      * @param int|null 0 for the forked child, the PID of the child for the parent, or null if no child.
@@ -15,16 +22,16 @@ class Resque_JobStrategy_Fork extends Resque_JobStrategy_InProcess
     protected $child;
 
     /**
-     * @param Resque_Worker Instance of Resque_Worker that is starting jobs
+     * @param Worker Instance that is starting jobs
      */
     protected $worker;
 
     /**
-     * Set the Resque_Worker instance
+     * Set the Worker instance
      *
-     * @param Resque_Worker $worker
+     * @param Worker $worker
      */
-    public function setWorker(Resque_Worker $worker)
+    public function setWorker(Worker $worker)
     {
         $this->worker = $worker;
     }
@@ -32,9 +39,9 @@ class Resque_JobStrategy_Fork extends Resque_JobStrategy_InProcess
     /**
      * Seperate the job from the worker via pcntl_fork
      *
-     * @param Resque_Job $job
+     * @param Job $job
      */
-    public function perform(Resque_Job $job)
+    public function perform(Job $job)
     {
         $this->child = Resque::fork();
 
@@ -54,7 +61,7 @@ class Resque_JobStrategy_Fork extends Resque_JobStrategy_InProcess
             pcntl_wait($status);
             $exitStatus = pcntl_wexitstatus($status);
             if ($exitStatus !== 0) {
-                $job->fail(new Resque_Job_DirtyExitException(
+                $job->fail(new Job\DirtyExitException(
                     'Job exited with exit code ' . $exitStatus
                 ));
             }

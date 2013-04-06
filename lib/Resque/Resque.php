@@ -1,17 +1,20 @@
 <?php
+
+namespace Resque;
+
 /**
  * Base Resque class.
  *
- * @package		Resque
- * @author		Chris Boulton <chris@bigcommerce.com>
- * @license		http://www.opensource.org/licenses/mit-license.php
+ * @package     Resque
+ * @author      Chris Boulton <chris@bigcommerce.com>
+ * @license     http://www.opensource.org/licenses/mit-license.php
  */
 class Resque
 {
     const VERSION = '1.2';
 
     /**
-     * @var Resque_Redis Instance of Resque_Redis that talks to redis.
+     * @var Redis Instance that talks to redis.
      */
     public static $redis = null;
 
@@ -42,9 +45,9 @@ class Resque
     }
 
     /**
-     * Return an instance of the Resque_Redis class instantiated for Resque.
+     * Return an instance of the Redis class instantiated for Resque.
      *
-     * @return Resque_Redis Instance of Resque_Redis.
+     * @return Redis Instance of Redis.
      */
     public static function redis()
     {
@@ -57,7 +60,7 @@ class Resque
             $server = 'localhost:6379';
         }
 
-        self::$redis = new Resque_Redis($server, self::$redisDatabase);
+        self::$redis = new Redis($server, self::$redisDatabase);
 
         return self::$redis;
     }
@@ -143,9 +146,9 @@ class Resque
      */
     public static function enqueue($queue, $class, $args = null, $trackStatus = false)
     {
-        $result = Resque_Job::create($queue, $class, $args, $trackStatus);
+        $result = Job::create($queue, $class, $args, $trackStatus);
         if ($result) {
-            Resque_Event::trigger('afterEnqueue', array(
+            Event::trigger('afterEnqueue', array(
                 'class' => $class,
                 'args'  => $args,
                 'queue' => $queue,
@@ -158,12 +161,12 @@ class Resque
     /**
      * Reserve and return the next available job in the specified queue.
      *
-     * @param  string     $queue Queue to fetch next available job from.
-     * @return Resque_Job Instance of Resque_Job to be processed, false if none or error.
+     * @param  string $queue Queue to fetch next available job from.
+     * @return Job    Instance of Job to be processed, false if none or error.
      */
     public static function reserve($queue)
     {
-        return Resque_Job::reserve($queue);
+        return Job::reserve($queue);
     }
 
     /**

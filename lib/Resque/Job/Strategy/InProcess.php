@@ -1,25 +1,31 @@
 <?php
+
+namespace Resque\Job\Strategy;
+
+use Resque\Worker;
+use Resque\Job;
+
 /**
- * Runs the job in the same process as Resque_Worker
+ * Runs the job in the same process as Worker
  *
  * @package		Resque/JobStrategy
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @author		Erik Bernharsdon <bernhardsonerik@gmail.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_JobStrategy_InProcess implements Resque_JobStrategy_Interface
+class InProcess implements StrategyInterface
 {
     /**
-     * @param Resque_Worker Instance of Resque_Worker that is starting jobs
+     * @param Worker Instance of Worker that is starting jobs
      */
     protected $worker;
 
     /**
-     * Set the Resque_Worker instance
+     * Set the Worker instance
      *
-     * @param Resque_Worker $worker
+     * @param Worker $worker
      */
-    public function setWorker(Resque_Worker $worker)
+    public function setWorker(Worker $worker)
     {
         $this->worker = $worker;
     }
@@ -27,9 +33,9 @@ class Resque_JobStrategy_InProcess implements Resque_JobStrategy_Interface
     /**
      * Run the job in the worker process
      *
-     * @param Resque_Job $job
+     * @param Job $job
      */
-    public function perform(Resque_Job $job)
+    public function perform(Job $job)
     {
         $status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
         $this->worker->updateProcLine($status);
