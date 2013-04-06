@@ -71,7 +71,7 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
         Resque::enqueue('jobs', 'Test_Job', array(
             'somevar'
         ));
-        $job = $this->getEventTestJob();
+        $this->getEventTestJob();
         $this->worker->work(0);
         $this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
     }

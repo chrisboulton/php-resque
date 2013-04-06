@@ -17,7 +17,7 @@ class Resque
 
     /**
      * @var mixed Host/port conbination separated by a colon, or a nested
-     * array of server swith host/port pairs
+     * array of servers with host/port pairs
      */
     protected static $redisServer = null;
 
