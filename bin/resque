@@ -80,6 +80,9 @@ switch($JOB_STRATEGY) {
     case 'fork':
         $jobStrategy = new Resque_JobStrategy_Fork;
         break;
+    case 'batchfork':
+        $jobStrategy = new Resque_JobStrategy_BatchFork(getenv('PER_CHILD') ?: 1);
+        break;
     case 'fastcgi':
         $fastcgiLocation = '127.0.0.1:9000';
         $FASTCGI_LOCATION = getenv('FASTCGI_LOCATION');
