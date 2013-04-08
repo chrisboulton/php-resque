@@ -9,7 +9,6 @@ $files = array(
     __DIR__ . '/../vendor/autoload.php',
 );
 
-$found = false;
 foreach ($files as $file) {
     if (file_exists($file)) {
         require_once $file;
