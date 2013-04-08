@@ -1,18 +1,18 @@
 {
-    "hash": "368ab2c0e1e816774e23468f57390c96",
+    "hash": "52417d1c1b273da3ccedad21f7798eb8",
     "packages": [
         {
             "name": "colinmollenhour/credis",
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/chrisboulton/credis",
-                "reference": "62c73dd16e08069e3fd8f224cb4a5ddd73db8095"
+                "url": "https://github.com/colinmollenhour/credis.git",
+                "reference": "1.2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/chrisboulton/credis/zipball/62c73dd16e08069e3fd8f224cb4a5ddd73db8095",
-                "reference": "62c73dd16e08069e3fd8f224cb4a5ddd73db8095",
+                "url": "https://api.github.com/repos/colinmollenhour/credis/zipball/1.2",
+                "reference": "1.2",
                 "shasum": ""
             },
             "require": {
@@ -25,6 +25,7 @@
                     "Cluster.php"
                 ]
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -36,10 +37,7 @@
             ],
             "description": "Credis is a lightweight interface to the Redis key-value store which wraps the phpredis library when available for better performance.",
             "homepage": "https://github.com/colinmollenhour/credis",
-            "support": {
-                "source": "https://github.com/chrisboulton/credis/tree/master"
-            },
-            "time": "2013-01-12 10:15:31"
+            "time": "2013-03-19 02:57:04"
         }
     ],
     "packages-dev": [
