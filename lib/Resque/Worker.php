@@ -69,6 +69,8 @@ class Worker
      */
     private $processed = 0;
 
+    private $interval = 5;
+
     /**
      * Return all workers known to Resque as instantiated instances.
      * @return array
@@ -187,6 +189,10 @@ class Worker
      */
     public function work($interval = 5)
     {
+        if ($interval) {
+            $this->interval = $interval;
+        }
+
         $this->updateProcLine('Starting');
         $this->startup();
 
@@ -203,17 +209,17 @@ class Worker
 
             if (!$job) {
                 // For an interval of 0, break now - helps with unit testing etc
-                if ($interval == 0) {
+                if ($this->interval == 0) {
                     break;
                 }
                 // If no job was found, we sleep for $interval before continuing and checking again
-                $this->log('Sleeping for ' . $interval);
+                $this->log('Sleeping for ' . $this->interval);
                 if ($this->paused) {
                     $this->updateProcLine('Paused');
                 } else {
                     $this->updateProcLine('Waiting for ' . implode(',', $this->queues));
                 }
-                usleep($interval * 1000000);
+                usleep($this->interval * 1000000);
                 continue;
             }
 
@@ -589,5 +595,15 @@ class Worker
     public function getProcessed()
     {
         return $this->processed;
+    }
+
+    public function setInterval($interval)
+    {
+        $this->interval = $interval;
+    }
+
+    public function getInterval()
+    {
+        return $this->interval;
     }
 }
