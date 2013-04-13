@@ -150,7 +150,7 @@ class Worker
      *
      * @param string|array $queues String with a single queue name, array with multiple.
      */
-    public function __construct($queues)
+    public function __construct($queues = array())
     {
         if (!is_array($queues)) {
             $queues = array($queues);
