@@ -339,7 +339,7 @@ class Worker
     public function updateProcLine($status)
     {
         if (function_exists('setproctitle')) {
-            setproctitle('resque-' . Resque::VERSION . ': ' . $status);
+            setproctitle('resque: ' . $status);
         }
     }
 
