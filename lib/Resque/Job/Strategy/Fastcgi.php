@@ -16,17 +16,17 @@ use Resque\Exception;
  */
 class Fastcgi implements StrategyInterface
 {
-    protected $worker;
+    public $worker;
 
     /**
      * @var bool True when waiting for a response from fcgi server
      */
-    private $waiting = false;
+    public $waiting = false;
 
     /**
      * @var array Default environment for FCGI requests
      */
-    protected $requestData = array(
+    public $requestData = array(
         'GATEWAY_INTERFACE' => 'FastCGI/1.0',
         'REQUEST_METHOD' => 'GET',
         'SERVER_SOFTWARE' => 'php-resque-fastcgi/1.3-dev',

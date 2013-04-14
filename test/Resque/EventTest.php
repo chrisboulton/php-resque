@@ -15,16 +15,17 @@ class EventTest extends TestCase
 
     public function setUp()
     {
+        parent::setUp();
+
         \Test_Job::$called = false;
 
         // Register a worker to test with
-        $this->worker = new Worker('jobs');
-        $this->worker->registerWorker();
+        $this->worker = new Worker($this->resque, 'jobs');
+        $this->resque->registerWorker($this->worker);
     }
 
     public function tearDown()
     {
-        Event::clearListeners();
         $this->callbacksHit = array();
     }
 
@@ -37,7 +38,7 @@ class EventTest extends TestCase
             ),
         );
 
-        $job = new Job('jobs', $payload);
+        $job = new Job($this->resque, 'jobs', $payload);
         $job->worker = $this->worker;
 
         return $job;
@@ -57,7 +58,7 @@ class EventTest extends TestCase
      */
     public function testEventCallbacksFire($event, $callback)
     {
-        Event::listen($event, array($this, $callback));
+        $this->resque->getEvent()->listen($event, array($this, $callback));
 
         $job = $this->getEventTestJob();
         $this->worker->perform($job);
@@ -71,8 +72,8 @@ class EventTest extends TestCase
         $event = 'beforeFork';
         $callback = 'beforeForkEventCallback';
 
-        Event::listen($event, array($this, $callback));
-        Resque::enqueue('jobs', '\Test_Job', array(
+        $this->resque->getEvent()->listen($event, array($this, $callback));
+        $this->resque->enqueue('jobs', '\Test_Job', array(
             'somevar'
         ));
         $this->getEventTestJob();
@@ -83,7 +84,7 @@ class EventTest extends TestCase
     public function testBeforePerformEventCanStopWork()
     {
         $callback = 'beforePerformEventDontPerformCallback';
-        Event::listen('beforePerform', array($this, $callback));
+        $this->resque->getEvent()->listen('beforePerform', array($this, $callback));
 
         $job = $this->getEventTestJob();
 
@@ -97,8 +98,8 @@ class EventTest extends TestCase
         $callback = 'afterEnqueueEventCallback';
         $event = 'afterEnqueue';
 
-        Event::listen($event, array($this, $callback));
-        Resque::enqueue('jobs', '\Test_Job', array(
+        $this->resque->getEvent()->listen($event, array($this, $callback));
+        $this->resque->enqueue('jobs', '\Test_Job', array(
             'somevar'
         ));
         $this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
@@ -109,15 +110,15 @@ class EventTest extends TestCase
         $callback = 'beforePerformEventCallback';
         $event = 'beforePerform';
 
-        Event::listen($event, array($this, $callback));
-        Event::stopListening($event, array($this, $callback));
+        $this->resque->getEvent()->listen($event, array($this, $callback));
+        $this->resque->getEvent()->stopListening($event, array($this, $callback));
 
         $job = $this->getEventTestJob();
         $this->worker->perform($job);
         $this->worker->work(0);
 
         $this->assertNotContains($callback, $this->callbacksHit,
-            $event . ' callback (' . $callback .') was called though Event::stopListening was called'
+            $event . ' callback (' . $callback .') was called though $this->resque->getEvent()->stopListening was called'
         );
     }
 

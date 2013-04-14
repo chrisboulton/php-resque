@@ -11,15 +11,22 @@ namespace Resque;
  */
 class Stat
 {
+    public $backend;
+
+    public function __construct($backend)
+    {
+        $this->backend = $backend;
+    }
+
     /**
      * Get the value of the supplied statistic counter for the specified statistic.
      *
      * @param  string $stat The name of the statistic to get the stats for.
      * @return mixed  Value of the statistic.
      */
-    public static function get($stat)
+    public function get($stat)
     {
-        return (int) Resque::getBackend()->get('stat:' . $stat);
+        return (int) $this->backend->get('stat:' . $stat);
     }
 
     /**
@@ -29,9 +36,9 @@ class Stat
      * @param  int     $by   The amount to increment the statistic by.
      * @return boolean True if successful, false if not.
      */
-    public static function incr($stat, $by = 1)
+    public function incr($stat, $by = 1)
     {
-        return (bool) Resque::getBackend()->incrby('stat:' . $stat, $by);
+        return (bool) $this->backend->incrby('stat:' . $stat, $by);
     }
 
     /**
@@ -41,9 +48,9 @@ class Stat
      * @param  int     $by   The amount to decrement the statistic by.
      * @return boolean True if successful, false if not.
      */
-    public static function decr($stat, $by = 1)
+    public function decr($stat, $by = 1)
     {
-        return (bool) Resque::getBackend()->decrby('stat:' . $stat, $by);
+        return (bool) $this->backend->decrby('stat:' . $stat, $by);
     }
 
     /**
@@ -52,8 +59,8 @@ class Stat
      * @param  string  $stat The name of the statistic to delete.
      * @return boolean True if successful, false if not.
      */
-    public static function clear($stat)
+    public function clear($stat)
     {
-        return (bool) Resque::getBackend()->del('stat:' . $stat);
+        return (bool) $this->backend->del('stat:' . $stat);
     }
 }

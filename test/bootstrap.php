@@ -35,10 +35,6 @@ if (!preg_match('#^\s*port\s+([0-9]+)#m', $config, $matches)) {
     exit(1);
 }
 
-\Resque\Resque::setBackendConfig(array(
-    'server'   => 'localhost:' . $matches[1],
-));
-
 // Shutdown
 function killRedis($pid)
 {

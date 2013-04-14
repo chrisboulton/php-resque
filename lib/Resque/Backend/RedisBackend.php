@@ -5,19 +5,19 @@ namespace Resque\Backend;
 use Credis_Client;
 use Credis_Cluster;
 
-class RedisBackend
+class RedisBackend implements BackendInterface
 {
     /**
      * Redis namespace
      * @var string
      */
-    private static $defaultNamespace = 'resque:';
+    public $defaultNamespace = 'resque:';
 
     /**
      * @var array List of all commands in Redis that supply a key as their
      *  first argument. Used to prefix keys with the Resque namespace.
      */
-    private $keyCommands = array(
+    public $keyCommands = array(
         'exists',
         'del',
         'type',
@@ -66,12 +66,12 @@ class RedisBackend
      * Set Redis namespace (prefix) default: resque
      * @param string $namespace
      */
-    public static function setPrefix($namespace)
+    public function setPrefix($namespace)
     {
         if (strpos($namespace, ':') === false) {
             $namespace .= ':';
         }
-        self::$defaultNamespace = $namespace;
+        $this->defaultNamespace = $namespace;
     }
 
     public function __construct(array $config)
@@ -115,16 +115,16 @@ class RedisBackend
 
     /**
      * Magic method to handle all function requests and prefix key based
-     * operations with the {self::$defaultNamespace} key prefix.
+     * operations with the {$this->defaultNamespace} key prefix.
      *
      * @param  string $name The name of the method called.
      * @param  array  $args Array of supplied arguments to the method.
-     * @return mixed  Return value from Resident::call() based on the command.
+     * @return mixed  Return value from Credis_Client::call() based on the command.
      */
     public function __call($name, $args)
     {
         if (in_array($name, $this->keyCommands)) {
-            $args[0] = self::$defaultNamespace . $args[0];
+            $args[0] = $this->defaultNamespace . $args[0];
         }
         try {
             return $this->driver->__call($name, $args);
@@ -133,14 +133,14 @@ class RedisBackend
         }
     }
 
-    public static function getPrefix()
+    public function getPrefix()
     {
-        return self::$defaultNamespace;
+        return $this->defaultNamespace;
     }
 
-    public static function removePrefix($string)
+    public function removePrefix($string)
     {
-        $prefix = self::getPrefix();
+        $prefix = $this->getPrefix();
 
         if (substr($string, 0, strlen($prefix)) == $prefix) {
             $string = substr($string, strlen($prefix), strlen($string) );

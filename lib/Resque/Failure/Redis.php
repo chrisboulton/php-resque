@@ -14,15 +14,7 @@ use Resque\Resque;
 
 class Redis implements FailureInterface
 {
-    /**
-     * Initialize a failed job class and save it (where appropriate).
-     *
-     * @param object $payload   Object containing details of the failed job.
-     * @param object $exception Instance of the exception that was thrown by the failed job.
-     * @param object $worker    Instance of \Resque\Worker that received the job.
-     * @param string $queue     The name of the queue the job was fetched from.
-     */
-    public function __construct($payload, $exception, $worker, $queue)
+    public function __construct($resque, $payload, $exception, $worker, $queue)
     {
         $data = new \stdClass;
         $data->failed_at = strftime('%a %b %d %H:%M:%S %Z %Y');
@@ -33,6 +25,6 @@ class Redis implements FailureInterface
         $data->worker = (string) $worker;
         $data->queue = $queue;
         $data = json_encode($data);
-        Resque::getBackend()->rpush('failed', $data);
+        $resque->getBackend()->rpush('failed', $data);
     }
 }

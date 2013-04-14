@@ -14,20 +14,15 @@ class Failure
     /**
      * @var string Class name representing the backend to pass failed jobs off to.
      */
-    private static $backend;
+    public $backend;
 
     /**
      * Create a new failed job on the backend.
-     *
-     * @param object     $payload   The contents of the job that has just failed.
-     * @param \Exception $exception The exception generated when the job failed to run.
-     * @param Worker     $worker    Instance of Worker that was running this job when it failed.
-     * @param string     $queue     The name of the queue that this job was fetched from.
      */
-    public static function create($payload, \Exception $exception, Worker $worker, $queue)
+    public function __construct($resque, $payload, \Exception $exception, Worker $worker, $queue)
     {
-        $backend = self::getBackend();
-        new $backend($payload, $exception, $worker, $queue);
+        $backend = $this->getBackend();
+        new $backend($resque, $payload, $exception, $worker, $queue);
     }
 
     /**
@@ -35,13 +30,13 @@ class Failure
      *
      * @return object Instance of backend object.
      */
-    public static function getBackend()
+    public function getBackend()
     {
-        if (self::$backend === null) {
-            self::$backend = 'Resque\\Failure\\Redis';
+        if ($this->backend === null) {
+            $this->backend = 'Resque\\Failure\\Redis';
         }
 
-        return self::$backend;
+        return $this->backend;
     }
 
     /**
@@ -51,8 +46,8 @@ class Failure
      *
      * @param string $backend The class name of the backend to pipe failures to.
      */
-    public static function setBackend($backend)
+    public function setBackend($backend)
     {
-        self::$backend = $backend;
+        $this->backend = $backend;
     }
 }

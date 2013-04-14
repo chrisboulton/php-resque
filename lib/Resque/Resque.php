@@ -3,6 +3,7 @@
 namespace Resque;
 
 use Resque\Backend\RedisBackend;
+use Resque\Backend\BackendInterface;
 
 /**
  * Base Resque class.
@@ -13,39 +14,47 @@ use Resque\Backend\RedisBackend;
  */
 class Resque
 {
-    public static $backend = null;
+    public $backend = null;
+    public $backendConfig = null;
+    public $stat;
+    public $event;
 
-    protected static $backendConfig = null;
-
-    public static function setBackendConfig(array $config)
+    public function setBackend(BackendInterface $backend)
     {
-        self::$backendConfig = $config;
+        $this->backend = $backend;
     }
 
-    public static function setPrefix($prefix)
+    public function setBackendConfig(array $config)
     {
-        self::getBackend()->setPrefix($prefix);
+        $this->backendConfig = $config;
     }
 
-    public static function getBackend()
+    public function setPrefix($prefix)
     {
-        return self::$backend ?: self::$backend = new RedisBackend(self::$backendConfig ?: 'localhost:6379');
+        $this->getBackend()->setPrefix($prefix);
+    }
+
+    public function getBackend()
+    {
+        return $this->backend ?: $this->backend = new RedisBackend($this->backendConfig ?: array(
+            'server' => 'localhost:6379',
+        ));
     }
 
     /**
      * Will close connection to the backend before forking.
      *
-     * @return int Return vars as per pcntl_fork()
+     * @return int               Return vars as per pcntl_fork()
      * @throws \RuntimeException
      */
-    public static function fork()
+    public function fork()
     {
         if (!function_exists('pcntl_fork')) {
             return -1;
         }
 
-        // self::getBackend()->close();
-        self::$backend = null;
+        // $this->getBackend()->close();
+        $this->backend = null;
 
         $pid = pcntl_fork();
         if ($pid === -1) {
@@ -62,10 +71,10 @@ class Resque
      * @param string $queue The name of the queue to add the job to.
      * @param array  $item  Job description as an array to be JSON encoded.
      */
-    public static function push($queue, $item)
+    public function push($queue, $item)
     {
-        self::getBackend()->sadd('queues', $queue);
-        self::getBackend()->rpush('queue:' . $queue, json_encode($item));
+        $this->getBackend()->sadd('queues', $queue);
+        $this->getBackend()->rpush('queue:' . $queue, json_encode($item));
     }
 
     /**
@@ -75,9 +84,9 @@ class Resque
      * @param  string $queue The name of the queue to fetch an item from.
      * @return array  Decoded item from the queue.
      */
-    public static function pop($queue)
+    public function pop($queue)
     {
-        $item = self::getBackend()->lpop('queue:' . $queue);
+        $item = $this->getBackend()->lpop('queue:' . $queue);
         if (!$item) {
             return null;
         }
@@ -92,9 +101,9 @@ class Resque
      *
      * @return int The size of the queue.
      */
-    public static function size($queue)
+    public function size($queue)
     {
-        return self::getBackend()->llen('queue:' . $queue);
+        return $this->getBackend()->llen('queue:' . $queue);
     }
 
     /**
@@ -107,11 +116,13 @@ class Resque
      *
      * @return string
      */
-    public static function enqueue($queue, $class, $args = array(), $trackStatus = false)
+    public function enqueue($queue, $class, $args = array(), $trackStatus = false)
     {
-        $result = Job::create($queue, $class, $args, $trackStatus);
+        $job = new Job($this, $queue, $class, $args);
+        $result = $job->create($queue, $class, $args, $trackStatus);
+
         if ($result) {
-            Event::trigger('afterEnqueue', array(
+            $this->getEvent()->trigger('afterEnqueue', array(
                 'class' => $class,
                 'args'  => $args,
                 'queue' => $queue,
@@ -122,28 +133,160 @@ class Resque
     }
 
     /**
-     * Reserve and return the next available job in the specified queue.
-     *
-     * @param  string $queue Queue to fetch next available job from.
-     * @return Job    Instance of Job to be processed, false if none or error.
-     */
-    public static function reserve($queue)
-    {
-        return Job::reserve($queue);
-    }
-
-    /**
      * Get an array of all known queues.
      *
      * @return array Array of queues.
      */
-    public static function queues()
+    public function queues()
     {
-        $queues = self::getBackend()->smembers('queues');
+        $queues = $this->getBackend()->smembers('queues');
         if (!is_array($queues)) {
             $queues = array();
         }
 
         return $queues;
+    }
+
+    public function workers()
+    {
+        $workers = $this->getBackend()->smembers('workers');
+        if (!is_array($workers)) {
+            $workers = array();
+        }
+
+        $instances = array();
+        foreach ($workers as $workerId) {
+            $instances[] = $this->worker($workerId);
+        }
+
+        return $instances;
+    }
+
+    public function worker($workerId)
+    {
+        $exists = (bool) $this->getBackend()->sismember('workers', $workerId);;
+        if (!$exists || false === strpos($workerId, ":")) {
+            return false;
+        }
+
+        list(,,$queues) = explode(':', $workerId, 3);
+        $queues = explode(',', $queues);
+
+        $worker = new Worker($this, $queues);
+        $worker->setId($workerId);
+
+        return $worker;
+    }
+
+    /**
+     * Register this worker in the backend.
+     */
+    public function registerWorker(Worker $worker)
+    {
+        $this->getBackend()->sadd('workers', (string) $worker);
+        $this->getBackend()->set('worker:' . (string) $worker . ':started', strftime('%a %b %d %H:%M:%S %Z %Y'));
+    }
+
+    /**
+     * Unregister this worker in getBackend. (shutdown etc)
+     */
+    public function unregisterWorker(Worker $worker)
+    {
+        if (is_object($worker->currentJob)) {
+            $worker->currentJob->fail(new Job\DirtyExitException);
+        }
+
+        $id = (string) $worker;
+        $this->getBackend()->srem('workers', $id);
+        $this->getBackend()->del('worker:' . $id);
+        $this->getBackend()->del('worker:' . $id . ':started');
+        $this->getStat()->clear('processed:' . $id);
+        $this->getStat()->clear('failed:' . $id);
+    }
+
+    public function getStat()
+    {
+        if (! $this->stat) {
+            $this->stat = new Stat($this->getBackend());
+        }
+
+        return $this->stat;
+    }
+
+    public function getEvent()
+    {
+        if (! $this->event) {
+            $this->event = new Event;
+        }
+
+        return $this->event;
+    }
+
+    public function reserve($queues = false)
+    {
+        $queues = $queues ?: $this->queues();
+        if (!is_array($queues)) {
+            return null;
+        }
+        foreach ($queues as $queue) {
+            // $this->log('Checking ' . $queue);
+            $job = $this->reserveJob($queue);
+            if ($job) {
+                // $this->log('Found job on ' . $queue);
+                return $job;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Find the next available job from the specified queue and return an
+     * instance of Job for it.
+     *
+     * @param  string      $queue The name of the queue to check for a job in.
+     * @return null|object Null when there aren't any waiting jobs, instance of Job when a job was found.
+     */
+    public function reserveJob($queue = '*')
+    {
+        $payload = $this->pop($queue);
+
+        if (!is_array($payload)) {
+            return false;
+        }
+
+        return new Job($this, $queue, $payload);
+    }
+
+    /**
+     * Given a worker ID, check if it is registered/valid.
+     *
+     * @param  string  $workerId ID of the worker.
+     * @return boolean True if the worker exists, false if not.
+     */
+    public function workerExists($workerId)
+    {
+        return (bool) $this->getBackend()->sismember('workers', $workerId);
+    }
+
+    /**
+     * Given a worker ID, find it and return an instantiated worker class for it.
+     *
+     * @param  string $workerId The ID of the worker.
+     * @return Worker Instance of the worker. False if the worker does not exist.
+     */
+    public function findWorker($workerId)
+    {
+        if (!$this->workerExists($workerId) || false === strpos($workerId, ":")) {
+            return false;
+        }
+
+        list(,,$queues) = explode(':', $workerId, 3);
+        $queues = explode(',', $queues);
+
+        $worker = new Worker($this, $queues);
+        $worker->setId($workerId);
+
+        return $worker;
     }
 }

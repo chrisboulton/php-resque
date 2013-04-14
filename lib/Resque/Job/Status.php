@@ -21,18 +21,18 @@ class Status
     /**
      * @var string The ID of the job this status class refers back to.
      */
-    private $id;
+    public $id;
 
     /**
      * @var mixed Cache variable if the status of this job is being monitored or not.
      * 	True/false when checked at least once or null if not checked yet.
      */
-    private $isTracking = null;
+    public $isTracking = null;
 
     /**
      * @var array Array of statuses that are considered final/complete.
      */
-    private static $completeStatuses = array(
+    public $completeStatuses = array(
         self::STATUS_FAILED,
         self::STATUS_COMPLETE
     );
@@ -42,8 +42,9 @@ class Status
      *
      * @param string $id The ID of the job to manage the status for.
      */
-    public function __construct($id)
+    public function __construct($resque, $id)
     {
+        $this->resque = $resque;
         $this->id = $id;
     }
 
@@ -53,14 +54,14 @@ class Status
      *
      * @param string $id The ID of the job to monitor the status of.
      */
-    public static function create($id)
+    public function create()
     {
         $statusPacket = array(
             'status' => self::STATUS_WAITING,
             'updated' => time(),
             'started' => time(),
         );
-        Resque::getBackend()->set('job:' . $id . ':status', json_encode($statusPacket));
+        $this->resque->getBackend()->set('job:' . $this->id . ':status', json_encode($statusPacket));
     }
 
     /**
@@ -75,7 +76,7 @@ class Status
             return false;
         }
 
-        if (!Resque::getBackend()->exists((string) $this)) {
+        if (!$this->resque->getBackend()->exists((string) $this)) {
             $this->isTracking = false;
 
             return false;
@@ -101,11 +102,11 @@ class Status
             'status' => $status,
             'updated' => time(),
         );
-        Resque::getBackend()->set((string) $this, json_encode($statusPacket));
+        $this->resque->getBackend()->set((string) $this, json_encode($statusPacket));
 
         // Expire the status for completed jobs after 24 hours
-        if (in_array($status, self::$completeStatuses)) {
-            Resque::getBackend()->expire((string) $this, 86400);
+        if (in_array($status, $this->completeStatuses)) {
+            $this->resque->getBackend()->expire((string) $this, 86400);
         }
     }
 
@@ -121,7 +122,7 @@ class Status
             return false;
         }
 
-        $statusPacket = json_decode(Resque::getBackend()->get((string) $this), true);
+        $statusPacket = json_decode($this->resque->getBackend()->get((string) $this), true);
         if (!$statusPacket) {
             return false;
         }
@@ -134,7 +135,7 @@ class Status
      */
     public function stop()
     {
-        Resque::getBackend()->del((string) $this);
+        $this->resque->getBackend()->del((string) $this);
     }
 
     /**

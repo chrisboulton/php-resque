@@ -32,93 +32,72 @@ class Worker
     /**
      * @var array Array of all associated queues for this worker.
      */
-    private $queues = array();
+    public $queues = array();
 
     /**
      * @var string The hostname of this worker.
      */
-    private $hostname;
+    public $hostname;
 
     /**
      * @var boolean True if on the next iteration, the worker should shutdown.
      */
-    private $shutdown = false;
+    public $shutdown = false;
 
     /**
      * @var boolean True if this worker is paused.
      */
-    private $paused = false;
+    public $paused = false;
 
     /**
      * @var string String identifying this worker.
      */
-    private $id;
+    public $id;
 
     /**
      * @var Job Current job, if any, being processed by this worker.
      */
-    private $currentJob = null;
+    public $currentJob = null;
 
     /**
      * @var @jobStrategy to use for job execution.
      */
-    private $jobStrategy;
+    public $jobStrategy;
 
     /**
      * @var integer processed job count
      */
-    private $processed = 0;
+    public $processed = 0;
 
-    private $interval = 5;
-
-    /**
-     * Return all workers known to Resque as instantiated instances.
-     * @return array
-     */
-    public static function all()
-    {
-        $workers = Resque::getBackend()->smembers('workers');
-        if (!is_array($workers)) {
-            $workers = array();
-        }
-
-        $instances = array();
-        foreach ($workers as $workerId) {
-            $instances[] = self::find($workerId);
-        }
-
-        return $instances;
-    }
+    public $interval = 5;
 
     /**
-     * Given a worker ID, check if it is registered/valid.
+     * Instantiate a new worker, given a list of queues that it should be working
+     * on. The list of queues should be supplied in the priority that they should
+     * be checked for jobs (first come, first served)
      *
-     * @param  string  $workerId ID of the worker.
-     * @return boolean True if the worker exists, false if not.
-     */
-    public static function exists($workerId)
-    {
-        return (bool) Resque::getBackend()->sismember('workers', $workerId);
-    }
-
-    /**
-     * Given a worker ID, find it and return an instantiated worker class for it.
+     * Passing a single '*' allows the worker to work on all queues in alphabetical
+     * order. You can easily add new queues dynamically and have them worked on using
+     * this method.
      *
-     * @param  string $workerId The ID of the worker.
-     * @return Worker Instance of the worker. False if the worker does not exist.
+     * @param string|array $queues String with a single queue name, array with multiple.
      */
-    public static function find($workerId)
+    public function __construct(Resque $resque, $queues = array())
     {
-        if (!self::exists($workerId) || false === strpos($workerId, ":")) {
-            return false;
+        $this->resque = $resque;
+
+        if (!is_array($queues)) {
+            $queues = array($queues);
         }
 
-        list(,,$queues) = explode(':', $workerId, 3);
-        $queues = explode(',', $queues);
-        $worker = new self($queues);
-        $worker->setId($workerId);
-
-        return $worker;
+        $this->queues = $queues;
+        if (function_exists('gethostname')) {
+            $hostname = gethostname();
+        } else {
+            $hostname = php_uname('n');
+        }
+        $this->hostname = $hostname;
+        $this->id = $this->hostname . ':' . getmypid() . ':' . implode(',', $this->queues);
     }
 
     /**
@@ -139,33 +118,6 @@ class Worker
     public function setLogLevel($level)
     {
         $this->logLevel = constant('\Resque\Worker::LOG_' . strtoupper($level));
-    }
-
-    /**
-     * Instantiate a new worker, given a list of queues that it should be working
-     * on. The list of queues should be supplied in the priority that they should
-     * be checked for jobs (first come, first served)
-     *
-     * Passing a single '*' allows the worker to work on all queues in alphabetical
-     * order. You can easily add new queues dynamically and have them worked on using
-     * this method.
-     *
-     * @param string|array $queues String with a single queue name, array with multiple.
-     */
-    public function __construct($queues = array())
-    {
-        if (!is_array($queues)) {
-            $queues = array($queues);
-        }
-
-        $this->queues = $queues;
-        if (function_exists('gethostname')) {
-            $hostname = gethostname();
-        } else {
-            $hostname = php_uname('n');
-        }
-        $this->hostname = $hostname;
-        $this->id = $this->hostname . ':' . getmypid() . ':' . implode(',', $this->queues);
     }
 
     /**
@@ -204,7 +156,7 @@ class Worker
             // Attempt to find and reserve a job
             $job = false;
             if (!$this->paused) {
-                $job = $this->reserve();
+                $job = $this->resque->reserve($this->queues);
             }
 
             if (!$job) {
@@ -224,7 +176,7 @@ class Worker
             }
 
             $this->log('Received ' . $job);
-            Event::trigger('beforeFork', $job);
+            $this->resque->getEvent()->trigger('beforeFork', $job);
             $this->workingOn($job);
 
             $this->getJobStrategy()->perform($job);
@@ -234,7 +186,7 @@ class Worker
             $this->doneWorking();
         }
 
-        $this->unregisterWorker();
+        $this->resque->unregisterWorker($this);
     }
 
     public function getJobStrategy()
@@ -258,7 +210,7 @@ class Worker
     public function perform(Job $job)
     {
         try {
-            Event::trigger('afterFork', $job);
+            $this->resque->getEvent()->trigger('afterFork', $job);
             $job->perform();
         } catch (\Exception $e) {
             $this->log($job . ' failed: ' . $e->getMessage());
@@ -269,30 +221,6 @@ class Worker
 
         $job->updateStatus(Job\Status::STATUS_COMPLETE);
         $this->log('Done ' . $job);
-    }
-
-    /**
-     * Attempt to find a job from the top of one of the queues for this worker.
-     *
-     * @return object|boolean Instance of Job if a job is found, false if not.
-     */
-    public function reserve()
-    {
-        $queues = $this->queues();
-        if (!is_array($queues)) {
-            return null;
-        }
-        foreach ($queues as $queue) {
-            $this->log('Checking ' . $queue);
-            $job = Job::reserve($queue);
-            if ($job) {
-                $this->log('Found job on ' . $queue);
-
-                return $job;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -312,7 +240,7 @@ class Worker
             return $this->queues;
         }
 
-        $queues = Resque::queues();
+        $queues = $this->resque->queues();
         sort($queues);
 
         return $queues;
@@ -321,12 +249,12 @@ class Worker
     /**
      * Perform necessary actions to start a worker.
      */
-    private function startup()
+    public function startup()
     {
         $this->registerSigHandlers();
         $this->pruneDeadWorkers();
-        Event::trigger('beforeFirstFork', $this);
-        $this->registerWorker();
+        $this->resque->getEvent()->trigger('beforeFirstFork', $this);
+        $this->resque->registerWorker($this);
     }
 
     /**
@@ -351,7 +279,7 @@ class Worker
      * QUIT: Shutdown after the current job finishes processing.
      * USR1: Kill the forked child immediately and continue processing jobs.
      */
-    private function registerSigHandlers()
+    public function registerSigHandlers()
     {
         if (!function_exists('pcntl_signal')) {
             return;
@@ -394,7 +322,7 @@ class Worker
     public function reestablishBackendConnection()
     {
         $this->log('SIGPIPE received; attempting to reconnect');
-        Resque::getBackend()->establishConnection();
+        $this->resque->getBackend()->establishConnection();
     }
 
     /**
@@ -439,7 +367,7 @@ class Worker
     public function pruneDeadWorkers()
     {
         $workerPids = $this->workerPids();
-        $workers = self::all();
+        $workers = $this->resque->workers();
         foreach ($workers as $worker) {
           if (is_object($worker)) {
               list($host, $pid) = explode(':', (string) $worker, 2);
@@ -447,7 +375,7 @@ class Worker
                   continue;
               }
               $this->log('Pruning dead worker: ' . (string) $worker);
-              $worker->unregisterWorker();
+              $this->resque->unregisterWorker($worker);
           }
         }
     }
@@ -470,32 +398,6 @@ class Worker
     }
 
     /**
-     * Register this worker in the backend.
-     */
-    public function registerWorker()
-    {
-        Resque::getBackend()->sadd('workers', (string) $this);
-        Resque::getBackend()->set('worker:' . (string) $this . ':started', strftime('%a %b %d %H:%M:%S %Z %Y'));
-    }
-
-    /**
-     * Unregister this worker in getBackend. (shutdown etc)
-     */
-    public function unregisterWorker()
-    {
-        if (is_object($this->currentJob)) {
-            $this->currentJob->fail(new Job\DirtyExitException);
-        }
-
-        $id = (string) $this;
-        Resque::getBackend()->srem('workers', $id);
-        Resque::getBackend()->del('worker:' . $id);
-        Resque::getBackend()->del('worker:' . $id . ':started');
-        Stat::clear('processed:' . $id);
-        Stat::clear('failed:' . $id);
-    }
-
-    /**
      * Tell the backend which job we're currently working on.
      *
      * @param Job $job Job instance containing the job we're working on.
@@ -510,7 +412,7 @@ class Worker
             'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
             'payload' => $job->payload
         ));
-        Resque::getBackend()->set('worker:' . $job->worker, $data);
+        $this->resque->getBackend()->set('worker:' . $job->worker, $data);
     }
 
     /**
@@ -520,9 +422,9 @@ class Worker
     public function doneWorking()
     {
         $this->currentJob = null;
-        Stat::incr('processed');
-        Stat::incr('processed:' . (string) $this);
-        Resque::getBackend()->del('worker:' . (string) $this);
+        $this->resque->getStat()->incr('processed');
+        $this->resque->getStat()->incr('processed:' . (string) $this);
+        $this->resque->getBackend()->del('worker:' . (string) $this);
     }
 
     /**
@@ -570,7 +472,7 @@ class Worker
      */
     public function job()
     {
-        $job = Resque::getBackend()->get('worker:' . (string) $this);
+        $job = $this->resque->getBackend()->get('worker:' . (string) $this);
         if (!$job) {
             return array();
         } else {
@@ -586,7 +488,7 @@ class Worker
      */
     public function getStat($stat)
     {
-        return Stat::get($stat . ':' . (string) $this);
+        return $this->resque->getStat()->get($stat . ':' . (string) $this);
     }
 
     /**

@@ -14,26 +14,26 @@ class Event
     /**
      * @var array Array containing all registered callbacks, indexed by event name.
      */
-    private static $events = array();
+    public $events = array();
 
     /**
      * Raise a given event with the supplied data.
      *
-     * @param  string $event Name of event to be raised.
-     * @param  mixed  $data  Optional, any data that should be passed to each callback.
+     * @param  string  $event Name of event to be raised.
+     * @param  mixed   $data  Optional, any data that should be passed to each callback.
      * @return boolean
      */
-    public static function trigger($event, $data = null)
+    public function trigger($event, $data = null)
     {
         if (!is_array($data)) {
             $data = array($data);
         }
 
-        if (empty(self::$events[$event])) {
+        if (empty($this->events[$event])) {
             return true;
         }
 
-        foreach (self::$events[$event] as $callback) {
+        foreach ($this->events[$event] as $callback) {
             if (!is_callable($callback)) {
                 continue;
             }
@@ -46,17 +46,17 @@ class Event
     /**
      * Listen in on a given event to have a specified callback fired.
      *
-     * @param  string $event    Name of event to listen on.
-     * @param  mixed  $callback Any callback callable by call_user_func_array.
+     * @param  string  $event    Name of event to listen on.
+     * @param  mixed   $callback Any callback callable by call_user_func_array.
      * @return boolean
      */
-    public static function listen($event, $callback)
+    public function listen($event, $callback)
     {
-        if (!isset(self::$events[$event])) {
-            self::$events[$event] = array();
+        if (!isset($this->events[$event])) {
+            $this->events[$event] = array();
         }
 
-        self::$events[$event][] = $callback;
+        $this->events[$event][] = $callback;
 
         return true;
     }
@@ -64,19 +64,19 @@ class Event
     /**
      * Stop a given callback from listening on a specific event.
      *
-     * @param  string $event    Name of event.
-     * @param  mixed  $callback The callback as defined when listen() was called.
+     * @param  string  $event    Name of event.
+     * @param  mixed   $callback The callback as defined when listen() was called.
      * @return boolean
      */
-    public static function stopListening($event, $callback)
+    public function stopListening($event, $callback)
     {
-        if (!isset(self::$events[$event])) {
+        if (!isset($this->events[$event])) {
             return true;
         }
 
-        $key = array_search($callback, self::$events[$event]);
+        $key = array_search($callback, $this->events[$event]);
         if ($key !== false) {
-            unset(self::$events[$event][$key]);
+            unset($this->events[$event][$key]);
         }
 
         return true;
@@ -85,8 +85,8 @@ class Event
     /**
      * Call all registered listeners.
      */
-    public static function clearListeners()
+    public function clearListeners()
     {
-        self::$events = array();
+        $this->events = array();
     }
 }

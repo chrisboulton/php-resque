@@ -20,66 +20,66 @@ class JobStatusTest extends TestCase
         parent::setUp();
 
         // Register a worker to test with
-        $this->worker = new Worker('jobs');
+        $this->worker = new Worker($this->resque, 'jobs');
     }
 
     public function testJobStatusCanBeTracked()
     {
-        $token = Resque::enqueue('jobs', '\Test_Job', null, true);
-        $status = new Status($token);
+        $token = $this->resque->enqueue('jobs', '\Test_Job', null, true);
+        $status = new Status($this->resque, $token);
         $this->assertTrue($status->isTracking());
     }
 
     public function testJobStatusIsReturnedViaJobInstance()
     {
-        Resque::enqueue('jobs', '\Test_Job', null, true);
-        $job = Job::reserve('jobs');
+        $this->resque->enqueue('jobs', '\Test_Job', null, true);
+        $job = $this->resque->reserveJob('jobs');
         $this->assertEquals(Status::STATUS_WAITING, $job->getStatus());
     }
 
     public function testQueuedJobReturnsQueuedStatus()
     {
-        $token = Resque::enqueue('jobs', '\Test_Job', null, true);
-        $status = new Status($token);
+        $token = $this->resque->enqueue('jobs', '\Test_Job', null, true);
+        $status = new Status($this->resque, $token);
         $this->assertEquals(Status::STATUS_WAITING, $status->get());
     }
 
     public function testRunningJobReturnsRunningStatus()
     {
-        $token = Resque::enqueue('jobs', '\Failing_Job', null, true);
-        $job = $this->worker->reserve();
+        $token = $this->resque->enqueue('jobs', '\Failing_Job', null, true);
+        $job = $this->resque->reserve();
         $this->worker->workingOn($job);
-        $status = new Status($token);
+        $status = new Status($this->resque, $token);
         $this->assertEquals(Status::STATUS_RUNNING, $status->get());
     }
 
     public function testFailedJobReturnsFailedStatus()
     {
-        $token = Resque::enqueue('jobs', '\Failing_Job', null, true);
+        $token = $this->resque->enqueue('jobs', '\Failing_Job', null, true);
         $this->worker->work(0);
-        $status = new Status($token);
+        $status = new Status($this->resque, $token);
         $this->assertEquals(Status::STATUS_FAILED, $status->get());
     }
 
     public function testCompletedJobReturnsCompletedStatus()
     {
-        $token = Resque::enqueue('jobs', '\Test_Job', null, true);
+        $token = $this->resque->enqueue('jobs', '\Test_Job', null, true);
         $this->worker->work(0);
-        $status = new Status($token);
+        $status = new Status($this->resque, $token);
         $this->assertEquals(Status::STATUS_COMPLETE, $status->get());
     }
 
     public function testStatusIsNotTrackedWhenToldNotTo()
     {
-        $token = Resque::enqueue('jobs', '\Test_Job', null, false);
-        $status = new Status($token);
+        $token = $this->resque->enqueue('jobs', '\Test_Job', null, false);
+        $status = new Status($this->resque, $token);
         $this->assertFalse($status->isTracking());
     }
 
     public function testStatusTrackingCanBeStopped()
     {
-        Status::create('test');
-        $status = new Status('test');
+        $status = new Status($this->resque, 'test');
+        $status->create('test');
         $this->assertEquals(Status::STATUS_WAITING, $status->get());
         $status->stop();
         $this->assertFalse($status->get());
@@ -87,10 +87,10 @@ class JobStatusTest extends TestCase
 
     public function testRecreatedJobWithTrackingStillTracksStatus()
     {
-        $originalToken = Resque::enqueue('jobs', '\Test_Job', null, true);
-        $job = $this->worker->reserve();
+        $originalToken = $this->resque->enqueue('jobs', '\Test_Job', null, true);
+        $job = $this->resque->reserve();
 
-        // Mark this job as being worked on to ensure that the new status is still
+        // Mark this job as being worked on to ensure that the new status $this->resque, is still
         // waiting.
         $this->worker->workingOn($job);
 
@@ -101,7 +101,7 @@ class JobStatusTest extends TestCase
         $this->assertNotEquals($originalToken, $newToken);
 
         // Now check the status of the new job
-        $newJob = Job::reserve('jobs');
+        $newJob = $this->resque->reserveJob('jobs');
         $this->assertEquals(Status::STATUS_WAITING, $newJob->getStatus());
     }
 }

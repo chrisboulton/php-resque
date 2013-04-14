@@ -17,7 +17,7 @@ class BatchFork extends Fork
     /**
      * @var int How many to process per child.
      */
-    private $perChild;
+    public $perChild;
 
     /**
      * @param integer $perChild

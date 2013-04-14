@@ -19,12 +19,12 @@ class Fork extends InProcess
     /**
      * @param int|null 0 for the forked child, the PID of the child for the parent, or null if no child.
      */
-    protected $child;
+    public $child;
 
     /**
      * @param Worker $worker Instance that is starting jobs
      */
-    protected $worker;
+    public $worker;
 
     /**
      * Set the Worker instance
@@ -43,7 +43,7 @@ class Fork extends InProcess
      */
     public function perform(Job $job)
     {
-        $this->child = Resque::fork();
+        $this->child = $this->worker->resque->fork();
 
         // Forked and we're the child. Run the job.
         if ($this->child === 0) {

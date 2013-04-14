@@ -18,7 +18,7 @@ class InProcess implements StrategyInterface
     /**
      * @param Worker $worker Instance of Worker that is starting jobs
      */
-    protected $worker;
+    public $worker;
 
     /**
      * Set the Worker instance

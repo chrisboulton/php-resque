@@ -13,6 +13,8 @@ use Resque\Job\Status;
  */
 class Job
 {
+    public $resque;
+
     /**
      * @var string The name of the queue that this job belongs to.
      */
@@ -31,7 +33,7 @@ class Job
     /**
      * @var object Instance of the class performing work for this job.
      */
-    private $instance;
+    public $instance;
 
     /**
      * Instantiate a new instance of a job.
@@ -39,8 +41,9 @@ class Job
      * @param string $queue   The queue that the job belongs to.
      * @param array  $payload array containing details of the job.
      */
-    public function __construct($queue, $payload)
+    public function __construct(Resque $resque, $queue, $payload)
     {
+        $this->resque = $resque;
         $this->queue = $queue;
         $this->payload = $payload;
     }
@@ -56,42 +59,27 @@ class Job
      * @return string
      * @throws \InvalidArgumentException
      */
-    public static function create($queue, $class, $args = null, $monitor = false)
+    public function create($queue, $class, $args = null, $monitor = false)
     {
         if ($args !== null && !is_array($args)) {
             throw new \InvalidArgumentException(
                 'Supplied $args must be an array.'
             );
         }
+
         $id = md5(uniqid('', true));
-        Resque::push($queue, array(
+        $this->resque->push($queue, array(
             'class' => $class,
             'args'  => array($args),
             'id'    => $id,
         ));
 
         if ($monitor) {
-            Status::create($id);
+            $status = new Status($this->resque, $id);
+            $status->create();
         }
 
         return $id;
-    }
-
-    /**
-     * Find the next available job from the specified queue and return an
-     * instance of Job for it.
-     *
-     * @param  string      $queue The name of the queue to check for a job in.
-     * @return null|object Null when there aren't any waiting jobs, instance of Job when a job was found.
-     */
-    public static function reserve($queue = '*')
-    {
-        $payload = Resque::pop($queue);
-        if (!is_array($payload)) {
-            return false;
-        }
-
-        return new Job($queue, $payload);
     }
 
     /**
@@ -105,7 +93,7 @@ class Job
             return;
         }
 
-        $statusInstance = new Status($this->payload['id']);
+        $statusInstance = new Status($this->resque, $this->payload['id']);
         $statusInstance->update($status);
     }
 
@@ -116,7 +104,7 @@ class Job
      */
     public function getStatus()
     {
-        $status = new Status($this->payload['id']);
+        $status = new Status($this->resque, $this->payload['id']);
 
         return $status->get();
     }
@@ -138,7 +126,7 @@ class Job
     /**
      * Get the instantiated object for this job that will be performing work.
      *
-     * @return object Instance of the object that this job belongs to.
+     * @return object            Instance of the object that this job belongs to.
      * @throws \Resque\Exception
      */
     public function getInstance()
@@ -178,7 +166,7 @@ class Job
     {
         $instance = $this->getInstance();
         try {
-            Event::trigger('beforePerform', $this);
+            $this->resque->getEvent()->trigger('beforePerform', $this);
 
             if (method_exists($instance, 'setUp')) {
                 $instance->setUp();
@@ -190,7 +178,7 @@ class Job
                 $instance->tearDown();
             }
 
-            Event::trigger('afterPerform', $this);
+            $this->resque->getEvent()->trigger('afterPerform', $this);
         }
         // beforePerform/setUp have said don't perform this job. Return.
         catch(Job\DontPerform $e) {
@@ -207,20 +195,17 @@ class Job
      */
     public function fail($exception)
     {
-        Event::trigger('onFailure', array(
+        $this->resque->getEvent()->trigger('onFailure', array(
             'exception' => $exception,
             'job' => $this,
         ));
 
         $this->updateStatus(Status::STATUS_FAILED);
-        Failure::create(
-            $this->payload,
-            $exception,
-            $this->worker,
-            $this->queue
-        );
-        Stat::incr('failed');
-        Stat::incr('failed:' . $this->worker);
+
+        new Failure($this->resque, $this->payload, $exception, $this->worker, $this->queue);
+
+        $this->resque->getStat()->incr('failed');
+        $this->resque->getStat()->incr('failed:' . $this->worker);
     }
 
     /**
@@ -229,13 +214,13 @@ class Job
      */
     public function recreate()
     {
-        $status = new Status($this->payload['id']);
+        $status = new Status($this->resque, $this->payload['id']);
         $monitor = false;
         if ($status->isTracking()) {
             $monitor = true;
         }
 
-        return self::create($this->queue, $this->payload['class'], $this->payload['args'], $monitor);
+        return $this->create($this->queue, $this->payload['class'], $this->payload['args'], $monitor);
     }
 
     /**

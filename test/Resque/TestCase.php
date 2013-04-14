@@ -25,5 +25,10 @@ class TestCase extends \PHPUnit_Framework_TestCase
 
         // Flush redis
         $this->redis->flushAll();
+
+        $this->resque = new \Resque\Resque;
+        $this->resque->setBackend(new \Resque\Backend\RedisBackend(array(
+            'server'   => 'localhost:' . $matches[1],
+        )));
     }
 }
