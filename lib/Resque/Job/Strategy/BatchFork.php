@@ -28,7 +28,7 @@ class BatchFork extends Fork
     }
 
     /**
-     * Seperate the job from the worker via pcntl_fork
+     * Separate the job from the worker via pcntl_fork
      *
      * @param \Resque\Job $job
      */

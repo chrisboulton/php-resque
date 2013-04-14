@@ -19,7 +19,7 @@ class Resque
     public static $redis = null;
 
     /**
-     * @var mixed Host/port conbination separated by a colon, or a nested
+     * @var mixed Host/port combination separated by a colon, or a nested
      * array of servers with host/port pairs
      */
     protected static $redisServer = null;

@@ -24,7 +24,7 @@ class Fastcgi implements StrategyInterface
     private $waiting = false;
 
     /**
-     * @var array Default enironment for FCGI requests
+     * @var array Default environment for FCGI requests
      */
     protected $requestData = array(
         'GATEWAY_INTERFACE' => 'FastCGI/1.0',

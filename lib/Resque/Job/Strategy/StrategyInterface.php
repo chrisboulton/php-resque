@@ -23,7 +23,7 @@ interface StrategyInterface
     public function setWorker(Worker $worker);
 
     /**
-     * Seperates the job execution context from the worker and calls $worker->perform($job).
+     * Separates the job execution context from the worker and calls $worker->perform($job).
      *
      * @param Job $job
      */
