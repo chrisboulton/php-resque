@@ -49,7 +49,7 @@ class Status
 
     /**
      * Create a new status monitor item for the supplied job ID. Will create
-     * all necessary keys in Redis to monitor the status of a job.
+     * all necessary keys in the backend to monitor the status of a job.
      *
      * @param string $id The ID of the job to monitor the status of.
      */
@@ -60,7 +60,7 @@ class Status
             'updated' => time(),
             'started' => time(),
         );
-        Resque::redis()->set('job:' . $id . ':status', json_encode($statusPacket));
+        Resque::getBackend()->set('job:' . $id . ':status', json_encode($statusPacket));
     }
 
     /**
@@ -75,7 +75,7 @@ class Status
             return false;
         }
 
-        if (!Resque::redis()->exists((string) $this)) {
+        if (!Resque::getBackend()->exists((string) $this)) {
             $this->isTracking = false;
 
             return false;
@@ -101,11 +101,11 @@ class Status
             'status' => $status,
             'updated' => time(),
         );
-        Resque::redis()->set((string) $this, json_encode($statusPacket));
+        Resque::getBackend()->set((string) $this, json_encode($statusPacket));
 
         // Expire the status for completed jobs after 24 hours
         if (in_array($status, self::$completeStatuses)) {
-            Resque::redis()->expire((string) $this, 86400);
+            Resque::getBackend()->expire((string) $this, 86400);
         }
     }
 
@@ -121,7 +121,7 @@ class Status
             return false;
         }
 
-        $statusPacket = json_decode(Resque::redis()->get((string) $this), true);
+        $statusPacket = json_decode(Resque::getBackend()->get((string) $this), true);
         if (!$statusPacket) {
             return false;
         }
@@ -134,7 +134,7 @@ class Status
      */
     public function stop()
     {
-        Resque::redis()->del((string) $this);
+        Resque::getBackend()->del((string) $this);
     }
 
     /**

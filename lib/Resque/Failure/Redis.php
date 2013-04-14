@@ -33,6 +33,6 @@ class Redis implements FailureInterface
         $data->worker = (string) $worker;
         $data->queue = $queue;
         $data = json_encode($data);
-        Resque::redis()->rpush('failed', $data);
+        Resque::getBackend()->rpush('failed', $data);
     }
 }

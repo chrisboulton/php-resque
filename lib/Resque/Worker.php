@@ -77,7 +77,7 @@ class Worker
      */
     public static function all()
     {
-        $workers = Resque::redis()->smembers('workers');
+        $workers = Resque::getBackend()->smembers('workers');
         if (!is_array($workers)) {
             $workers = array();
         }
@@ -98,7 +98,7 @@ class Worker
      */
     public static function exists($workerId)
     {
-        return (bool) Resque::redis()->sismember('workers', $workerId);
+        return (bool) Resque::getBackend()->sismember('workers', $workerId);
     }
 
     /**
@@ -189,7 +189,7 @@ class Worker
      */
     public function work($interval = 5)
     {
-        if ($interval) {
+        if (! is_null($interval)) {
             $this->interval = $interval;
         }
 
@@ -303,7 +303,7 @@ class Worker
      * alphabetic order. (@see $fetch)
      *
      * @param boolean $fetch If true, and the queue is set to *, will fetch
-     * all queue names from redis.
+     * all queue names from the backend.
      * @return array Array of associated queues.
      */
     public function queues($fetch = true)
@@ -364,7 +364,7 @@ class Worker
         pcntl_signal(SIGUSR1, array($this, 'killChild'));
         pcntl_signal(SIGUSR2, array($this, 'pauseProcessing'));
         pcntl_signal(SIGCONT, array($this, 'unPauseProcessing'));
-        pcntl_signal(SIGPIPE, array($this, 'reestablishRedisConnection'));
+        pcntl_signal(SIGPIPE, array($this, 'reestablishBackendConnection'));
         $this->log('Registered signals');
     }
 
@@ -388,13 +388,13 @@ class Worker
     }
 
     /**
-     * Signal handler for SIGPIPE, in the event the redis connection has gone away.
-     * Attempts to reconnect to redis, or raises an Exception.
+     * Signal handler for SIGPIPE, in the event the backend connection has gone away.
+     * Attempts to reconnect to the backend, or raises an Exception.
      */
-    public function reestablishRedisConnection()
+    public function reestablishBackendConnection()
     {
         $this->log('SIGPIPE received; attempting to reconnect');
-        Resque::redis()->establishConnection();
+        Resque::getBackend()->establishConnection();
     }
 
     /**
@@ -430,11 +430,11 @@ class Worker
 
     /**
      * Look for any workers which should be running on this server and if
-     * they're not, remove them from Redis.
+     * they're not, remove them from the backend.
      *
      * This is a form of garbage collection to handle cases where the
      * server may have been killed and the Resque workers did not die gracefully
-     * and therefore leave state information in Redis.
+     * and therefore leave state information in the backend.
      */
     public function pruneDeadWorkers()
     {
@@ -470,16 +470,16 @@ class Worker
     }
 
     /**
-     * Register this worker in Redis.
+     * Register this worker in the backend.
      */
     public function registerWorker()
     {
-        Resque::redis()->sadd('workers', (string) $this);
-        Resque::redis()->set('worker:' . (string) $this . ':started', strftime('%a %b %d %H:%M:%S %Z %Y'));
+        Resque::getBackend()->sadd('workers', (string) $this);
+        Resque::getBackend()->set('worker:' . (string) $this . ':started', strftime('%a %b %d %H:%M:%S %Z %Y'));
     }
 
     /**
-     * Unregister this worker in Redis. (shutdown etc)
+     * Unregister this worker in getBackend. (shutdown etc)
      */
     public function unregisterWorker()
     {
@@ -488,15 +488,15 @@ class Worker
         }
 
         $id = (string) $this;
-        Resque::redis()->srem('workers', $id);
-        Resque::redis()->del('worker:' . $id);
-        Resque::redis()->del('worker:' . $id . ':started');
+        Resque::getBackend()->srem('workers', $id);
+        Resque::getBackend()->del('worker:' . $id);
+        Resque::getBackend()->del('worker:' . $id . ':started');
         Stat::clear('processed:' . $id);
         Stat::clear('failed:' . $id);
     }
 
     /**
-     * Tell Redis which job we're currently working on.
+     * Tell the backend which job we're currently working on.
      *
      * @param Job $job Job instance containing the job we're working on.
      */
@@ -510,11 +510,11 @@ class Worker
             'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
             'payload' => $job->payload
         ));
-        Resque::redis()->set('worker:' . $job->worker, $data);
+        Resque::getBackend()->set('worker:' . $job->worker, $data);
     }
 
     /**
-     * Notify Redis that we've finished working on a job, clearing the working
+     * Notify the backend that we've finished working on a job, clearing the working
      * state and incrementing the job stats.
      */
     public function doneWorking()
@@ -522,7 +522,7 @@ class Worker
         $this->currentJob = null;
         Stat::incr('processed');
         Stat::incr('processed:' . (string) $this);
-        Resque::redis()->del('worker:' . (string) $this);
+        Resque::getBackend()->del('worker:' . (string) $this);
     }
 
     /**
@@ -570,7 +570,7 @@ class Worker
      */
     public function job()
     {
-        $job = Resque::redis()->get('worker:' . (string) $this);
+        $job = Resque::getBackend()->get('worker:' . (string) $this);
         if (!$job) {
             return array();
         } else {

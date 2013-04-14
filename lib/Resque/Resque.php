@@ -2,6 +2,8 @@
 
 namespace Resque;
 
+use Resque\Backend\RedisBackend;
+
 /**
  * Base Resque class.
  *
@@ -11,64 +13,27 @@ namespace Resque;
  */
 class Resque
 {
-    /**
-     * @var Redis Instance that talks to redis.
-     */
-    public static $redis = null;
+    public static $backend = null;
 
-    /**
-     * @var mixed Host/port combination separated by a colon, or a nested
-     * array of servers with host/port pairs
-     */
-    protected static $redisServer = null;
+    protected static $backendConfig = null;
 
-    /**
-     * @var int ID of Redis database to select.
-     */
-    protected static $redisDatabase = 0;
-
-    /**
-     * Given a host/port combination separated by a colon, set it as
-     * the redis server that Resque will talk to.
-     *
-     * @param mixed $server Host/port combination separated by a colon, or
-     *                      a nested array of servers with host/port pairs.
-     * @param int $database
-     */
-    public static function setBackend($server, $database = 0)
+    public static function setBackendConfig(array $config)
     {
-        self::$redisServer   = $server;
-        self::$redisDatabase = $database;
-        self::$redis         = null;
+        self::$backendConfig = $config;
+    }
+
+    public static function setPrefix($prefix)
+    {
+        self::getBackend()->setPrefix($prefix);
+    }
+
+    public static function getBackend()
+    {
+        return self::$backend ?: self::$backend = new RedisBackend(self::$backendConfig ?: 'localhost:6379');
     }
 
     /**
-     * Return an instance of the Redis class instantiated for Resque.
-     *
-     * @return Redis Instance of Redis.
-     */
-    public static function redis()
-    {
-        if (self::$redis !== null) {
-            return self::$redis;
-        }
-
-        $server = self::$redisServer;
-        if (empty($server)) {
-            $server = 'localhost:6379';
-        }
-
-        self::$redis = new Redis($server, self::$redisDatabase);
-
-        return self::$redis;
-    }
-
-    /**
-     * fork() helper method for php-resque that handles issues PHP socket
-     * and phpredis have with passing around sockets between child/parent
-     * processes.
-     *
-     * Will close connection to Redis before forking.
+     * Will close connection to the backend before forking.
      *
      * @return int Return vars as per pcntl_fork()
      * @throws \RuntimeException
@@ -79,9 +44,8 @@ class Resque
             return -1;
         }
 
-        // Close the connection to Redis before forking.
-        // This is a workaround for issues phpredis has.
-        self::$redis = null;
+        // self::getBackend()->close();
+        self::$backend = null;
 
         $pid = pcntl_fork();
         if ($pid === -1) {
@@ -100,8 +64,8 @@ class Resque
      */
     public static function push($queue, $item)
     {
-        self::redis()->sadd('queues', $queue);
-        self::redis()->rpush('queue:' . $queue, json_encode($item));
+        self::getBackend()->sadd('queues', $queue);
+        self::getBackend()->rpush('queue:' . $queue, json_encode($item));
     }
 
     /**
@@ -113,7 +77,7 @@ class Resque
      */
     public static function pop($queue)
     {
-        $item = self::redis()->lpop('queue:' . $queue);
+        $item = self::getBackend()->lpop('queue:' . $queue);
         if (!$item) {
             return null;
         }
@@ -130,7 +94,7 @@ class Resque
      */
     public static function size($queue)
     {
-        return self::redis()->llen('queue:' . $queue);
+        return self::getBackend()->llen('queue:' . $queue);
     }
 
     /**
@@ -175,7 +139,7 @@ class Resque
      */
     public static function queues()
     {
-        $queues = self::redis()->smembers('queues');
+        $queues = self::getBackend()->smembers('queues');
         if (!is_array($queues)) {
             $queues = array();
         }

@@ -169,7 +169,7 @@ class JobTest extends TestCase
 
     public function testJobWithNamespace()
     {
-        Redis::prefix('php');
+        Resque::setPrefix('php');
         $queue = 'jobs';
         $payload = array('another_value');
         Resque::enqueue($queue, '\Test_Job_With_TearDown', $payload);
@@ -177,7 +177,7 @@ class JobTest extends TestCase
         $this->assertEquals(Resque::queues(), array('jobs'));
         $this->assertEquals(Resque::size($queue), 1);
 
-        Redis::prefix('resque');
+        Resque::setPrefix('resque');
         $this->assertEquals(Resque::size($queue), 0);
     }
 }

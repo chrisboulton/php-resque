@@ -1,18 +1,11 @@
 <?php
 
-namespace Resque;
+namespace Resque\Backend;
 
 use Credis_Client;
 use Credis_Cluster;
 
-/**
- * Wrap Credis to add namespace support and various helper methods.
- *
- * @package		Resque/Redis
- * @author		Chris Boulton <chris@bigcommerce.com>
- * @license		http://www.opensource.org/licenses/mit-license.php
- */
-class Redis
+class RedisBackend
 {
     /**
      * Redis namespace
@@ -20,12 +13,9 @@ class Redis
      */
     private static $defaultNamespace = 'resque:';
 
-    private $server;
-    private $database;
-
     /**
      * @var array List of all commands in Redis that supply a key as their
-     *	first argument. Used to prefix keys with the Resque namespace.
+     *  first argument. Used to prefix keys with the Resque namespace.
      */
     private $keyCommands = array(
         'exists',
@@ -71,25 +61,12 @@ class Redis
         'zremrangebyscore',
         'sort'
     );
-    // sinterstore
-    // sunion
-    // sunionstore
-    // sdiff
-    // sdiffstore
-    // sinter
-    // smove
-    // rename
-    // rpoplpush
-    // mget
-    // msetnx
-    // mset
-    // renamenx
 
     /**
      * Set Redis namespace (prefix) default: resque
      * @param string $namespace
      */
-    public static function prefix($namespace)
+    public static function setPrefix($namespace)
     {
         if (strpos($namespace, ':') === false) {
             $namespace .= ':';
@@ -97,12 +74,11 @@ class Redis
         self::$defaultNamespace = $namespace;
     }
 
-    public function __construct($server, $database = null)
+    public function __construct(array $config)
     {
-        $this->server = $server;
-        $this->database = $database;
+        $server = (! empty($config['server'])) ? $config['server'] : 'localhost:6379';
 
-        if (is_array($this->server)) {
+        if (is_array($server)) {
             $this->driver = new Credis_Cluster($server);
         } else {
             $port = null;
@@ -132,8 +108,8 @@ class Redis
             }
         }
 
-        if ($this->database !== null) {
-            $this->driver->select($database);
+        if (! empty($config['database'])) {
+            $this->driver->select($config['database']);
         }
     }
 
@@ -164,7 +140,7 @@ class Redis
 
     public static function removePrefix($string)
     {
-        $prefix=self::getPrefix();
+        $prefix = self::getPrefix();
 
         if (substr($string, 0, strlen($prefix)) == $prefix) {
             $string = substr($string, strlen($prefix), strlen($string) );
