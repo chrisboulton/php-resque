@@ -11,7 +11,7 @@ I am a kiss-ass), and written in Ruby. What you're seeing here is an
 almost direct port of the Resque worker and enqueue system to PHP.
 
 For more information on Resque, visit the official GitHub project:
- <http://github.com/defunkt/resque/>
+ <https://github.com/resque/resque>
 
 For further information, see the launch post on the GitHub blog:
  <http://github.com/blog/542-introducing-resque>
