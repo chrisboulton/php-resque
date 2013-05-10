@@ -29,6 +29,11 @@ class Resque_Job
 	private $instance;
 
 	/**
+	 * @var string location of autoloader
+	 */
+	public static $appInclude;
+
+	/**
 	 * Instantiate a new instance of a job.
 	 *
 	 * @param string $queue The queue that the job belongs to.
@@ -138,6 +143,9 @@ class Resque_Job
 		if (!is_null($this->instance)) {
 			return $this->instance;
 		}
+
+		// latest point to require appInclude
+		require_once self::$appInclude;
 
 		if(!class_exists($this->payload['class'])) {
 			throw new Resque_Exception(

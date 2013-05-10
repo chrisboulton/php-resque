@@ -53,6 +53,9 @@ class Resque_Worker
 	 */
 	private $child = null;
 
+	/** @var string  location of the autoloader used for Job creation */
+	private $workerAutoloader;
+
 	/**
 	 * Return all workers known to Resque as instantiated instances.
 	 * @return array
