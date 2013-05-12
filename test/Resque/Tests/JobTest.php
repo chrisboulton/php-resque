@@ -95,7 +95,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 
 		$newJob = Resque_Job::reserve('jobs');
 		$this->assertEquals($job->payload['class'], $newJob->payload['class']);
-		$this->assertEquals($job->payload['args'], $newJob->getArguments());
+		$this->assertEquals($job->getArguments(), $newJob->getArguments());
 	}
 
 
