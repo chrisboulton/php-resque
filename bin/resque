@@ -56,7 +56,7 @@ if($APP_INCLUDE) {
 		die('APP_INCLUDE ('.$APP_INCLUDE.") does not exist.\n");
 	}
 
-	require_once $APP_INCLUDE;
+	Resque_Job::$appInclude = $APP_INCLUDE;
 }
 
 $interval = 5;
