@@ -58,13 +58,12 @@ class Resque_Job
 			);
 		}
 		$id = md5(uniqid('', true));
-		if ( ! Resque::push($queue, array(
+		if (!Resque::push($queue, array(
 			'class'	=> $class,
 			'args'	=> array($args),
 			'id'	=> $id,
-		)))
-		{
-			return FALSE;
+		))) {
+			return false;
 		}
 
 		if($monitor) {

@@ -98,11 +98,11 @@ class Resque
 	public static function push($queue, $item)
 	{
 		self::redis()->sadd('queues', $queue);
-		if (self::redis()->rpush('queue:' . $queue, json_encode($item)) < 1)
-		{
-			return FALSE;
+		$length = self::redis()->rpush('queue:' . $queue, json_encode($item));
+		if ($length < 1) {
+			return false;
 		}
-		return TRUE;
+		return true;
 	}
 
 	/**
