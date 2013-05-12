@@ -226,7 +226,7 @@ class Resque_Job
 			$monitor = true;
 		}
 
-		return self::create($this->queue, $this->payload['class'], $this->payload['args'], $monitor);
+		return self::create($this->queue, $this->payload['class'], $this->getArguments(), $monitor);
 	}
 
 	/**
