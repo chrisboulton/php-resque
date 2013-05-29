@@ -125,7 +125,7 @@ class Resque
 	/**
 	 * Return the size (number of pending jobs) of the specified queue.
 	 *
-	 * @param $queue name of the queue to be checked for pending jobs
+	 * @param string $queue name of the queue to be checked for pending jobs
 	 *
 	 * @return int The size of the queue.
 	 */
