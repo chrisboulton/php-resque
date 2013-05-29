@@ -146,7 +146,17 @@ class Resque
             return;
         }
 
-        return json_decode($item[1], true);
+        /**
+         * Normally the Resque_Redis class returns queue names without the prefix
+         * But the blpop is a bit different. It returns the name as prefix:queue:name
+         * So we need to strip off the prefix:queue: part
+         */
+        $queue = substr($item[0], strlen(self::redis()->getPrefix() . 'queue:'));
+
+        return array(
+            'queue'   => $queue,
+            'payload' => json_decode($item[1], true)
+        );
     }
 
 	/**

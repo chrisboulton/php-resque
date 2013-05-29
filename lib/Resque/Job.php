@@ -100,12 +100,13 @@ class Resque_Job
      */
     public static function reserveBlocking(array $queues, $timeout = null)
     {
-        $payload = Resque::blpop($queues, $timeout);
-        if(!is_array($payload)) {
+        $item = Resque::blpop($queues, $timeout);
+
+        if(!is_array($item)) {
             return false;
         }
 
-        return new Resque_Job($payload->queue, $payload);
+        return new Resque_Job($item['queue'], $item['payload']);
     }
 
 	/**
