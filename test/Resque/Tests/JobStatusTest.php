@@ -8,6 +8,11 @@
  */
 class Resque_Tests_JobStatusTest extends Resque_Tests_TestCase
 {
+    /**
+     * @var \Resque_Worker
+     */
+    protected $worker;
+
 	public function setUp()
 	{
 		parent::setUp();
@@ -36,6 +41,7 @@ class Resque_Tests_JobStatusTest extends Resque_Tests_TestCase
 		$status = new Resque_Job_Status($token);
 		$this->assertEquals(Resque_Job_Status::STATUS_WAITING, $status->get());
 	}
+
 	public function testRunningJobReturnsRunningStatus()
 	{
 		$token = Resque::enqueue('jobs', 'Failing_Job', null, true);
