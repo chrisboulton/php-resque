@@ -6,4 +6,3 @@ class PHP_Error_Job
 		callToUndefinedFunction();
 	}
 }
-?>

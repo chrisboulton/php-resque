@@ -10,6 +10,8 @@ class Resque
 {
 	const VERSION = '1.2';
 
+    const DEFAULT_INTERVAL = 5;
+
 	/**
 	 * @var Resque_Redis Instance of Resque_Redis that talks to redis.
 	 */
@@ -60,7 +62,7 @@ class Resque
 		self::$redis = new Resque_Redis($server, self::$redisDatabase);
 		return self::$redis;
 	}
-
+	
 	/**
 	 * fork() helper method for php-resque that handles issues PHP socket
 	 * and phpredis have with passing around sockets between child/parent
@@ -114,13 +116,48 @@ class Resque
 	 */
 	public static function pop($queue)
 	{
-		$item = self::redis()->lpop('queue:' . $queue);
+        $item = self::redis()->lpop('queue:' . $queue);
+
 		if(!$item) {
 			return;
 		}
 
 		return json_decode($item, true);
 	}
+
+    /**
+     * Pop an item off the end of the specified queues, using blocking list pop,
+     * decode it and return it.
+     *
+     * @param array         $queues
+     * @param int           $timeout
+     * @return null|array   Decoded item from the queue.
+     */
+    public static function blpop(array $queues, $timeout)
+    {
+        $list = array();
+        foreach($queues AS $queue) {
+            $list[] = 'queue:' . $queue;
+        }
+
+        $item = self::redis()->blpop($list, (int)$timeout);
+
+        if(!$item) {
+            return;
+        }
+
+        /**
+         * Normally the Resque_Redis class returns queue names without the prefix
+         * But the blpop is a bit different. It returns the name as prefix:queue:name
+         * So we need to strip off the prefix:queue: part
+         */
+        $queue = substr($item[0], strlen(self::redis()->getPrefix() . 'queue:'));
+
+        return array(
+            'queue'   => $queue,
+            'payload' => json_decode($item[1], true)
+        );
+    }
 
 	/**
 	 * Return the size (number of pending jobs) of the specified queue.

@@ -247,4 +247,27 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 		$this->assertEquals(1, Resque_Stat::get('failed'));
 	}
+
+    public function testBlockingListPop()
+    {
+        $worker = new Resque_Worker('jobs');
+        $worker->registerWorker();
+
+        Resque::enqueue('jobs', 'Test_Job_1');
+        Resque::enqueue('jobs', 'Test_Job_2');
+
+        $i = 1;
+        while($job = $worker->reserve(true, 1))
+        {
+            $this->assertEquals('Test_Job_' . $i, $job->payload['class']);
+
+            if($i == 2) {
+                break;
+            }
+
+            $i++;
+        }
+
+        $this->assertEquals(2, $i);
+    }
 }
