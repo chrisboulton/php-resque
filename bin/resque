@@ -50,8 +50,6 @@ else if(!empty($VVERBOSE)) {
     $logLevel = true;
 }
 
-$logger = new Resque_Log($logLevel);
-
 $APP_INCLUDE = getenv('APP_INCLUDE');
 if($APP_INCLUDE) {
     if(!file_exists($APP_INCLUDE)) {
@@ -59,6 +57,12 @@ if($APP_INCLUDE) {
     }
 
     require_once $APP_INCLUDE;
+}
+
+// See if the APP_INCLUDE containes a logger object,
+// If none exists, fallback to internal logger
+if (!isset($logger) && !is_object($logger)) {
+    $logger = new Resque_Log($logLevel);
 }
 
 $BLOCKING = getenv('BLOCKING') !== FALSE;
@@ -92,7 +96,7 @@ if($count > 1) {
         else if(!$pid) {
             $queues = explode(',', $QUEUE);
             $worker = new Resque_Worker($queues);
-            $worker->setLogger(new Resque_Log($logLevel));
+            $worker->setLogger($logger);
             $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
             $worker->work($interval, $BLOCKING);
             break;
@@ -103,7 +107,7 @@ if($count > 1) {
 else {
     $queues = explode(',', $QUEUE);
     $worker = new Resque_Worker($queues);
-    $worker->setLogger(new Resque_Log($logLevel));
+    $worker->setLogger($logger);
 
     $PIDFILE = getenv('PIDFILE');
     if ($PIDFILE) {
