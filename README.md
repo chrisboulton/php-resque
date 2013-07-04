@@ -161,7 +161,7 @@ Workers work in the exact same way as the Ruby workers. For complete
 documentation on workers, see the original documentation.
 
 A basic "up-and-running" `bin/resque` file is included that sets up a
-running worker environment is included. (`vendor/bin/resque` when installed
+running worker environment. (`vendor/bin/resque` when installed
 via Composer)
 
 The exception to the similarities with the Ruby version of resque is
