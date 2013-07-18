@@ -150,22 +150,26 @@ To track the status of a job, pass `true` as the fourth argument to
 `Resque::enqueue`. A token used for tracking the job status will be
 returned:
 
+```php
 	$token = Resque::enqueue('default', 'My_Job', $args, true);
 	echo $token;
+```
 
 To fetch the status of a job:
 
+```php
 	$status = new Resque_Job_Status($token);
 	echo $status->get(); // Outputs the status
+```
 
 Job statuses are defined as constants in the `Resque_Job_Status` class.
 Valid statuses include:
 
-    * `Resque_Job_Status::STATUS_WAITING` - Job is still queued
-    * `Resque_Job_Status::STATUS_RUNNING` - Job is currently running
-    * `Resque_Job_Status::STATUS_FAILED` - Job has failed
-    * `Resque_Job_Status::STATUS_COMPLETE` - Job is complete
-    * `false` - Failed to fetch the status - is the token valid?
+* `Resque_Job_Status::STATUS_WAITING` - Job is still queued
+* `Resque_Job_Status::STATUS_RUNNING` - Job is currently running
+* `Resque_Job_Status::STATUS_FAILED` - Job has failed
+* `Resque_Job_Status::STATUS_COMPLETE` - Job is complete
+* `false` - Failed to fetch the status - is the token valid?
 
 Statuses are available for up to 24 hours after a job has completed
 or failed, and are then automatically expired. A status can also
@@ -274,11 +278,11 @@ the job.
 Signals also work on supported platforms exactly as in the Ruby
 version of Resque:
 
-    * `QUIT` - Wait for child to finish processing then exit
-    * `TERM` / `INT` - Immediately kill child then exit
-    * `USR1` - Immediately kill child but don't exit
-    * `USR2` - Pause worker, no new jobs will be processed
-    * `CONT` - Resume worker.
+* `QUIT` - Wait for child to finish processing then exit
+* `TERM` / `INT` - Immediately kill child then exit
+* `USR1` - Immediately kill child but don't exit
+* `USR2` - Pause worker, no new jobs will be processed
+* `CONT` - Resume worker.
 
 ### Process Titles/Statuses ###
 
@@ -309,10 +313,10 @@ raised:
 
 `[callback]` may be anything in PHP that is callable by `call_user_func_array`:
 
-    * A string with the name of a function
-    * An array containing an object and method to call
-    * An array containing an object and a static method to call
-    * A closure (PHP 5.3)
+* A string with the name of a function
+* An array containing an object and method to call
+* An array containing an object and a static method to call
+* A closure (PHP 5.3)
 
 Events may pass arguments (documented below), so your callback should accept
 these arguments.
@@ -389,24 +393,24 @@ Called after a job has been queued using the `Resque::enqueue` method. Arguments
 
 ## Contributors ##
 
-    * chrisboulton 
-    * thedotedge
-    * hobodave
-    * scraton
-    * KevBurnsJr
-    * jmathai
-    * dceballos
-    * patrickbajao
-    * andrewjshults
-    * warezthebeef
-    * d11wtq
-    * hlegius
-    * salimane
-    * humancopy
-    * pedroarnal
-    * chaitanyakuber
-    * maetl
-    * Matt Heath
-    * jjfrey
-    * scragg0x
-    * ruudk
+* chrisboulton 
+* thedotedge
+* hobodave
+* scraton
+* KevBurnsJr
+* jmathai
+* dceballos
+* patrickbajao
+* andrewjshults
+* warezthebeef
+* d11wtq
+* hlegius
+* salimane
+* humancopy
+* pedroarnal
+* chaitanyakuber
+* maetl
+* Matt Heath
+* jjfrey
+* scragg0x
+* ruudk
