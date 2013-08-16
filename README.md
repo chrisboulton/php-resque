@@ -51,20 +51,24 @@ If you're not familiar with Composer, please see <http://getcomposer.org/>.
 
 1. Add php-resque to your application's composer.json.
 
-        {
-            ...
-            "require": {
-                "chrisboulton/php-resque": "1.2.x"
-            },
-            ...
-        }
+```json
+{
+    //...
+    "require": {
+        "chrisboulton/php-resque": "1.2.x"
+    },
+    // ...
+}
+```
 
 2. Run `composer install`.
 
 3. If you haven't already, add the Composer autoload to your project's
    initialization file. (example)
 
-        require 'vendor/autoload.php';
+```sh
+require 'vendor/autoload.php';
+```
 
 ## Jobs ##
 
@@ -72,26 +76,30 @@ If you're not familiar with Composer, please see <http://getcomposer.org/>.
 
 Jobs are queued as follows:
 
-	// Required if redis is located elsewhere
-	Resque::setBackend('localhost:6379');
+```php
+// Required if redis is located elsewhere
+Resque::setBackend('localhost:6379');
 
-	$args = array(
-		'name' => 'Chris'
-	);
-	Resque::enqueue('default', 'My_Job', $args);
+$args = array(
+        'name' => 'Chris'
+        );
+Resque::enqueue('default', 'My_Job', $args);
+```
 
 ### Defining Jobs ###
 
 Each job should be in it's own class, and include a `perform` method.
 
-	class My_Job
-	{
-		public function perform()
-		{
-			// Work work work
-			echo $this->args['name'];
-		}
-	}
+```php
+class My_Job
+{
+    public function perform()
+    {
+        // Work work work
+        echo $this->args['name'];
+    }
+}
+```
 
 When the job is run, the class will be instantiated and any arguments
 will be set as an array on the instantiated object, and are accessible
@@ -105,23 +113,26 @@ Jobs can also have `setUp` and `tearDown` methods. If a `setUp` method
 is defined, it will be called before the `perform` method is run.
 The `tearDown` method if defined, will be called after the job finishes.
 
-	class My_Job
-	{
-		public function setUp()
-		{
-			// ... Set up environment for this job
-		}
 
-		public function perform()
-		{
-			// .. Run job
-		}
+```php
+class My_Job
+{
+    public function setUp()
+    {
+        // ... Set up environment for this job
+    }
 
-		public function tearDown()
-		{
-			// ... Remove environment for this job
-		}
-	}
+    public function perform()
+    {
+        // .. Run job
+    }
+
+    public function tearDown()
+    {
+        // ... Remove environment for this job
+    }
+}
+```
 
 ### Tracking Job Statuses ###
 
@@ -133,13 +144,17 @@ To track the status of a job, pass `true` as the fourth argument to
 `Resque::enqueue`. A token used for tracking the job status will be
 returned:
 
-	$token = Resque::enqueue('default', 'My_Job', $args, true);
-	echo $token;
+```php
+$token = Resque::enqueue('default', 'My_Job', $args, true);
+echo $token;
+```
 
 To fetch the status of a job:
 
-	$status = new Resque_Job_Status($token);
-	echo $status->get(); // Outputs the status
+```php
+$status = new Resque_Job_Status($token);
+echo $status->get(); // Outputs the status
+```
 
 Job statuses are defined as constants in the `Resque_Job_Status` class.
 Valid statuses include:
@@ -170,14 +185,16 @@ not having a single environment such as with Ruby, the PHP port makes
 *no* assumptions about your setup.
 
 To start a worker, it's very similar to the Ruby version:
-
-    $ QUEUE=file_serve php bin/resque
-
+```sh
+$ QUEUE=file_serve php bin/resque
+```
 It's your responsibility to tell the worker which file to include to get
 your application underway. You do so by setting the `APP_INCLUDE` environment
 variable:
 
-    $ QUEUE=file_serve APP_INCLUDE=../application/init.php php bin/resque
+```sh
+$ QUEUE=file_serve APP_INCLUDE=../application/init.php php bin/resque
+```
 
 *Pro tip: Using Composer? More than likely, you don't need to worry about
 `APP_INCLUDE`, because hopefully Composer is responsible for autoloading
@@ -192,8 +209,10 @@ The port supports the same environment variables for logging to STDOUT.
 Setting `VERBOSE` will print basic debugging information and `VVERBOSE`
 will print detailed information.
 
-    $ VERBOSE QUEUE=file_serve bin/resque
-    $ VVERBOSE QUEUE=file_serve bin/resque
+```sh
+$ VERBOSE QUEUE=file_serve bin/resque
+$ VVERBOSE QUEUE=file_serve bin/resque
+```
 
 ### Priorities and Queue Lists ###
 
@@ -204,7 +223,9 @@ checked in.
 
 As per the original example:
 
-	$ QUEUE=file_serve,warm_cache bin/resque
+```sh
+$ QUEUE=file_serve,warm_cache bin/resque
+```
 
 The `file_serve` queue will always be checked for new jobs on each
 iteration before the `warm_cache` queue is checked.
@@ -214,21 +235,27 @@ iteration before the `warm_cache` queue is checked.
 All queues are supported in the same manner and processed in alphabetical
 order:
 
-    $ QUEUE=* bin/resque
+```sh
+$ QUEUE=* bin/resque
+```
 
 ### Running Multiple Workers ###
 
 Multiple workers ca be launched and automatically worked by supplying
 the `COUNT` environment variable:
 
-	$ COUNT=5 bin/resque
+```sh
+$ COUNT=5 bin/resque
+```
 
 ### Custom prefix ###
 
 When you have multiple apps using the same Redis database it is better to
 use a custom prefix to separate the Resque data:
 
-	$ PREFIX=my-app-name bin/resque
+```sh
+$ PREFIX=my-app-name bin/resque
+```
 
 ### Forking ###
 
@@ -274,7 +301,9 @@ You listen in on events (as listed below) by registering with `Resque_Event`
 and supplying a callback that you would like triggered when the event is
 raised:
 
-	Resque_Event::listen('eventName', [callback]);
+```sh
+Resque_Event::listen('eventName', [callback]);
+```
 
 `[callback]` may be anything in PHP that is callable by `call_user_func_array`:
 
@@ -358,7 +387,7 @@ Called after a job has been queued using the `Resque::enqueue` method. Arguments
 
 ## Contributors ##
 
-* chrisboulton
+* chrisboulton 
 * thedotedge
 * hobodave
 * scraton
