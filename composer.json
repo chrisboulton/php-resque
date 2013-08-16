@@ -20,7 +20,8 @@
 	"require": {
 		"php": ">=5.3.0",
 		"ext-pcntl": "*",
-		"colinmollenhour/credis": "1.2.*"
+		"colinmollenhour/credis": "1.2.*",
+		"psr/log": "1.0.0"
 	},
 	"suggest": {
 		"ext-proctitle": "Allows php-resque to rename the title of UNIX processes to show the status of a worker.",

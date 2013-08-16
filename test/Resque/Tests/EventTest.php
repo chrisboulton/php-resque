@@ -16,6 +16,7 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 		
 		// Register a worker to test with
 		$this->worker = new Resque_Worker('jobs');
+		$this->worker->setLogger(new Resque_Log());
 		$this->worker->registerWorker();
 	}
 
