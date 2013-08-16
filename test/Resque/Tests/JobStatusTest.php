@@ -19,6 +19,7 @@ class Resque_Tests_JobStatusTest extends Resque_Tests_TestCase
 
 		// Register a worker to test with
 		$this->worker = new Resque_Worker('jobs');
+		$this->worker->setLogger(new Resque_Log());
 	}
 
 	public function testJobStatusCanBeTracked()
