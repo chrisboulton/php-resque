@@ -9,7 +9,6 @@ $files = array(
     __DIR__ . '/../vendor/autoload.php',
 );
 
-$found = false;
 foreach ($files as $file) {
     if (file_exists($file)) {
         require_once $file;
@@ -18,11 +17,56 @@ foreach ($files as $file) {
 }
 
 if (!class_exists('Composer\Autoload\ClassLoader', false)) {
-    die(
-        'You need to set up the project dependencies using the following commands:' . PHP_EOL .
-            'curl -s http://getcomposer.org/installer | php' . PHP_EOL .
-            'php composer.phar install' . PHP_EOL
-    );
+	$RESQUE_PATH = getenv('RESQUE_PATH');
+	if($RESQUE_PATH) {
+		if(!file_exists("${RESQUE_PATH}/Resque.php") && !file_exists("${RESQUE_PATH}/lib/Resque.php")) {
+			die('RESQUE_PATH ('.$RESQUE_PATH.") is incorrect - it should point to the directory containing Resque.php.\n");
+		}
+		elseif(file_exists("${RESQUE_PATH}/lib/Resque.php")) {
+			$RESQUE_PATH = "${RESQUE_PATH}/lib";
+		}
+	}
+	else
+	{
+		$dirs = array(
+			__DIR__ . '/../lib',
+			__DIR__ . '/lib',
+			__DIR__ . '/php-resque/lib',
+			__DIR__ . '/../php-resque/lib',
+			__DIR__ . '/../../chrisboulton/php-resque/lib',
+			__DIR__ . '/vendor/chrisboulton/php-resque/lib',
+		);
+		
+		foreach ($dirs as $dir) {
+			if (file_exists("${dir}/Resque.php")) {
+				$RESQUE_PATH = $dir;
+				break;
+			}
+		}
+		
+		if(!$RESQUE_PATH) {
+			die(
+				'You need to set up the project dependencies using the following commands:' . PHP_EOL .
+				'	curl -s http://getcomposer.org/installer | php' . PHP_EOL .
+				'	php composer.phar install' . PHP_EOL .
+				'or by defining RESQUE_PATH as an environment variable pointing to the directory where PHP-Resque is installed/cloned.' . PHP_EOL
+			);
+		}
+	}
+	
+	// Preserve existing autoloader, if any
+	if ( ( spl_autoload_functions() === FALSE) && function_exists('__autoload') )
+	{
+		spl_autoload_register('__autoload');
+	}
+	// Register fallback autoloader, which isn't as elegant as Composer's, but removes the dependency thereon
+	spl_autoload_register(function($class) {
+		$path = $GLOBALS["RESQUE_PATH"] . DIRECTORY_SEPARATOR . str_replace(array('_', '\\', '/'), DIRECTORY_SEPARATOR, $class) . ".php";
+		
+		if(file_exists($path)) {
+			require_once($path);
+		}
+	});
 }
 
 $QUEUE = getenv('QUEUE');
@@ -61,7 +105,7 @@ if($APP_INCLUDE) {
 
 // See if the APP_INCLUDE containes a logger object,
 // If none exists, fallback to internal logger
-if (!isset($logger) && !is_object($logger)) {
+if (!isset($logger) && !is_object(@$logger)) {
     $logger = new Resque_Log($logLevel);
 }
 
@@ -118,4 +162,5 @@ else {
     $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
     $worker->work($interval, $BLOCKING);
 }
-?>
+
+/* End Of File bin/resque */
