@@ -17,6 +17,15 @@ foreach ($files as $file) {
 }
 
 if (!class_exists('Composer\Autoload\ClassLoader', false)) {
+	$search_dirs = array(
+		__DIR__,
+		__DIR__ . '/lib',
+		__DIR__ . '/php-resque',
+		__DIR__ . '/php-resque/lib',
+		__DIR__ . '/..',
+		__DIR__ . '/../lib',
+	);
+	
 	$RESQUE_PATH = getenv('RESQUE_PATH');
 	if($RESQUE_PATH) {
 		if(!file_exists("${RESQUE_PATH}/Resque.php") && !file_exists("${RESQUE_PATH}/lib/Resque.php")) {
@@ -28,30 +37,42 @@ if (!class_exists('Composer\Autoload\ClassLoader', false)) {
 	}
 	else
 	{
-		$dirs = array(
-			__DIR__ . '/../lib',
-			__DIR__ . '/lib',
-			__DIR__ . '/php-resque/lib',
-			__DIR__ . '/../php-resque/lib',
-			__DIR__ . '/../../chrisboulton/php-resque/lib',
-			__DIR__ . '/vendor/chrisboulton/php-resque/lib',
-		);
-		
-		foreach ($dirs as $dir) {
+		foreach ($search_dirs as $dir) {
 			if (file_exists("${dir}/Resque.php")) {
 				$RESQUE_PATH = $dir;
 				break;
 			}
 		}
-		
-		if(!$RESQUE_PATH) {
-			die(
-				'You need to set up the project dependencies using the following commands:' . PHP_EOL .
-				'	curl -s http://getcomposer.org/installer | php' . PHP_EOL .
-				'	php composer.phar install' . PHP_EOL .
-				'or by defining RESQUE_PATH as an environment variable pointing to the directory where PHP-Resque is installed/cloned.' . PHP_EOL
-			);
+	}
+	
+	$DEPEND_PATH = getenv('DEPEND_PATH');
+	if($DEPEND_PATH) {
+		if(!file_exists("${DEPEND_PATH}/Credis/Client.php") && !file_exists("${DEPEND_PATH}/lib/Credis/Client.php")) {
+			die('DEPEND_PATH ('.$DEPEND_PATH.") is incorrect - it should point to the directory containing Credis/Client.php.\n");
 		}
+		elseif(file_exists("${DEPEND_PATH}/lib/Credis/Client.php")) {
+			$DEPEND_PATH = "${DEPEND_PATH}/lib";
+		}
+	}
+	else
+	{
+		foreach ($search_dirs as $dir) {
+			if (file_exists("${dir}/Credis/Client.php")) {
+				$DEPEND_PATH = $dir;
+				break;
+			}
+		}
+	}
+	
+	if(!$RESQUE_PATH || !$DEPEND_PATH) {
+		die(
+			'You need to set up the project dependencies using the following commands:' . PHP_EOL .
+			'	curl -s http://getcomposer.org/installer | php' . PHP_EOL .
+			'	php composer.phar install' . PHP_EOL .
+			'or by defining RESQUE_PATH and DEPEND_PATH as environment variables pointing to' . PHP_EOL .
+			'the directory where PHP-Resque is installed/cloned, and the directory where its' . PHP_EOL .
+			'dependencies reside, respectively.' . PHP_EOL
+		);
 	}
 	
 	// Preserve existing autoloader, if any
@@ -65,6 +86,14 @@ if (!class_exists('Composer\Autoload\ClassLoader', false)) {
 		
 		if(file_exists($path)) {
 			require_once($path);
+			return;
+		}
+		
+		$path = $GLOBALS["DEPEND_PATH"] . DIRECTORY_SEPARATOR . str_replace(array('_', '\\', '/'), DIRECTORY_SEPARATOR, $class) . ".php";
+		
+		if(file_exists($path)) {
+			require_once($path);
+			return;
 		}
 	});
 }
