@@ -118,4 +118,3 @@ else {
     $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
     $worker->work($interval, $BLOCKING);
 }
-?>
