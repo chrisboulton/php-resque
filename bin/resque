@@ -61,7 +61,7 @@ if($APP_INCLUDE) {
 
 // See if the APP_INCLUDE contains a logger object,
 // If none exists, fallback to internal logger
-if (!isset($logger) && !is_object($logger)) {
+if (!isset($logger) || !is_object($logger)) {
     $logger = new Resque_Log($logLevel);
 }
 
