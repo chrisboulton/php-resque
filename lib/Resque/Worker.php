@@ -324,7 +324,10 @@ class Resque_Worker
 	 */
 	private function updateProcLine($status)
 	{
-		if(function_exists('setproctitle')) {
+		if(function_exists('cli_set_process_title')) {
+			cli_set_process_title('resque-' . Resque::VERSION . ': ' . $status);
+		}
+		else if(function_exists('setproctitle')) {
 			setproctitle('resque-' . Resque::VERSION . ': ' . $status);
 		}
 	}
