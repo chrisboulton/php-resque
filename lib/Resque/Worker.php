@@ -261,7 +261,11 @@ class Resque_Worker
 			if ($job instanceof Resque_Job) {
 				$this->logger->log(Psr\Log\LogLevel::INFO, 'Processing ' . $job->queue . ' since ' . strftime('%F %T'));
 				$this->performJob($job);
-				$this->doneWorking();
+
+				// The done status is updated in
+				if ($jobsPerformed > 0) {
+					$this->doneWorking();
+				}
 			} else {
 				sleep(2);
 			}
@@ -272,7 +276,7 @@ class Resque_Worker
 			$jobsPerformed++;
 		}
 
-		$this->logger->log(Psr\Log\LogLevel::INFO, "Ending PerformJobsPerFork... ");
+		$this->logger->log(Psr\Log\LogLevel::INFO, "Ending PerformJobsPerFork, processed $jobsPerformed job(s).");
 		Resque_Event::trigger('afterPerformJobsPerFork');
 	}
 
