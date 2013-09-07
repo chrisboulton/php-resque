@@ -354,7 +354,6 @@ class Resque_Worker
 		pcntl_signal(SIGUSR1, array($this, 'killChild'));
 		pcntl_signal(SIGUSR2, array($this, 'pauseProcessing'));
 		pcntl_signal(SIGCONT, array($this, 'unPauseProcessing'));
-		pcntl_signal(SIGPIPE, array($this, 'reestablishRedisConnection'));
 		$this->logger->log(Psr\Log\LogLevel::DEBUG, 'Registered signals');
 	}
 
@@ -375,16 +374,6 @@ class Resque_Worker
 	{
 		$this->logger->log(Psr\Log\LogLevel::NOTICE, 'CONT received; resuming job processing');
 		$this->paused = false;
-	}
-
-	/**
-	 * Signal handler for SIGPIPE, in the event the redis connection has gone away.
-	 * Attempts to reconnect to redis, or raises an Exception.
-	 */
-	public function reestablishRedisConnection()
-	{
-		$this->logger->log(Psr\Log\LogLevel::NOTICE, 'SIGPIPE received; attempting to reconnect');
-		Resque::redis()->establishConnection();
 	}
 
 	/**
