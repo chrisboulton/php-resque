@@ -50,6 +50,14 @@ class Resque_Worker
 	private $child = null;
 
 	/**
+	 * number of jobs to run per fork
+	 *
+	 * @var int
+	 * @access public
+	 */
+	public static $jobsPerFork = 1;
+
+	/**
 	 * Return all workers known to Resque as instantiated instances.
 	 * @return array
 	 */
@@ -118,8 +126,10 @@ class Resque_Worker
 	 *
 	 * @param string|array $queues String with a single queue name, array with multiple.
 	 */
-	public function __construct($queues)
+	public function __construct($queues, $jobsPerFork = null)
 	{
+		self::$jobsPerFork = $jobsPerFork ? max(1, $jobsPerFork) : 1;
+
 		if(!is_array($queues)) {
 			$queues = array($queues);
 		}
@@ -236,18 +246,68 @@ class Resque_Worker
 	 */
 	public function perform(Resque_Job $job)
 	{
+		$this->logger->log(Psr\Log\LogLevel::INFO, "Starting PerformJobsPerFork... ");
+		Resque_Event::trigger('beforePerformJobsPerFork');
+
+		$jobsPerformed = 0;
+		while ($jobsPerformed < self::$jobsPerFork) {
+
+			// The first job need not set the status to "working"
+			if ($jobsPerformed > 0) {
+				$this->logger->log(Psr\Log\LogLevel::INFO, 'got ' . $job);
+				$this->workingOn($job);
+			}
+
+			if ($job instanceof Resque_Job) {
+				$this->logger->log(Psr\Log\LogLevel::INFO, 'Processing ' . $job->queue . ' since ' . strftime('%F %T'));
+				$this->performJob($job);
+
+				// The done status is updated in
+				if ($jobsPerformed > 0) {
+					$this->doneWorking();
+				}
+			} else {
+				sleep(2);
+			}
+
+			// Claiming a new job
+			$job = $this->reserve();
+
+			$jobsPerformed++;
+		}
+
+		$this->logger->log(Psr\Log\LogLevel::INFO, "Ending PerformJobsPerFork, processed $jobsPerformed job(s).");
+		Resque_Event::trigger('afterPerformJobsPerFork');
+	}
+
+
+	/**
+	 * @param Resque_Job $job
+	 */
+	private function performJob(Resque_Job $job)
+	{
+		$performed = false;
+
 		try {
 			Resque_Event::trigger('afterFork', $job);
 			$job->perform();
-		}
-		catch(Exception $e) {
-			$this->logger->log(Psr\Log\LogLevel::CRITICAL, '{job} has failed {stack}', array('job' => $job, 'stack' => $e->getMessage()));
+			$performed = true;
+		} catch(Exception $e) {
 			$job->fail($e);
-			return;
+			$this->logger->log(
+				Psr\Log\LogLevel::CRITICAL,
+				'{job} has failed {stack}',
+				array(
+					 'job' => $job,
+					 'stack' => $e->getMessage()
+				)
+			);
 		}
 
-		$job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
-		$this->logger->log(Psr\Log\LogLevel::NOTICE, '{job} has finished', array('job' => $job));
+		if ($performed) {
+			$job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
+			$this->logger->log(Psr\Log\LogLevel::NOTICE, '{job} has finished', array('job' => $job));
+		}
 	}
 
 	/**

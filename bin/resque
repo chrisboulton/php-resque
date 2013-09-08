@@ -30,6 +30,8 @@ if(empty($QUEUE)) {
     die("Set QUEUE env var containing the list of queues to work.\n");
 }
 
+$jobsPerFork = getenv('JOBS_PER_FORK') ? max(1, (int) getenv('JOBS_PER_FORK')) : 1;
+
 $REDIS_BACKEND = getenv('REDIS_BACKEND');
 $REDIS_BACKEND_DB = getenv('REDIS_BACKEND_DB');
 if(!empty($REDIS_BACKEND)) {
@@ -59,7 +61,7 @@ if($APP_INCLUDE) {
     require_once $APP_INCLUDE;
 }
 
-// See if the APP_INCLUDE containes a logger object,
+// See if the APP_INCLUDE contains a logger object,
 // If none exists, fallback to internal logger
 if (!isset($logger) || !is_object($logger)) {
     $logger = new Resque_Log($logLevel);
@@ -95,7 +97,7 @@ if($count > 1) {
         // Child, start the worker
         else if(!$pid) {
             $queues = explode(',', $QUEUE);
-            $worker = new Resque_Worker($queues);
+            $worker = new Resque_Worker($queues, $jobsPerFork);
             $worker->setLogger($logger);
             $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
             $worker->work($interval, $BLOCKING);
@@ -106,7 +108,7 @@ if($count > 1) {
 // Start a single worker
 else {
     $queues = explode(',', $QUEUE);
-    $worker = new Resque_Worker($queues);
+    $worker = new Resque_Worker($queues, $jobsPerFork);
     $worker->setLogger($logger);
 
     $PIDFILE = getenv('PIDFILE');
@@ -118,4 +120,3 @@ else {
     $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
     $worker->work($interval, $BLOCKING);
 }
-?>

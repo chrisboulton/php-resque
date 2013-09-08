@@ -248,6 +248,18 @@ the `COUNT` environment variable:
 $ COUNT=5 bin/resque
 ```
 
+### Running Multiple Jobs Per Fork ###
+
+By default each job is individually forked. This means that each job is isolated and no objects or state can be shared directly between jobs. In terms of performance and use of resources, this is a bad thing. However it is more safe, especially with poorly designed jobs.
+
+Forking is an expensive process and each job must fully bootstrap all libraries you want to use. By having more than one job per fork, you can gain a tremendous boost by lowering the fork overhead per job. You can also share objects between jobs, reducing the overhead of bootstrapping.
+
+Multiple jobs per fork, can be configured using the `JOBS_PER_FORK` environment variable. This defaults to 1, which basically means the original "safe" behaviour. Do note that if you don't design your jobs well, you can get strange bugs when you enable this feature. `JOBS_PER_FORK` requires a value of 1 and larger, the higher the value, the more jobs are run per fork. This setting does not care about job types. Jobs of every type are simply forked together.
+
+```sh
+$ JOBS_PER_FORK=5 bin/resque
+```
+
 ### Custom prefix ###
 
 When you have multiple apps using the same Redis database it is better to
