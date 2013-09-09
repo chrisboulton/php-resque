@@ -33,13 +33,19 @@ class Resque_Job_Status
 	);
 
 	/**
+	 * @var string prefix for the key 
+	 */
+	private $prefix = "";
+
+	/**
 	 * Setup a new instance of the job monitor class for the supplied job ID.
 	 *
 	 * @param string $id The ID of the job to manage the status for.
 	 */
-	public function __construct($id)
+	public function __construct($id, $prefix = "")
 	{
 		$this->id = $id;
+        $this->prefix = $prefix;
 	}
 
 	/**
@@ -48,14 +54,14 @@ class Resque_Job_Status
 	 *
 	 * @param string $id The ID of the job to monitor the status of.
 	 */
-	public static function create($id)
+	public static function create($id, $prefix = "")
 	{
 		$statusPacket = array(
 			'status' => self::STATUS_WAITING,
 			'updated' => time(),
 			'started' => time(),
 		);
-		Resque::redis()->set('job:' . $id . ':status', json_encode($statusPacket));
+		Resque::redis()->set($prefix . ':job:' . $id . ':status', json_encode($statusPacket));
 	}
 
 	/**
@@ -84,7 +90,7 @@ class Resque_Job_Status
 	 *
 	 * @param int The status of the job (see constants in Resque_Job_Status)
 	 */
-	public function update($status)
+	public function update($status, $result = "")
 	{
 		if(!$this->isTracking()) {
 			return;
@@ -93,6 +99,7 @@ class Resque_Job_Status
 		$statusPacket = array(
 			'status' => $status,
 			'updated' => time(),
+			'result' => $result
 		);
 		Resque::redis()->set((string)$this, json_encode($statusPacket));
 
@@ -119,8 +126,22 @@ class Resque_Job_Status
 			return false;
 		}
 
-		return $statusPacket['status'];
+		return $statusPacket;
 	}
+    
+    /**
+     * Delete the job monitoring from the queue
+     * 
+     * @return boolean/int
+     */
+    public function del()
+    {
+        if(!$this->isTracking()) {
+			return false;
+		}
+
+		return Resque::redis()->del((string)$this);
+    }
 
 	/**
 	 * Stop tracking the status of a job.
@@ -137,7 +158,7 @@ class Resque_Job_Status
 	 */
 	public function __toString()
 	{
-		return 'job:' . $this->id . ':status';
+		return $this->prefix . ':job:' . $this->id . ':status';
 	}
 }
 ?>
