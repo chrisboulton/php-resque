@@ -84,7 +84,7 @@ class Resque_Job_Status
 	 *
 	 * @param int The status of the job (see constants in Resque_Job_Status)
 	 */
-	public function update($status)
+	public function update($status, $result = "")
 	{
 		if(!$this->isTracking()) {
 			return;
@@ -93,6 +93,7 @@ class Resque_Job_Status
 		$statusPacket = array(
 			'status' => $status,
 			'updated' => time(),
+			'result' => $result
 		);
 		Resque::redis()->set((string)$this, json_encode($statusPacket));
 
@@ -122,6 +123,40 @@ class Resque_Job_Status
 		return $statusPacket['status'];
 	}
 
+	/**
+	 * Fetch the result of the job being monitored.
+	 *
+	 * @return mixed False if the job is not being monitored, otherwise the result as
+	 * 	as mixed
+	 */
+	public function getResult()
+	{
+		if(!$this->isTracking()) {
+			return false;
+		}
+
+		$statusPacket = json_decode(Resque::redis()->get((string)$this), true);
+		if(!$statusPacket) {
+			return false;
+		}
+
+		return $statusPacket['result'];
+	}
+
+	/**
+	 * Delete the job monitoring from the queue
+	 *
+	 * @return boolean/int
+	 */
+	public function del()
+	{
+		if(!$this->isTracking()) {
+			return false;
+		}
+
+		return Resque::redis()->del((string)$this);
+	}    
+    
 	/**
 	 * Stop tracking the status of a job.
 	 */

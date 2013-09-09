@@ -236,9 +236,10 @@ class Resque_Worker
 	 */
 	public function perform(Resque_Job $job)
 	{
+		$result = "";
 		try {
 			Resque_Event::trigger('afterFork', $job);
-			$job->perform();
+			$result = $job->perform();
 		}
 		catch(Exception $e) {
 			$this->logger->log(Psr\Log\LogLevel::CRITICAL, '{job} has failed {stack}', array('job' => $job, 'stack' => $e->getMessage()));
@@ -246,7 +247,7 @@ class Resque_Worker
 			return;
 		}
 
-		$job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
+		$job->updateStatus(Resque_Job_Status::STATUS_COMPLETE, $result);
 		$this->logger->log(Psr\Log\LogLevel::NOTICE, '{job} has finished', array('job' => $job));
 	}
 
