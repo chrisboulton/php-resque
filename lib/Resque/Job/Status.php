@@ -14,6 +14,11 @@ class Resque_Job_Status
 	const STATUS_COMPLETE = 4;
 
 	/**
+	 * @var string The prefix of the job status id.
+	 */
+	private $prefix;
+    
+	/**
 	 * @var string The ID of the job this status class refers back to.
 	 */
 	private $id;
@@ -37,9 +42,10 @@ class Resque_Job_Status
 	 *
 	 * @param string $id The ID of the job to manage the status for.
 	 */
-	public function __construct($id)
+	public function __construct($id, $prefix = "")
 	{
 		$this->id = $id;
+		$this->prefix = $prefix;
 	}
 
 	/**
@@ -48,14 +54,14 @@ class Resque_Job_Status
 	 *
 	 * @param string $id The ID of the job to monitor the status of.
 	 */
-	public static function create($id)
+	public static function create($id, $prefix = "")
 	{
 		$statusPacket = array(
 			'status' => self::STATUS_WAITING,
 			'updated' => time(),
 			'started' => time(),
 		);
-		Resque::redis()->set('job:' . $id . ':status', json_encode($statusPacket));
+		Resque::redis()->set('job:' . $prefix . $id . ':status', json_encode($statusPacket));
 	}
 
 	/**
@@ -137,7 +143,7 @@ class Resque_Job_Status
 	 */
 	public function __toString()
 	{
-		return 'job:' . $this->id . ':status';
+		return 'job:' . $this->prefix . $this->id . ':status';
 	}
 }
 ?>
