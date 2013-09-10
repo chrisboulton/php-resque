@@ -47,10 +47,11 @@ class Resque_Job
 	 * @param string $class The name of the class that contains the code to execute the job.
 	 * @param array $args Any optional arguments that should be passed when the job is executed.
 	 * @param boolean $monitor Set to true to be able to monitor the status of a job.
+	 * @param string $prefix The prefix needs to be set for the status key
 	 *
 	 * @return string
 	 */
-	public static function create($queue, $class, $args = null, $monitor = false)
+	public static function create($queue, $class, $args = null, $monitor = false, $prefix = "")
 	{
 		if($args !== null && !is_array($args)) {
 			throw new InvalidArgumentException(
@@ -62,10 +63,11 @@ class Resque_Job
 			'class'	=> $class,
 			'args'	=> array($args),
 			'id'	=> $id,
+			'prefix' => $prefix
 		));
 
 		if($monitor) {
-			Resque_Job_Status::create($id);
+			Resque_Job_Status::create($id, $prefix);
 		}
 
 		return $id;
@@ -118,7 +120,7 @@ class Resque_Job
 			return;
 		}
 
-		$statusInstance = new Resque_Job_Status($this->payload['id']);
+		$statusInstance = new Resque_Job_Status($this->payload['id'], $this->payload['prefix']);
 		$statusInstance->update($status, $result);
 	}
 
@@ -129,7 +131,7 @@ class Resque_Job
 	 */
 	public function getStatus()
 	{
-		$status = new Resque_Job_Status($this->payload['id']);
+		$status = new Resque_Job_Status($this->payload['id'], $this->payload['prefix']);
 		return $status->get();
 	}
 
@@ -240,7 +242,7 @@ class Resque_Job
 	 */
 	public function recreate()
 	{
-		$status = new Resque_Job_Status($this->payload['id']);
+		$status = new Resque_Job_Status($this->payload['id'], $this->payload['prefix']);
 		$monitor = false;
 		if($status->isTracking()) {
 			$monitor = true;
