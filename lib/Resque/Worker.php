@@ -452,10 +452,15 @@ class Resque_Worker
 	public function workerPids()
 	{
 		$pids = array();
-		exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
-		foreach($cmdOutput as $line) {
+		if (PHP_OS === "SunOS") {
+			exec('ps -A -o pid,comm,args | grep [r]esque', $cmdOutput);
+		} else {
+			exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
+		}
+		foreach ($cmdOutput as $line) {
 			list($pids[],) = explode(' ', trim($line), 2);
 		}
+
 		return $pids;
 	}
 
