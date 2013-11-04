@@ -11,12 +11,6 @@
 			"email": "chris@bigcommerce.com"
 		}
 	],
-	"repositories": [
-		{
-			"type": "vcs",
-			"url": "https://github.com/chrisboulton/credis"
-		}
-	],
 	"require": {
 		"php": ">=5.3.0",
 		"ext-pcntl": "*",
