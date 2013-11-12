@@ -384,6 +384,7 @@ Called after a job has been queued using the `Resque::enqueue` method. Arguments
 * Class - string containing the name of scheduled job
 * Arguments - array of arguments supplied to the job
 * Queue - string containing the name of the queue the job was added to
+* Token - string containing the new token of the enqueued job
 
 ## Contributors ##
 

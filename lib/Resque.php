@@ -189,6 +189,7 @@ class Resque
 				'class' => $class,
 				'args'  => $args,
 				'queue' => $queue,
+				'token' => $result,
 			));
 		}
 
