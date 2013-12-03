@@ -210,8 +210,8 @@ Setting `VERBOSE` will print basic debugging information and `VVERBOSE`
 will print detailed information.
 
 ```sh
-$ VERBOSE QUEUE=file_serve bin/resque
-$ VVERBOSE QUEUE=file_serve bin/resque
+$ VERBOSE=1 QUEUE=file_serve bin/resque
+$ VVERBOSE=1 QUEUE=file_serve bin/resque
 ```
 
 ### Priorities and Queue Lists ###
