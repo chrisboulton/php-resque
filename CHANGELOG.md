@@ -6,7 +6,7 @@
 
 Redisent has always been the Redis backend for php-resque because of its lightweight nature. Unfortunately, Redisent is largely unmaintained.
 
-[Credis](http://example.com/) is a fork of Redisent, which among other improvements will automatically use the [phpredis](https://github.com/nicolasff/phpredis) native PHP extension if it is available. (you want this for speed, trust me)
+[Credis](https://github.com/colinmollenhour/credis) is a fork of Redisent, which among other improvements will automatically use the [phpredis](https://github.com/nicolasff/phpredis) native PHP extension if it is available. (you want this for speed, trust me)
 
 php-resque now utilizes Credis for all Redis based operations. Credis automatically required and installed as a Composer dependency.
 
