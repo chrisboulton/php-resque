@@ -143,44 +143,48 @@ class Resque_Worker
      *
      * @param int $interval How often to check for new jobs across the queues.
      */
-    public function work($interval = Resque::DEFAULT_INTERVAL, $blocking = false)
+    public function work($interval = Resque::DEFAULT_INTERVAL, $shortPolling = false)
     {
         $this->updateProcLine('Starting');
         $this->startup();
 
-        while(true) {
-            if($this->shutdown) {
+        while (true) {
+            if ($this->shutdown) {
                 break;
             }
 
             // Attempt to find and reserve a job
             $job = false;
-            if(!$this->paused) {
-                if($blocking === true) {
-                    $this->logger->log(Psr\Log\LogLevel::INFO, 'Starting blocking with timeout of {interval}', array('interval' => $interval));
-                    $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with blocking timeout ' . $interval);
-                } else {
-                    $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $interval);
+            if (!$this->paused) {
+                $this->updateProcLine('Polling ' . implode(',', $this->queues));
+                if ($shortPolling === false) {
+                    $this->logger->log(
+                        Psr\Log\LogLevel::INFO,
+                        'Starting long poll with timeout of {interval}',
+                        array('interval' => $interval)
+                    );
                 }
 
-                $job = $this->reserve($blocking, $interval);
+                $job = $this->reserve($shortPolling, $interval);
             }
 
-            if(!$job) {
+            if (!$job) {
                 // For an interval of 0, break now - helps with unit testing etc
-                if($interval == 0) {
+                if ($interval == 1) {
                     break;
                 }
 
-                if($blocking === false)
-                {
+                if ($shortPolling === true) {
                     // If no job was found, we sleep for $interval before continuing and checking again
-                    $this->logger->log(Psr\Log\LogLevel::INFO, 'Sleeping for {interval}', array('interval' => $interval));
-                    if($this->paused) {
+                    $this->logger->log(
+                        Psr\Log\LogLevel::INFO,
+                        'Sleeping for {interval}',
+                        array('interval' => $interval)
+                    );
+                    if ($this->paused) {
                         $this->updateProcLine('Paused');
-                    }
-                    else {
-                        $this->updateProcLine('Waiting for ' . implode(',', $this->queues));
+                    } else {
+                        $this->updateProcLine('Sleeping for ' . $interval);
                     }
 
                     usleep($interval * 1000000);
@@ -206,7 +210,7 @@ class Resque_Worker
                 }
             }
 
-            if($this->child > 0) {
+            if ($this->child > 0) {
                 // Parent process, sit and wait
                 $status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
                 $this->updateProcLine($status);
@@ -215,7 +219,7 @@ class Resque_Worker
                 // Wait until the child process finishes before continuing
                 pcntl_wait($status);
                 $exitStatus = pcntl_wexitstatus($status);
-                if($exitStatus !== 0) {
+                if ($exitStatus !== 0) {
                     $job->fail(new Resque_Job_DirtyExitException(
                         'Job exited with exit code ' . $exitStatus
                     ));
@@ -251,28 +255,28 @@ class Resque_Worker
     }
 
     /**
-     * @param  bool            $blocking
+     * @param  bool            $shortPolling
      * @param  int             $timeout
      * @return object|boolean               Instance of Resque_Job if a job is found, false if not.
      */
-    public function reserve($blocking = false, $timeout = null)
+    public function reserve($shortPolling = false, $timeout = null)
     {
         $queues = $this->queues();
-        if(!is_array($queues)) {
+        if (!is_array($queues)) {
             return;
         }
 
-        if($blocking === true) {
+        if ($shortPolling === false) {
             $job = Resque_Job::reserveBlocking($queues, $timeout);
-            if($job) {
+            if ($job) {
                 $this->logger->log(Psr\Log\LogLevel::INFO, 'Found job on {queue}', array('queue' => $job->queue));
                 return $job;
             }
         } else {
-            foreach($queues as $queue) {
+            foreach ($queues as $queue) {
                 $this->logger->log(Psr\Log\LogLevel::INFO, 'Checking {queue} for jobs', array('queue' => $queue));
                 $job = Resque_Job::reserve($queue);
-                if($job) {
+                if ($job) {
                     $this->logger->log(Psr\Log\LogLevel::INFO, 'Found job on {queue}', array('queue' => $job->queue));
                     return $job;
                 }
