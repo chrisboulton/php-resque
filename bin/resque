@@ -65,7 +65,7 @@ if (!isset($logger) || !is_object($logger)) {
     $logger = new Resque_Log($logLevel);
 }
 
-$BLOCKING = getenv('BLOCKING') !== FALSE;
+$shortPolling = getenv('SHORT_POLLING') ? true : false;
 
 $interval = 5;
 $INTERVAL = getenv('INTERVAL');
@@ -98,7 +98,7 @@ if($count > 1) {
             $worker = new Resque_Worker($queues);
             $worker->setLogger($logger);
             $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
-            $worker->work($interval, $BLOCKING);
+            $worker->work($interval, $shortPolling);
             break;
         }
     }
@@ -116,6 +116,6 @@ else {
     }
 
     $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
-    $worker->work($interval, $BLOCKING);
+    $worker->work($interval, $shortPolling);
 }
-?>
+
