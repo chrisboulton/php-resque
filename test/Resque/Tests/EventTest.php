@@ -53,19 +53,17 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 	 */
 	public function testEventCallbacksFire($event, $callback)
 	{
-        $this->markTestIncomplete("Interval 0 issue must be addressed.");
 		Resque_Event::listen($event, array($this, $callback));
 
 		$job = $this->getEventTestJob();
 		$this->worker->perform($job);
-		$this->worker->work(0);
+		$this->worker->work(null, null, true);
 
 		$this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
 	}
 
 	public function testBeforeForkEventCallbackFires()
 	{
-        $this->markTestIncomplete("Interval 0 issue must be addressed.");
 		$event = 'beforeFork';
 		$callback = 'beforeForkEventCallback';
 
@@ -74,7 +72,7 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 			'somevar'
 		));
 		$job = $this->getEventTestJob();
-		$this->worker->work(0);
+		$this->worker->work(null, null, true);
 		$this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
 	}
 
@@ -104,7 +102,6 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 
 	public function testStopListeningRemovesListener()
 	{
-        $this->markTestIncomplete("Interval 0 issue must be addressed.");
 		$callback = 'beforePerformEventCallback';
 		$event = 'beforePerform';
 
@@ -113,7 +110,7 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 
 		$job = $this->getEventTestJob();
 		$this->worker->perform($job);
-		$this->worker->work(0);
+		$this->worker->work(null, null, true);
 
 		$this->assertNotContains($callback, $this->callbacksHit,
 			$event . ' callback (' . $callback .') was called though Resque_Event::stopListening was called'

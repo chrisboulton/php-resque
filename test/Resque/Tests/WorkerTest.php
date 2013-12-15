@@ -61,27 +61,24 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testPausedWorkerDoesNotPickUpJobs()
 	{
-        $this->markTestIncomplete("Interval 0 issue must be addressed.");
 		$worker = new Resque_Worker('*');
 		$worker->setLogger(new Resque_Log());
 		$worker->pauseProcessing();
 		Resque::enqueue('jobs', 'Test_Job');
-		$worker->work(0);
-		$worker->work(0);
+		$worker->work(null, null, true);
 		$this->assertEquals(0, Resque_Stat::get('processed'));
 	}
 
 	public function testResumedWorkerPicksUpJobs()
 	{
-        $this->markTestIncomplete("Interval 0 issue must be addressed.");
 		$worker = new Resque_Worker('*');
 		$worker->setLogger(new Resque_Log());
 		$worker->pauseProcessing();
 		Resque::enqueue('jobs', 'Test_Job');
-		$worker->work(0);
+		$worker->work(null, null, true);
 		$this->assertEquals(0, Resque_Stat::get('processed'));
 		$worker->unPauseProcessing();
-		$worker->work(0);
+		$worker->work(null, null, true);
 		$this->assertEquals(1, Resque_Stat::get('processed'));
 	}
 
@@ -147,13 +144,14 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testWorkerDoesNotWorkOnUnknownQueues()
 	{
-        $this->markTestIncomplete("Interval 0 issue must be addressed.");
 		$worker = new Resque_Worker('queue1');
 		$worker->setLogger(new Resque_Log());
 		$worker->registerWorker();
 		Resque::enqueue('queue2', 'Test_Job');
+        $worker->work(null, null, true);
 
-		$this->assertFalse($worker->reserve());
+		$this->assertEquals(0, $worker->getStat('processed'));
+		$this->assertEquals(0, $worker->getStat('failed'));
 	}
 
 	public function testWorkerClearsItsStatusWhenNotWorking()
@@ -189,14 +187,12 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testWorkerErasesItsStatsWhenShutdown()
 	{
-        $this->markTestIncomplete("Interval 0 issue must be addressed.");
 		Resque::enqueue('jobs', 'Test_Job');
 		Resque::enqueue('jobs', 'Invalid_Job');
 
 		$worker = new Resque_Worker('jobs');
 		$worker->setLogger(new Resque_Log());
-		$worker->work(0);
-		$worker->work(0);
+		$worker->work(null, null, true);
 
 		$this->assertEquals(0, $worker->getStat('processed'));
 		$this->assertEquals(0, $worker->getStat('failed'));
@@ -271,18 +267,25 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 		$this->assertEquals(1, Resque_Stat::get('failed'));
 	}
 
+    public function testWorkerFailsOnIntervalsLessThanZero()
+    {
+        $this->setExpectedException('InvalidArgumentException');
+        $worker = new Resque_Worker('jobs');
+		$worker->setLogger(new Resque_Log());
+        $worker->work(-1);
+    }
+
     public function testBlockingListPop()
     {
         $this->markTestIncomplete("This doesn't actually test BLPOP functionality!");
         $worker = new Resque_Worker('jobs');
 		$worker->setLogger(new Resque_Log());
-        $worker->registerWorker();
 
         Resque::enqueue('jobs', 'Test_Job_1');
         Resque::enqueue('jobs', 'Test_Job_2');
 
         $i = 1;
-        while ($job = $worker->reserve(false))
+        while ($job = $worker->reserve(true))
         {
             $this->assertEquals('Test_Job_' . $i, $job->payload['class']);
 

@@ -141,15 +141,20 @@ class Resque_Worker
      *
      * After completing all jobs in its assigned queues, a worker will wait $interval seconds before polling the
      * queues again. In the case of long polling (default), the worker will remain connected to Redis for the
-     * interval, immediately processing any newly queued jobs. In the case of short polling, the worker will sleep
-     * for the interval. $workOnceThenShutdown is used for unit testing.
+     * interval (rounded to the nearest integer, see Resque_Worker::reserve()), immediately processing any newly
+     * queued jobs. In the case of short polling, the worker will sleep for the interval. $workOnceThenShutdown is
+     * used for unit testing.
      *
      * @param int $interval The time between the last job performed and the next poll.
-     * @param boolean $shortPolling Use short polling (instead of the default long polling).
+     * @param boolean $shortPolling Use short polling (instead of the default long polling, ie LPOP vs BLPOP).
      * @param boolean $workOnceThenShutdown Perform queued jobs then stop working.
+     * @throws InvalidArgumentException if $interval is less than zero.
      */
     public function work($interval = Resque::DEFAULT_INTERVAL, $shortPolling = false, $workOnceThenShutdown = false)
     {
+        if ($interval < 0) {
+            throw new InvalidArgumentException('Interval must be greater than or equal to zero!');
+        }
         $this->updateProcLine('Starting');
         $this->startup();
 
@@ -255,11 +260,16 @@ class Resque_Worker
     }
 
     /**
-     * @param  bool            $shortPolling
-     * @param  int             $timeout
-     * @return object|boolean               Instance of Resque_Job if a job is found, false if not.
+     * Poll the assigned queues for jobs.
+     *
+     * Redis only accepts integers for BLPOP timeouts; $timeout values will be rounded to the nearest integer.
+     * Warning: A $timeout of 0 means the worker will indefinitely maintain its connection to Redis.
+     *
+     * @param  bool $shortPolling Use LPOP instead of default BLPOP.
+     * @param  int $timeout The timeout for BLPOP.
+     * @return object|boolean   Instance of Resque_Job if a job is found, false if not.
      */
-    public function reserve($shortPolling = false, $timeout = null)
+    public function reserve($shortPolling = false, $timeout = Resque::DEFAULT_INTERVAL)
     {
         $queues = $this->queues();
         if (!is_array($queues)) {
@@ -267,7 +277,7 @@ class Resque_Worker
         }
 
         if ($shortPolling === false) {
-            $job = Resque_Job::reserveBlocking($queues, $timeout);
+            $job = Resque_Job::reserveBlocking($queues, round($timeout));
             if ($job) {
                 $this->logger->log(Psr\Log\LogLevel::INFO, 'Found job on {queue}', array('queue' => $job->queue));
                 return $job;
@@ -317,6 +327,7 @@ class Resque_Worker
         $this->pruneDeadWorkers();
         Resque_Event::trigger('beforeFirstFork', $this);
         $this->registerWorker();
+        $this->shutdown = false;
     }
 
     /**
