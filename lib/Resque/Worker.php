@@ -139,20 +139,21 @@ class Resque_Worker
      * The primary loop for a worker which when called on an instance starts
      * the worker's life cycle.
      *
-     * Queues are checked every $interval (seconds) for new jobs.
+     * After completing all jobs in its assigned queues, a worker will wait $interval seconds before polling the
+     * queues again. In the case of long polling (default), the worker will remain connected to Redis for the
+     * interval, immediately processing any newly queued jobs. In the case of short polling, the worker will sleep
+     * for the interval. $workOnceThenShutdown is used for unit testing.
      *
-     * @param int $interval How often to check for new jobs across the queues.
+     * @param int $interval The time between the last job performed and the next poll.
+     * @param boolean $shortPolling Use short polling (instead of the default long polling).
+     * @param boolean $workOnceThenShutdown Perform queued jobs then stop working.
      */
-    public function work($interval = Resque::DEFAULT_INTERVAL, $shortPolling = false)
+    public function work($interval = Resque::DEFAULT_INTERVAL, $shortPolling = false, $workOnceThenShutdown = false)
     {
         $this->updateProcLine('Starting');
         $this->startup();
 
-        while (true) {
-            if ($this->shutdown) {
-                break;
-            }
-
+        while (!$this->shutdown) {
             // Attempt to find and reserve a job
             $job = false;
             if (!$this->paused) {
@@ -169,9 +170,8 @@ class Resque_Worker
             }
 
             if (!$job) {
-                // For an interval of 0, break now - helps with unit testing etc
-                if ($interval == 1) {
-                    break;
+                if ($workOnceThenShutdown) {
+                    $this->shutdown();
                 }
 
                 if ($shortPolling === true) {
