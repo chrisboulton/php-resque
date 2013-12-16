@@ -30,16 +30,18 @@ How do the workers process the queues?
 
 1. `Resque_Worker::work()`, the main loop of the worker process, calls
    `Resque_Worker->reserve()` to check for a job
-2. `Resque_Worker->reserve()` checks whether to use blocking pops or not (from
-   `BLOCKING`), then acts accordingly:
-  * Blocking Pop
+2. `Resque_Worker->reserve()` checks whether to use long polling (default) or
+    not (set by `SHORT_POLLING=1`), then acts accordingly:
+  * Long Polling (via BLPOP)
     1. `Resque_Worker->reserve()` calls `Resque_Job::reserveBlocking()` with
-       the entire queue list and the timeout (from `INTERVAL`) as arguments
+       the entire queue list and the timeout (from `INTERVAL`, rounded to the
+       nearest integer) as arguments
     2. `Resque_Job::reserveBlocking()` calls `Resque::blpop()` (which in turn
        calls Redis' `blpop`, after prepping the queue list for the call, then
        processes the response for consistency with other aspects of the
        library, before finally returning control [and the queue/content of the
-       retrieved job, if any] to `Resque_Job::reserveBlocking()`)
+       retrieved job, if any] to `Resque_Job::reserveBlocking()` after
+       `INTERVAL` seconds)
     3. `Resque_Job::reserveBlocking()` checks whether the job content is an
        array (it should contain the job's type [class], payload [args], and
        ID), and aborts processing if not
@@ -47,7 +49,7 @@ How do the workers process the queues?
        the queue and content as constructor arguments to initialize the job
        itself, and returns it, along with control of the process, to
        `Resque_Worker->reserve()`
-  * Queue Polling
+  * Short Polling (via LPOP)
     1. `Resque_Worker->reserve()` iterates through the queue list, calling
        `Resque_Job::reserve()` with the current queue's name as the sole
        argument on each pass
@@ -64,9 +66,9 @@ How do the workers process the queues?
    object, along with control, up to `Resque_Worker::work()`; if no job is
    found, it simply returns `FALSE`
   * No Jobs
-    1. If blocking mode is not enabled, `Resque_Worker::work()` sleeps for
-       `INTERVAL` seconds; it calls `usleep()` for this, so fractional seconds
-       *are* supported
+    1. If short polling is enabled, `Resque_Worker::work()` sleeps for `INTERVAL`
+       seconds; it calls `usleep()` for this, so fractional seconds *are*
+       supported for short polling
   * Job Reserved
     1. `Resque_Worker::work()` triggers a `beforeFork` event
     2. `Resque_Worker::work()` calls `Resque_Worker->workingOn()` with the new
