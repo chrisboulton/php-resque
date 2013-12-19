@@ -40,8 +40,8 @@ How do the workers process the queues?
        calls Redis' `blpop`, after prepping the queue list for the call, then
        processes the response for consistency with other aspects of the
        library, before finally returning control [and the queue/content of the
-       retrieved job, if any] to `Resque_Job::reserveBlocking()` after
-       `INTERVAL` seconds)
+       retrieved job, if any] to `Resque_Job::reserveBlocking()` after waiting
+       no longer than the duration of the timeout
     3. `Resque_Job::reserveBlocking()` checks whether the job content is an
        array (it should contain the job's type [class], payload [args], and
        ID), and aborts processing if not
@@ -68,7 +68,7 @@ How do the workers process the queues?
   * No Jobs
     1. If short polling is enabled, `Resque_Worker::work()` sleeps for `INTERVAL`
        seconds; it calls `usleep()` for this, so fractional seconds *are*
-       supported for short polling
+       supported
   * Job Reserved
     1. `Resque_Worker::work()` triggers a `beforeFork` event
     2. `Resque_Worker::work()` calls `Resque_Worker->workingOn()` with the new
