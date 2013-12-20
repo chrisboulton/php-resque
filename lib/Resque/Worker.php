@@ -49,6 +49,11 @@ class Resque_Worker
 	 */
 	private $child = null;
 
+    public function __construct()
+    {
+        $this->logger = new Resque_Log();
+    }
+
 	/**
 	 * Return all workers known to Resque as instantiated instances.
 	 * @return array
