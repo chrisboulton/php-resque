@@ -49,9 +49,34 @@ class Resque_Worker
 	 */
 	private $child = null;
 
-    public function __construct()
+    /**
+     * Instantiate a new worker, given a list of queues that it should be working
+     * on. The list of queues should be supplied in the priority that they should
+     * be checked for jobs (first come, first served)
+     *
+     * Passing a single '*' allows the worker to work on all queues in alphabetical
+     * order. You can easily add new queues dynamically and have them worked on using
+     * this method.
+     *
+     * @param string|array $queues String with a single queue name, array with multiple.
+     */
+    public function __construct($queues)
     {
         $this->logger = new Resque_Log();
+        
+        if(!is_array($queues)) {
+            $queues = array($queues);
+        }
+
+        $this->queues = $queues;
+        if(function_exists('gethostname')) {
+            $hostname = gethostname();
+        }
+        else {
+            $hostname = php_uname('n');
+        }
+        $this->hostname = $hostname;
+        $this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
     }
 
 	/**
@@ -110,34 +135,6 @@ class Resque_Worker
 	public function setId($workerId)
 	{
 		$this->id = $workerId;
-	}
-
-	/**
-	 * Instantiate a new worker, given a list of queues that it should be working
-	 * on. The list of queues should be supplied in the priority that they should
-	 * be checked for jobs (first come, first served)
-	 *
-	 * Passing a single '*' allows the worker to work on all queues in alphabetical
-	 * order. You can easily add new queues dynamically and have them worked on using
-	 * this method.
-	 *
-	 * @param string|array $queues String with a single queue name, array with multiple.
-	 */
-	public function __construct($queues)
-	{
-		if(!is_array($queues)) {
-			$queues = array($queues);
-		}
-
-		$this->queues = $queues;
-		if(function_exists('gethostname')) {
-			$hostname = gethostname();
-		}
-		else {
-			$hostname = php_uname('n');
-		}
-		$this->hostname = $hostname;
-		$this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
 	}
 
 	/**
