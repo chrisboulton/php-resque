@@ -8,14 +8,15 @@
  */
 class Resque_Redis
 {
+    const DEFAULT_PORT = 6379;
+
     /**
      * Redis namespace
      * @var string
      */
     private static $defaultNamespace = 'resque:';
 
-    private $server;
-    private $database;
+    private $driver;
 
 	/**
 	 * @var array List of all commands in Redis that supply a key as their
@@ -92,43 +93,30 @@ class Resque_Redis
 	    self::$defaultNamespace = $namespace;
 	}
 
-	public function __construct($server, $database = null)
+	public function __construct($server = null, $database = null, $password = null)
 	{
-		$this->server = $server;
-		$this->database = $database;
-
-		if (is_array($this->server)) {
-			$this->driver = new Credis_Cluster($server);
+		if (empty($server)) {
+			$server = 'localhost:' . self::DEFAULT_PORT;
 		}
-		else {
-			$port = null;
-			$password = null;
-			$host = $server;
 
-			// If not a UNIX socket path or tcp:// formatted connections string
-			// assume host:port combination.
-			if (strpos($server, '/') === false) {
-				$parts = explode(':', $server);
-				if (isset($parts[1])) {
-					$port = $parts[1];
-				}
-				$host = $parts[0];
-			}else if (strpos($server, 'redis://') !== false){
-				// Redis format is:
-				// redis://[user]:[password]@[host]:[port]
-				list($userpwd,$hostport) = explode('@', $server);
-				$userpwd = substr($userpwd, strpos($userpwd, 'redis://')+8);
-				list($host, $port) = explode(':', $hostport);
-				list($user, $password) = explode(':', $userpwd);
-			}
+		if (is_array($server)) {
+			$this->driver = new Credis_Cluster($server);
+		} else {
+			if (strpos($server, ':') !== false) {
+				list($host, $port) = explode(':', $server);
+            } else {
+                $host = $server;
+                $port = self::DEFAULT_PORT;
+            }
 			
 			$this->driver = new Credis_Client($host, $port);
-			if (isset($password)){
-				$this->driver->auth($password);
-			}
+
+            if ($password !== null) {
+                $this->driver->auth($password);
+            }
 		}
 
-		if ($this->database !== null) {
+		if ($database !== null) {
 			$this->driver->select($database);
 		}
 	}
@@ -141,8 +129,9 @@ class Resque_Redis
 	 * @param array $args Array of supplied arguments to the method.
 	 * @return mixed Return value from Resident::call() based on the command.
 	 */
-	public function __call($name, $args) {
-		if(in_array($name, $this->keyCommands)) {
+    public function __call($name, $args)
+    {
+        if(in_array($name, $this->keyCommands)) {
             if(is_array($args[0])) {
                 foreach($args[0] AS $i => $v) {
                     $args[0][$i] = self::$defaultNamespace . $v;
@@ -150,14 +139,14 @@ class Resque_Redis
             } else {
                 $args[0] = self::$defaultNamespace . $args[0];
             }
-		}
-		try {
-			return $this->driver->__call($name, $args);
-		}
-		catch(CredisException $e) {
-			return false;
-		}
-	}
+        }
+        try {
+            return $this->driver->__call($name, $args);
+        }
+        catch(CredisException $e) {
+            return false;
+        }
+    }
 
     public static function getPrefix()
     {
