@@ -202,6 +202,9 @@ $ QUEUE=file_serve APP_INCLUDE=../application/init.php php bin/resque
 `APP_INCLUDE`, because hopefully Composer is responsible for autoloading
 your application too!*
 
+Pass along your custom backend configuration by additionally setting
+`REDIS_BACKEND_SERVER`, `REDIS_BACKEND_DB`, and `REDIS_BACKEND_PASSWORD`.
+
 Getting your application underway also includes telling the worker your job
 classes, by means of either an autoloader or including them.
 

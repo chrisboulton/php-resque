@@ -8,7 +8,11 @@
  */
 class Resque_Redis
 {
+    const DEFAULT_HOST = 'localhost';
+
     const DEFAULT_PORT = 6379;
+
+    const DEFAULT_DATABASE = 0;
 
     /**
      * Redis namespace
@@ -96,7 +100,10 @@ class Resque_Redis
 	public function __construct($server = null, $database = null, $password = null)
 	{
 		if (empty($server)) {
-			$server = 'localhost:' . self::DEFAULT_PORT;
+			$server = self::DEFAULT_HOST . ':' . self::DEFAULT_PORT;
+		}
+		if (empty($database)) {
+			$database = self::DEFAULT_DATABASE;
 		}
 
 		if (is_array($server)) {

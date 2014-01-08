@@ -30,13 +30,16 @@ if(empty($QUEUE)) {
     die("Set QUEUE env var containing the list of queues to work.\n");
 }
 
-$REDIS_BACKEND = getenv('REDIS_BACKEND');
-$REDIS_BACKEND_DB = getenv('REDIS_BACKEND_DB');
-if(!empty($REDIS_BACKEND)) {
-    if (empty($REDIS_BACKEND_DB))
-        Resque::setBackend($REDIS_BACKEND);
-    else
-        Resque::setBackend($REDIS_BACKEND, $REDIS_BACKEND_DB);
+$REDIS_BACKEND_SERVER = getenv('REDIS_BACKEND_SERVER') ?:
+    (getenv('REDIS_BACKEND') ?: null); // for backward compatibility
+$REDIS_BACKEND_DB = getenv('REDIS_BACKEND_DB') ?: null;
+$REDIS_BACKEND_PASSWORD = getenv('REDIS_BACKEND_PASSWORD') ?: null;
+if(!empty($REDIS_BACKEND_SERVER)) {
+    Resque::setBackend(
+        $REDIS_BACKEND_SERVER,
+        $REDIS_BACKEND_DB,
+        $REDIS_BACKEND_PASSWORD
+    );
 }
 
 $logLevel = false;
