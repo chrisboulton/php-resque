@@ -20,6 +20,10 @@ class Resque_Redis
      */
     private static $defaultNamespace = 'resque:';
 
+    /**
+     * Credis driver for Redis
+     * @var mixed Credis_Client or Credis_Cluster
+     */
     private $driver;
 
 	/**
@@ -123,9 +127,7 @@ class Resque_Redis
             }
 		}
 
-		if ($database !== null) {
-			$this->driver->select($database);
-		}
+        $this->driver->select($database);
 	}
 
 	/**

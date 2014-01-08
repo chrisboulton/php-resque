@@ -19,7 +19,8 @@ class Resque
 
 	/**
 	 * @var mixed Host/port conbination separated by a colon, or a nested
-	 * array of server swith host/port pairs
+     * array of servers with host/port pairs. See:
+     * @link https://github.com/colinmollenhour/credis
 	 */
 	protected static $redisServer = null;
 
@@ -29,7 +30,7 @@ class Resque
 	protected static $redisDatabase = 0;
 
 	/**
-	 * @var string password to use when connecting to Redis.
+	 * @var string Password to use when connecting to Redis.
 	 */
 	protected static $redisPassword = null;
 
