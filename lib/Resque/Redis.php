@@ -101,6 +101,14 @@ class Resque_Redis
 	    self::$defaultNamespace = $namespace;
 	}
 
+    /**
+     * Sets up Redis driver, optionally authenticates, and selects database.
+     *
+	 * @param mixed $server Host/port combination separated by a colon, or
+	 *                      a nested array of servers with host/port pairs.
+     * @param int $database
+     * @param string $password
+     */
 	public function __construct($server = null, $database = null, $password = null)
 	{
 		if (empty($server)) {
@@ -113,7 +121,19 @@ class Resque_Redis
 		if (is_array($server)) {
 			$this->driver = new Credis_Cluster($server);
 		} else {
-			if (strpos($server, ':') !== false) {
+            // This "redis://" method is deprecated and left only for
+            // backward compatibility
+            if (strpos($server, 'redis://') !== false) {
+                // Redis format is:
+                // redis://[user]:[password]@[host]:[port]
+                $firstColonAfterUser =
+                    strpos($server, ':', 8); // 8 is length of "redis://"
+                $passwordHostPort = substr($server, $firstColonAfterUser + 1);
+                $lastAt = strrpos($passwordHostPort, '@');
+                $hostPort = substr($passwordHostPort, $lastAt + 1);
+                $password = str_replace('@' . $hostPort, '', $passwordHostPort);
+                list($host, $port) = explode(':', $hostPort);
+            } elseif (strpos($server, ':') !== false) {
 				list($host, $port) = explode(':', $server);
             } else {
                 $host = $server;
