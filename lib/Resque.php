@@ -19,7 +19,8 @@ class Resque
 
 	/**
 	 * @var mixed Host/port conbination separated by a colon, or a nested
-	 * array of server swith host/port pairs
+     * array of servers with host/port pairs. See:
+     * @link https://github.com/colinmollenhour/credis
 	 */
 	protected static $redisServer = null;
 
@@ -29,6 +30,11 @@ class Resque
 	protected static $redisDatabase = 0;
 
 	/**
+	 * @var string Password to use when connecting to Redis.
+	 */
+	protected static $redisPassword = null;
+
+	/**
 	 * Given a host/port combination separated by a colon, set it as
 	 * the redis server that Resque will talk to.
 	 *
@@ -36,10 +42,11 @@ class Resque
 	 *                      a nested array of servers with host/port pairs.
 	 * @param int $database
 	 */
-	public static function setBackend($server, $database = 0)
+	public static function setBackend($server, $database = null, $password = null)
 	{
 		self::$redisServer   = $server;
 		self::$redisDatabase = $database;
+		self::$redisPassword = $password;
 		self::$redis         = null;
 	}
 
@@ -54,12 +61,12 @@ class Resque
 			return self::$redis;
 		}
 
-		$server = self::$redisServer;
-		if (empty($server)) {
-			$server = 'localhost:6379';
-		}
+        self::$redis = new Resque_Redis(
+            self::$redisServer,
+            self::$redisDatabase,
+            self::$redisPassword
+        );
 
-		self::$redis = new Resque_Redis($server, self::$redisDatabase);
 		return self::$redis;
 	}
 	
