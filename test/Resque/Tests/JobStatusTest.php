@@ -58,7 +58,7 @@ class Resque_Tests_JobStatusTest extends Resque_Tests_TestCase
 	public function testFailedJobReturnsFailedStatus($nonblocking)
 	{
 		$token = Resque::enqueue('jobs', 'Failing_Job', null, true);
-		$this->worker->work(1, $nonblocking, true);
+		$this->worker->work(0.000001, $nonblocking, true);
 		$status = new Resque_Job_Status($token);
 		$this->assertEquals(Resque_Job_Status::STATUS_FAILED, $status->get());
 	}
@@ -69,7 +69,7 @@ class Resque_Tests_JobStatusTest extends Resque_Tests_TestCase
 	public function testCompletedJobReturnsCompletedStatus($nonblocking)
 	{
 		$token = Resque::enqueue('jobs', 'Test_Job', null, true);
-		$this->worker->work(1, $nonblocking, true);
+		$this->worker->work(0.000001, $nonblocking, true);
 		$status = new Resque_Job_Status($token);
 		$this->assertEquals(Resque_Job_Status::STATUS_COMPLETE, $status->get());
 	}
