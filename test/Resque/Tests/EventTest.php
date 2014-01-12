@@ -51,18 +51,35 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 	/**
 	 * @dataProvider eventCallbackProvider
 	 */
-	public function testEventCallbacksFire($event, $callback)
+	public function testEventCallbacksFireForBlockingWorker($event, $callback)
 	{
 		Resque_Event::listen($event, array($this, $callback));
 
 		$job = $this->getEventTestJob();
 		$this->worker->perform($job);
-		$this->worker->work(null, null, true);
+		$this->worker->work(1, false, true);
 
 		$this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
 	}
 
-	public function testBeforeForkEventCallbackFires()
+	/**
+	 * @dataProvider eventCallbackProvider
+	 */
+	public function testEventCallbacksFireForPollingWorker($event, $callback)
+	{
+		Resque_Event::listen($event, array($this, $callback));
+
+		$job = $this->getEventTestJob();
+		$this->worker->perform($job);
+		$this->worker->work(1, true, true);
+
+		$this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
+	}
+
+    /**
+     * @dataProvider providePollingSetting
+     */
+	public function testBeforeForkEventCallbackFires($polling)
 	{
 		$event = 'beforeFork';
 		$callback = 'beforeForkEventCallback';
@@ -72,7 +89,7 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 			'somevar'
 		));
 		$job = $this->getEventTestJob();
-		$this->worker->work(null, null, true);
+		$this->worker->work(1, $polling, true);
 		$this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
 	}
 
@@ -100,7 +117,10 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 		$this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
 	}
 
-	public function testStopListeningRemovesListener()
+    /**
+     * @dataProvider providePollingSetting
+     */
+	public function testStopListeningRemovesListener($polling)
 	{
 		$callback = 'beforePerformEventCallback';
 		$event = 'beforePerform';
@@ -110,7 +130,7 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 
 		$job = $this->getEventTestJob();
 		$this->worker->perform($job);
-		$this->worker->work(null, null, true);
+		$this->worker->work(1, $polling, true);
 
 		$this->assertNotContains($callback, $this->callbacksHit,
 			$event . ' callback (' . $callback .') was called though Resque_Event::stopListening was called'
