@@ -146,14 +146,14 @@ class Resque_Worker
      * used for unit testing.
      *
      * @param int $interval The time between the last job performed and the next poll.
-     * @param boolean $shortPolling Use short polling (instead of the default long polling, ie LPOP vs BLPOP).
+     * @param boolean $polling Use nonblocking polling (instead of the default blocking polling, ie LPOP vs BLPOP).
      * @param boolean $workOnceThenShutdown Perform queued jobs then stop working.
-     * @throws InvalidArgumentException if $interval is less than zero.
+     * @throws InvalidArgumentException if $interval is less than or equal to zero.
      */
-    public function work($interval = Resque::DEFAULT_INTERVAL, $shortPolling = false, $workOnceThenShutdown = false)
+    public function work($interval = Resque::DEFAULT_INTERVAL, $polling = false, $workOnceThenShutdown = false)
     {
-        if ($interval < 0) {
-            throw new InvalidArgumentException('Interval must be greater than or equal to zero!');
+        if ($interval <= 0) {
+            throw new InvalidArgumentException('Interval must be greater than zero!');
         }
         $this->updateProcLine('Starting');
         $this->startup();
@@ -161,36 +161,25 @@ class Resque_Worker
         while (!$this->shutdown) {
             // Attempt to find and reserve a job
             $job = false;
-            if (!$this->paused) {
+            if ($this->paused) {
+                $this->updateProcLine('Paused');
+            } else {
                 $this->updateProcLine('Polling ' . implode(',', $this->queues));
-                if ($shortPolling === false) {
-                    $this->logger->log(
-                        Psr\Log\LogLevel::INFO,
-                        'Starting long poll with timeout of {interval}',
-                        array('interval' => $interval)
-                    );
-                }
-
-                $job = $this->reserve($shortPolling, $interval);
+                $job = $this->reserve($polling, $interval);
             }
 
             if (!$job) {
                 if ($workOnceThenShutdown) {
                     $this->shutdown();
                 }
-
-                if ($shortPolling === true) {
+                if ($polling === true) {
                     // If no job was found, we sleep for $interval before continuing and checking again
                     $this->logger->log(
                         Psr\Log\LogLevel::INFO,
                         'Sleeping for {interval}',
                         array('interval' => $interval)
                     );
-                    if ($this->paused) {
-                        $this->updateProcLine('Paused');
-                    } else {
-                        $this->updateProcLine('Sleeping for ' . $interval);
-                    }
+                    $this->updateProcLine('Sleeping for ' . $interval);
 
                     usleep($interval * 1000000);
                 }
@@ -262,32 +251,37 @@ class Resque_Worker
     /**
      * Poll the assigned queues for jobs.
      *
-     * Redis only accepts integers for BLPOP timeouts; $timeout values will be rounded to the nearest integer.
-     * Warning: A $timeout of 0 means the worker will indefinitely maintain its connection to Redis.
+     * Redis only accepts integers for BLPOP timeouts; $timeout values will be rounded to the nearest integer >= 1.
      *
-     * @param  bool $shortPolling Use LPOP instead of default BLPOP.
+     * @param  bool $polling Use LPOP instead of default BLPOP.
      * @param  int $timeout The timeout for BLPOP.
      * @return object|boolean   Instance of Resque_Job if a job is found, false if not.
      */
-    public function reserve($shortPolling = false, $timeout = Resque::DEFAULT_INTERVAL)
+    public function reserve($polling = false, $timeout = Resque::DEFAULT_INTERVAL)
     {
         $queues = $this->queues();
         if (!is_array($queues)) {
             return;
         }
 
-        if ($shortPolling === false) {
-            $job = Resque_Job::reserveBlocking($queues, round($timeout));
+        if ($polling === false) {
+            $this->logger->log(
+                Psr\Log\LogLevel::INFO,
+                'Starting blocking poll of {queues} with timeout of {interval}',
+                array('interval' => $timeout, 'queues' => implode(',', $queues))
+            );
+            $timeout = round($timeout) < 1 ? 1 : round($timeout); // Ensuring a timeout of 0 isn't passed to BLPOP
+            $job = Resque_Job::reserveBlocking($queues, $timeout);
             if ($job) {
                 $this->logger->log(Psr\Log\LogLevel::INFO, 'Found job on {queue}', array('queue' => $job->queue));
                 return $job;
             }
         } else {
             foreach ($queues as $queue) {
-                $this->logger->log(Psr\Log\LogLevel::INFO, 'Checking {queue} for jobs', array('queue' => $queue));
+                $this->logger->log(Psr\Log\LogLevel::INFO, 'Polling {queue} for jobs', array('queue' => $queue));
                 $job = Resque_Job::reserve($queue);
                 if ($job) {
-                    $this->logger->log(Psr\Log\LogLevel::INFO, 'Found job on {queue}', array('queue' => $job->queue));
+                    $this->logger->log(Psr\Log\LogLevel::INFO, 'Found job on {queue}', array('queue' => $queue));
                     return $job;
                 }
             }
