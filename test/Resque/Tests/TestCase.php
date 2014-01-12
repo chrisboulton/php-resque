@@ -21,7 +21,7 @@ class Resque_Tests_TestCase extends PHPUnit_Framework_TestCase
 		$this->redis->flushAll();
 	}
 
-    public function providePollingSetting()
+    public function provideNonblockingSetting()
     {
         return array(
             array(false),

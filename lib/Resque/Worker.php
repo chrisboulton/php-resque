@@ -140,17 +140,17 @@ class Resque_Worker
      * the worker's life cycle.
      *
      * After completing all jobs in its assigned queues, a worker will wait $interval seconds before polling the
-     * queues again. In the case of long polling (default), the worker will remain connected to Redis for the
+     * queues again. In the case of blocking polling (default), the worker will remain connected to Redis for the
      * interval (rounded to the nearest integer, see Resque_Worker::reserve()), immediately processing any newly
-     * queued jobs. In the case of short polling, the worker will sleep for the interval. $workOnceThenShutdown is
-     * used for unit testing.
+     * queued jobs. In the case of nonblocking polling, the worker will sleep for the interval.
+     * $workOnceThenShutdown is used for unit testing.
      *
      * @param int $interval The time between the last job performed and the next poll.
-     * @param boolean $polling Use nonblocking polling (instead of the default blocking polling, ie LPOP vs BLPOP).
+     * @param boolean $nonblocking Use nonblocking polling (instead of the default blocking polling, ie LPOP vs BLPOP).
      * @param boolean $workOnceThenShutdown Perform queued jobs then stop working.
      * @throws InvalidArgumentException if $interval is less than or equal to zero.
      */
-    public function work($interval = Resque::DEFAULT_INTERVAL, $polling = false, $workOnceThenShutdown = false)
+    public function work($interval = Resque::DEFAULT_INTERVAL, $nonblocking = false, $workOnceThenShutdown = false)
     {
         if ($interval <= 0) {
             throw new InvalidArgumentException('Interval must be greater than zero!');
@@ -165,14 +165,14 @@ class Resque_Worker
                 $this->updateProcLine('Paused');
             } else {
                 $this->updateProcLine('Polling ' . implode(',', $this->queues));
-                $job = $this->reserve($polling, $interval);
+                $job = $this->reserve($nonblocking, $interval);
             }
 
             if (!$job) {
                 if ($workOnceThenShutdown) {
                     $this->shutdown();
                 }
-                if ($polling === true) {
+                if ($nonblocking === true) {
                     // If no job was found, we sleep for $interval before continuing and checking again
                     $this->logger->log(
                         Psr\Log\LogLevel::INFO,
@@ -253,18 +253,18 @@ class Resque_Worker
      *
      * Redis only accepts integers for BLPOP timeouts; $timeout values will be rounded to the nearest integer >= 1.
      *
-     * @param  bool $polling Use LPOP instead of default BLPOP.
+     * @param  bool $nonblocking Use LPOP instead of default BLPOP.
      * @param  int $timeout The timeout for BLPOP.
      * @return object|boolean   Instance of Resque_Job if a job is found, false if not.
      */
-    public function reserve($polling = false, $timeout = Resque::DEFAULT_INTERVAL)
+    public function reserve($nonblocking = false, $timeout = Resque::DEFAULT_INTERVAL)
     {
         $queues = $this->queues();
         if (!is_array($queues)) {
             return;
         }
 
-        if ($polling === false) {
+        if ($nonblocking === false) {
             $this->logger->log(
                 Psr\Log\LogLevel::INFO,
                 'Starting blocking poll of {queues} with timeout of {interval}',

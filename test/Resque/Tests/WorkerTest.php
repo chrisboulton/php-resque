@@ -60,31 +60,31 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 	}
 
     /**
-     * @dataProvider providePollingSetting
+     * @dataProvider provideNonblockingSetting
      */
-	public function testPausedWorkerDoesNotPickUpJobs($polling)
+	public function testPausedWorkerDoesNotPickUpJobs($nonblocking)
 	{
 		$worker = new Resque_Worker('*');
 		$worker->setLogger(new Resque_Log());
 		$worker->pauseProcessing();
 		Resque::enqueue('jobs', 'Test_Job');
-		$worker->work(1, $polling, true);
+		$worker->work(1, $nonblocking, true);
 		$this->assertEquals(0, Resque_Stat::get('processed'));
 	}
 
     /**
-     * @dataProvider providePollingSetting
+     * @dataProvider provideNonblockingSetting
      */
-	public function testResumedWorkerPicksUpJobs($polling)
+	public function testResumedWorkerPicksUpJobs($nonblocking)
 	{
 		$worker = new Resque_Worker('*');
 		$worker->setLogger(new Resque_Log());
 		$worker->pauseProcessing();
 		Resque::enqueue('jobs', 'Test_Job');
-		$worker->work(1, $polling, true);
+		$worker->work(1, $nonblocking, true);
 		$this->assertEquals(0, Resque_Stat::get('processed'));
 		$worker->unPauseProcessing();
-		$worker->work(1, $polling, true);
+		$worker->work(1, $nonblocking, true);
 		$this->assertEquals(1, Resque_Stat::get('processed'));
 	}
 
@@ -192,16 +192,16 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 	}
 
     /**
-     * @dataProvider providePollingSetting
+     * @dataProvider provideNonblockingSetting
      */
-	public function testWorkerErasesItsStatsWhenShutdown($polling)
+	public function testWorkerErasesItsStatsWhenShutdown($nonblocking)
 	{
 		Resque::enqueue('jobs', 'Test_Job');
 		Resque::enqueue('jobs', 'Invalid_Job');
 
 		$worker = new Resque_Worker('jobs');
 		$worker->setLogger(new Resque_Log());
-		$worker->work(1, $polling, true);
+		$worker->work(1, $nonblocking, true);
 
 		$this->assertEquals(0, $worker->getStat('processed'));
 		$this->assertEquals(0, $worker->getStat('failed'));
