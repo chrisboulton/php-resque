@@ -68,7 +68,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 		$worker->setLogger(new Resque_Log());
 		$worker->pauseProcessing();
 		Resque::enqueue('jobs', 'Test_Job');
-		$worker->work(1, $nonblocking, true);
+		$worker->work(0.000001, $nonblocking, true);
 		$this->assertEquals(0, Resque_Stat::get('processed'));
 	}
 
@@ -81,10 +81,10 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 		$worker->setLogger(new Resque_Log());
 		$worker->pauseProcessing();
 		Resque::enqueue('jobs', 'Test_Job');
-		$worker->work(1, $nonblocking, true);
+		$worker->work(0.000001, $nonblocking, true);
 		$this->assertEquals(0, Resque_Stat::get('processed'));
 		$worker->unPauseProcessing();
-		$worker->work(1, $nonblocking, true);
+		$worker->work(0.000001, $nonblocking, true);
 		$this->assertEquals(1, Resque_Stat::get('processed'));
 	}
 
@@ -201,7 +201,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 		$worker = new Resque_Worker('jobs');
 		$worker->setLogger(new Resque_Log());
-		$worker->work(1, $nonblocking, true);
+		$worker->work(0.000001, $nonblocking, true);
 
 		$this->assertEquals(0, $worker->getStat('processed'));
 		$this->assertEquals(0, $worker->getStat('failed'));

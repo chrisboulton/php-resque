@@ -57,7 +57,7 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 
 		$job = $this->getEventTestJob();
 		$this->worker->perform($job);
-		$this->worker->work(1, false, true);
+		$this->worker->work(0.000001, false, true);
 
 		$this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
 	}
@@ -71,7 +71,7 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 
 		$job = $this->getEventTestJob();
 		$this->worker->perform($job);
-		$this->worker->work(1, true, true);
+		$this->worker->work(0.000001, true, true);
 
 		$this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
 	}
@@ -89,7 +89,7 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 			'somevar'
 		));
 		$job = $this->getEventTestJob();
-		$this->worker->work(1, $nonblocking, true);
+		$this->worker->work(0.000001, $nonblocking, true);
 		$this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
 	}
 
@@ -130,7 +130,7 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 
 		$job = $this->getEventTestJob();
 		$this->worker->perform($job);
-		$this->worker->work(1, $nonblocking, true);
+		$this->worker->work(0.000001, $nonblocking, true);
 
 		$this->assertNotContains($callback, $this->callbacksHit,
 			$event . ' callback (' . $callback .') was called though Resque_Event::stopListening was called'
