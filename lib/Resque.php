@@ -62,7 +62,7 @@ class Resque
 		self::$redis = new Resque_Redis($server, self::$redisDatabase);
 		return self::$redis;
 	}
-	
+
 	/**
 	 * fork() helper method for php-resque that handles issues PHP socket
 	 * and phpredis have with passing around sockets between child/parent
