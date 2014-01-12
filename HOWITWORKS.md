@@ -30,9 +30,10 @@ How do the workers process the queues?
 
 1. `Resque_Worker::work()`, the main loop of the worker process, calls
    `Resque_Worker->reserve()` to check for a job
-2. `Resque_Worker->reserve()` checks whether to use long polling (default) or
-    not (set by `SHORT_POLLING=1`), then acts accordingly:
-  * Long Polling (via BLPOP)
+2. `Resque_Worker->reserve()` checks whether to use blocking polling (default) or
+    not (set by `NONBLOCKING=1`; note: `BLOCKING` is deprecated), then acts
+    accordingly:
+  * Blocking Polling (via BLPOP)
     1. `Resque_Worker->reserve()` calls `Resque_Job::reserveBlocking()` with
        the entire queue list and the timeout (from `INTERVAL`, rounded to the
        nearest integer) as arguments
@@ -49,7 +50,7 @@ How do the workers process the queues?
        the queue and content as constructor arguments to initialize the job
        itself, and returns it, along with control of the process, to
        `Resque_Worker->reserve()`
-  * Short Polling (via LPOP)
+  * Nonblocking Polling (via LPOP)
     1. `Resque_Worker->reserve()` iterates through the queue list, calling
        `Resque_Job::reserve()` with the current queue's name as the sole
        argument on each pass
@@ -66,7 +67,7 @@ How do the workers process the queues?
    object, along with control, up to `Resque_Worker::work()`; if no job is
    found, it simply returns `FALSE`
   * No Jobs
-    1. If short polling is enabled, `Resque_Worker::work()` sleeps for `INTERVAL`
+    1. If nonblocking is enabled, `Resque_Worker::work()` sleeps for `INTERVAL`
        seconds; it calls `usleep()` for this, so fractional seconds *are*
        supported
   * Job Reserved
