@@ -113,7 +113,7 @@ class Resque_Redis
 					$port = $parts[1];
 				}
 				$host = $parts[0];
-			}else if (strpos($server, 'redis://') !== false){
+			}else if (strpos($server, 'redis://') !== false && strpos($server, '@') !== false){
 				// Redis format is:
 				// redis://[user]:[password]@[host]:[port]
 				list($userpwd,$hostport) = explode('@', $server);
