@@ -159,8 +159,7 @@ class Resque_Tests_DsnTest extends Resque_Tests_TestCase
 	 */
 	public function testParsingValidDsnString($dsn, $expected)
 	{
-		$resqueRedis = new Resque_Redis('localhost');
-		$result = $resqueRedis->parseDsn($dsn);
+		$result = Resque_Redis::parseDsn($dsn);
 		$this->assertEquals($expected, $result);
 	}
 
@@ -170,9 +169,8 @@ class Resque_Tests_DsnTest extends Resque_Tests_TestCase
 	 */
 	public function testParsingBogusDsnStringThrowsException($dsn)
 	{
-		$resqueRedis = new Resque_Redis('localhost');
 		// The next line should throw an InvalidArgumentException
-		$result = $resqueRedis->parseDsn($dsn);
+		$result = Resque_Redis::parseDsn($dsn);
 	}
 
 }

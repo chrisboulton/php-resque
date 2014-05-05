@@ -29,9 +29,6 @@ class Resque_Redis
 	 */
 	const DEFAULT_DATABASE = 0;
 
-	private $server;
-	private $database;
-
 	/**
 	 * @var array List of all commands in Redis that supply a key as their
 	 *	first argument. Used to prefix keys with the Resque namespace.
@@ -114,16 +111,12 @@ class Resque_Redis
 	 */
     public function __construct($server, $database = null)
 	{
-		$this->server = $server;
-		$this->database = $database;
-
-		if (is_array($this->server)) {
+		if (is_array($server)) {
 			$this->driver = new Credis_Cluster($server);
-
 		}
 		else {
 
-			list($host, $port, $dsnDatabase, $user, $password, $options) = $this->parseDsn($server);
+			list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
 			// $user is not used, only $password
 
 			// Look for known Credis_Client options
@@ -139,11 +132,10 @@ class Resque_Redis
 			// value passed into the constructor.
 			if ($dsnDatabase !== false) {
 				$database = $dsnDatabase;
-				$this->database = $database;
 			}
 		}
 
-		if ($this->database !== null) {
+		if ($database !== null) {
 			$this->driver->select($database);
 		}
 	}
@@ -158,9 +150,10 @@ class Resque_Redis
 	 * Note: the 'user' part of the DSN is not used.
 	 *
 	 * @param string $dsn A DSN string
-	 * @return array [host, port, db, user, pass, options]
+	 * @return array An array of DSN compotnents, with 'false' values for any unknown components. e.g.
+	 *               [host, port, db, user, pass, options]
 	 */
-	public function parseDsn($dsn)
+	public static function parseDsn($dsn)
 	{
 		if ($dsn == '') {
 			// Use a sensible default for an empty DNS string
@@ -219,37 +212,38 @@ class Resque_Redis
 	 * @param array $args Array of supplied arguments to the method.
 	 * @return mixed Return value from Resident::call() based on the command.
 	 */
-	public function __call($name, $args) {
-		if(in_array($name, $this->keyCommands)) {
-            if(is_array($args[0])) {
-                foreach($args[0] AS $i => $v) {
-                    $args[0][$i] = self::$defaultNamespace . $v;
-                }
-            } else {
-                $args[0] = self::$defaultNamespace . $args[0];
-            }
+	public function __call($name, $args)
+	{
+		if (in_array($name, $this->keyCommands)) {
+			if (is_array($args[0])) {
+				foreach ($args[0] AS $i => $v) {
+					$args[0][$i] = self::$defaultNamespace . $v;
+				}
+			}
+			else {
+				$args[0] = self::$defaultNamespace . $args[0];
+			}
 		}
 		try {
 			return $this->driver->__call($name, $args);
 		}
-		catch(CredisException $e) {
+		catch (CredisException $e) {
 			return false;
 		}
 	}
 
-    public static function getPrefix()
-    {
-        return self::$defaultNamespace;
-    }
+	public static function getPrefix()
+	{
+	    return self::$defaultNamespace;
+	}
 
-    public static function removePrefix($string)
-    {
-        $prefix=self::getPrefix();
+	public static function removePrefix($string)
+	{
+	    $prefix=self::getPrefix();
 
-        if (substr($string, 0, strlen($prefix)) == $prefix) {
-            $string = substr($string, strlen($prefix), strlen($string) );
-        }
-        return $string;
-    }
+	    if (substr($string, 0, strlen($prefix)) == $prefix) {
+	        $string = substr($string, strlen($prefix), strlen($string) );
+	    }
+	    return $string;
+	}
 }
-?>

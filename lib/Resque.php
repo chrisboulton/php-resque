@@ -54,12 +54,7 @@ class Resque
 			return self::$redis;
 		}
 
-		$server = self::$redisServer;
-		if (empty($server)) {
-			$server = 'localhost:6379';
-		}
-
-		self::$redis = new Resque_Redis($server, self::$redisDatabase);
+		self::$redis = new Resque_Redis(self::$redisServer, self::$redisDatabase);
 		return self::$redis;
 	}
 	
