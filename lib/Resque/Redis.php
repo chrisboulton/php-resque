@@ -109,7 +109,8 @@ class Resque_Redis
 
 	/**
 	 * @param string|array $server A DSN or array
-	 * @param int $database A database number to select
+	 * @param int $database A database number to select. However, if we find a valid database number in the DSN the
+	 *                      DSN-supplied value will be used instead and this parameter is ignored.
 	 */
     public function __construct($server, $database = null)
 	{
@@ -134,7 +135,7 @@ class Resque_Redis
 			}
 
 			// If we have found a database in our DSN, use it instead of the `$database`
-			// value passed into the constructor
+			// value passed into the constructor.
 			if ($dsnDatabase !== false) {
 				$database = $dsnDatabase;
 				$this->database = $database;
