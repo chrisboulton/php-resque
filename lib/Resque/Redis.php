@@ -120,7 +120,8 @@ class Resque_Redis
 		if (is_array($this->server)) {
 			$this->driver = new Credis_Cluster($server);
 
-		} else {
+		}
+		else {
 
 			list($host, $port, $dsnDatabase, $user, $password, $options) = $this->parseDsn($server);
 			// $user is not used, only $password
