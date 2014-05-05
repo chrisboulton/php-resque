@@ -8,14 +8,29 @@
  */
 class Resque_Redis
 {
-    /**
-     * Redis namespace
-     * @var string
-     */
-    private static $defaultNamespace = 'resque:';
+	/**
+	 * Redis namespace
+	 * @var string
+	 */
+	private static $defaultNamespace = 'resque:';
 
-    private $server;
-    private $database;
+	/**
+	 * A default host to connect to
+	 */
+	const DEFAULT_HOST = 'localhost';
+
+	/**
+	 * The default Redis port
+	 */
+	const DEFAULT_PORT = 6379;
+
+	/**
+	 * The default Redis Database number
+	 */
+	const DEFAULT_DATABASE = 0;
+
+	private $server;
+	private $database;
 
 	/**
 	 * @var array List of all commands in Redis that supply a key as their
@@ -92,45 +107,87 @@ class Resque_Redis
 	    self::$defaultNamespace = $namespace;
 	}
 
-	public function __construct($server, $database = null)
+	/**
+	 * @param string|array $server A DSN or array
+	 * @param int $database A database number to select
+	 */
+    public function __construct($server, $database = null)
 	{
 		$this->server = $server;
 		$this->database = $database;
 
 		if (is_array($this->server)) {
 			$this->driver = new Credis_Cluster($server);
-		}
-		else {
-			$port = null;
-			$password = null;
-			$host = $server;
 
-			// If not a UNIX socket path or tcp:// formatted connections string
-			// assume host:port combination.
-			if (strpos($server, '/') === false) {
-				$parts = explode(':', $server);
-				if (isset($parts[1])) {
-					$port = $parts[1];
-				}
-				$host = $parts[0];
-			}else if (strpos($server, 'redis://') !== false){
-				// Redis format is:
-				// redis://[user]:[password]@[host]:[port]
-				list($userpwd,$hostport) = explode('@', $server);
-				$userpwd = substr($userpwd, strpos($userpwd, 'redis://')+8);
-				list($host, $port) = explode(':', $hostport);
-				list($user, $password) = explode(':', $userpwd);
-			}
-			
-			$this->driver = new Credis_Client($host, $port);
-			if (isset($password)){
+		} else {
+
+			list($host, $port, $dsnDatabase, $user, $password, $options) = $this->parseDsn($server);
+			// $user is are unused here
+
+			// Look for known Credis_Client options
+			$timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
+			$persistent = isset($options['persistent']) ? $options['persistent'] : '';
+
+			$this->driver = new Credis_Client($host, $port, $timeout, $persistent);
+			if ($password){
 				$this->driver->auth($password);
+			}
+
+			// If the `$database` constructor argument is not set, use the value from the DSN.
+			if (is_null($database)) {
+				$database = $dsnDatabase;
 			}
 		}
 
 		if ($this->database !== null) {
 			$this->driver->select($database);
 		}
+	}
+
+	/**
+	 * Parse a DSN string
+	 * @param string $dsn
+	 * @return array [host, port, db, user, pass, options]
+	 */
+	public function parseDsn($dsn)
+	{
+		$validSchemes = array('redis', 'tcp');
+		if ($dsn == '') {
+			// Use a sensible default for an empty DNS string
+			$dsn = 'redis://' . self::DEFAULT_HOST;
+		}
+		$parts = parse_url($dsn);
+		if (isset($parts['scheme']) && ! in_array($parts['scheme'], $validSchemes)) {
+			throw new \InvalidArgumentException("Invalid DSN. Supported schemes are " . implode(', ', $validSchemes));
+		}
+
+		// Allow simple 'hostname' format, which parse_url treats as a path, not host.
+		if ( ! isset($parts['host'])) {
+			$parts = array('host' => $parts['path']);
+		}
+
+		$port = isset($parts['port']) ? intval($parts['port']) : self::DEFAULT_PORT;
+
+		$database = self::DEFAULT_DATABASE;
+		if (isset($parts['path'])) {
+			// Strip non-digit chars from path
+			$database = intval(preg_replace('/[^0-9]/', '', $parts['path']));
+		}
+
+		$options = array();
+		if (isset($parts['query'])) {
+			// Parse the query string into an array
+			parse_str($parts['query'], $options);
+		}
+
+		return array(
+			$parts['host'],
+			$port,
+			$database,
+			isset($parts['user']) ? $parts['user'] : false,
+			isset($parts['pass']) ? $parts['pass'] : false,
+			$options,
+		);
 	}
 
 	/**
