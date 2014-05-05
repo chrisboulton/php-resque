@@ -122,7 +122,7 @@ class Resque_Redis
 		} else {
 
 			list($host, $port, $dsnDatabase, $user, $password, $options) = $this->parseDsn($server);
-			// $user is are unused here
+			// $user is not used, only $password
 
 			// Look for known Credis_Client options
 			$timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
@@ -133,9 +133,11 @@ class Resque_Redis
 				$this->driver->auth($password);
 			}
 
-			// If the `$database` constructor argument is not set, use the value from the DSN.
-			if (is_null($database)) {
+			// If we have found a database in our DSN, use it instead of the `$database`
+			// value passed into the constructor
+			if ($dsnDatabase !== false) {
 				$database = $dsnDatabase;
+				$this->database = $database;
 			}
 		}
 
@@ -145,35 +147,52 @@ class Resque_Redis
 	}
 
 	/**
-	 * Parse a DSN string
-	 * @param string $dsn
+	 * Parse a DSN string, which can have one of the following formats:
+	 *
+	 * - host:port
+	 * - redis://user:pass@host:port/db?option1=val1&option2=val2
+	 * - tcp://user:pass@host:port/db?option1=val1&option2=val2
+	 *
+	 * Note: the 'user' part of the DSN is not used.
+	 *
+	 * @param string $dsn A DSN string
 	 * @return array [host, port, db, user, pass, options]
 	 */
 	public function parseDsn($dsn)
 	{
-		$validSchemes = array('redis', 'tcp');
 		if ($dsn == '') {
 			// Use a sensible default for an empty DNS string
 			$dsn = 'redis://' . self::DEFAULT_HOST;
 		}
 		$parts = parse_url($dsn);
+
+		// Check the URI scheme
+		$validSchemes = array('redis', 'tcp');
 		if (isset($parts['scheme']) && ! in_array($parts['scheme'], $validSchemes)) {
 			throw new \InvalidArgumentException("Invalid DSN. Supported schemes are " . implode(', ', $validSchemes));
 		}
 
-		// Allow simple 'hostname' format, which parse_url treats as a path, not host.
-		if ( ! isset($parts['host'])) {
-			$parts = array('host' => $parts['path']);
+		// Allow simple 'hostname' format, which `parse_url` treats as a path, not host.
+		if ( ! isset($parts['host']) && isset($parts['path'])) {
+			$parts['host'] = $parts['path'];
+			unset($parts['path']);
 		}
 
+		// Extract the port number as an integer
 		$port = isset($parts['port']) ? intval($parts['port']) : self::DEFAULT_PORT;
 
-		$database = self::DEFAULT_DATABASE;
+		// Get the database from the 'path' part of the URI
+		$database = false;
 		if (isset($parts['path'])) {
 			// Strip non-digit chars from path
 			$database = intval(preg_replace('/[^0-9]/', '', $parts['path']));
 		}
 
+		// Extract any 'user' and 'pass' values
+		$user = isset($parts['user']) ? $parts['user'] : false;
+		$pass = isset($parts['pass']) ? $parts['pass'] : false;
+
+		// Convert the query string into an associative array
 		$options = array();
 		if (isset($parts['query'])) {
 			// Parse the query string into an array
@@ -184,8 +203,8 @@ class Resque_Redis
 			$parts['host'],
 			$port,
 			$database,
-			isset($parts['user']) ? $parts['user'] : false,
-			isset($parts['pass']) ? $parts['pass'] : false,
+			$user,
+			$pass,
 			$options,
 		);
 	}

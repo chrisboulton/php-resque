@@ -32,7 +32,7 @@ class Resque
 	 * Given a host/port combination separated by a colon, set it as
 	 * the redis server that Resque will talk to.
 	 *
-	 * @param mixed $server Host/port combination separated by a colon, or
+	 * @param mixed $server Host/port combination separated by a colon, DSN-formatted URI, or
 	 *                      a nested array of servers with host/port pairs.
 	 * @param int $database
 	 */
