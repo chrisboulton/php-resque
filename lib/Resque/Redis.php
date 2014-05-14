@@ -1,4 +1,7 @@
 <?php
+
+namespace Chrisboulton\Resque;
+
 /**
  * Wrap Credis to add namespace support and various helper methods.
  *
@@ -6,7 +9,7 @@
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Redis
+class Redis
 {
     /**
      * Redis namespace
@@ -121,7 +124,7 @@ class Resque_Redis
 				list($host, $port) = explode(':', $hostport);
 				list($user, $password) = explode(':', $userpwd);
 			}
-			
+
 			$this->driver = new Credis_Client($host, $port);
 			if (isset($password)){
 				$this->driver->auth($password);

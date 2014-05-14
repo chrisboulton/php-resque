@@ -1,5 +1,7 @@
 <?php
 
+namespace Chrisboulton\Resque;
+
 /**
  * Failed Resque job.
  *
@@ -7,7 +9,7 @@
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Failure
+class Failure
 {
 	/**
 	 * @var string Class name representing the backend to pass failed jobs off to.

@@ -1,4 +1,7 @@
 <?php
+
+namespace Chrisboulton\Resque\Job;
+
 /**
  * Status tracker/information for a job.
  *
@@ -6,7 +9,7 @@
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Job_Status
+class Status
 {
 	const STATUS_WAITING = 1;
 	const STATUS_RUNNING = 2;
