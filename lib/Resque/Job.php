@@ -1,4 +1,7 @@
 <?php
+
+namespace Chrisboulton\Resque;
+
 /**
  * Resque job.
  *
@@ -6,7 +9,7 @@
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Job
+class Job
 {
 	/**
 	 * @var string The name of the queue that this job belongs to.

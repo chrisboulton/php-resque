@@ -1,4 +1,7 @@
 <?php
+
+namespace Chrisboulton\Resque;
+
 /**
  * Resque worker that handles checking queues for jobs, fetching them
  * off the queues, running them and handling the result.
@@ -7,7 +10,7 @@
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Worker
+class Worker
 {
 	/**
 	* @var LoggerInterface Logging object that impliments the PSR-3 LoggerInterface

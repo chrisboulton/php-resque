@@ -1,4 +1,7 @@
 <?php
+
+namespace Chrisboulton\Resque;
+
 /**
  * Resque default logger PSR-3 compliant
  *
@@ -6,7 +9,7 @@
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Log extends Psr\Log\AbstractLogger 
+class Log extends Psr\Log\AbstractLogger
 {
 	public $verbose;
 
@@ -43,7 +46,7 @@ class Resque_Log extends Psr\Log\AbstractLogger
 	/**
 	 * Fill placeholders with the provided context
 	 * @author Jordi Boggiano j.boggiano@seld.be
-	 * 
+	 *
 	 * @param  string  $message  Message to be logged
 	 * @param  array   $context  Array of variables to use in message
 	 * @return string
@@ -55,7 +58,7 @@ class Resque_Log extends Psr\Log\AbstractLogger
 		foreach ($context as $key => $val) {
 			$replace['{' . $key . '}'] = $val;
 		}
-	
+
 		// interpolate replacement values into the message and return
 		return strtr($message, $replace);
 	}

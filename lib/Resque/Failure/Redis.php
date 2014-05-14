@@ -1,4 +1,9 @@
 <?php
+
+namespace Chrisboulton\Resque\Failure;
+
+use Chrisboulton\Resque\Failure\Interface as FailureInterface;
+
 /**
  * Redis backend for storing failed Resque jobs.
  *
@@ -7,7 +12,7 @@
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
 
-class Resque_Failure_Redis implements Resque_Failure_Interface
+class Redis implements FailureInterface
 {
 	/**
 	 * Initialize a failed job class and save it (where appropriate).
