@@ -215,6 +215,9 @@ class Resque_Worker
 				// Wait until the child process finishes before continuing
 				while(pcntl_wait($status, WNOHANG) === 0) {
 					pcntl_signal_dispatch();
+
+					// Pause for a half a second to conserve system resources
+					usleep(500000);
 				}
 				$exitStatus = pcntl_wexitstatus($status);
 				if($exitStatus !== 0) {
