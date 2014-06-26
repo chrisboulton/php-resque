@@ -116,10 +116,15 @@ class Resque_Redis
 			}else if (strpos($server, 'redis://') !== false){
 				// Redis format is:
 				// redis://[user]:[password]@[host]:[port]
-				list($userpwd,$hostport) = explode('@', $server);
-				$userpwd = substr($userpwd, strpos($userpwd, 'redis://')+8);
+                if(strpos($server, '@') !== false){
+				    list($userpwd,$hostport) = explode('@', $server);
+                    $userpwd = substr($userpwd, strpos($userpwd, 'redis://')+8);
+                    list($user, $password) = explode(':', $userpwd);
+                }else{
+                    $hostport = substr($server, strpos($server, 'redis://')+8);
+                }
 				list($host, $port) = explode(':', $hostport);
-				list($user, $password) = explode(':', $userpwd);
+
 			}
 			
 			$this->driver = new Credis_Client($host, $port);
