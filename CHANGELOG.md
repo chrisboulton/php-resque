@@ -14,6 +14,17 @@ php-resque now utilizes Credis for all Redis based operations. Credis automatica
 
 Composer support has been improved and is now the recommended method for including php-resque in your project. Details on Composer support can be found in the Getting Started section of the readme.
 
+### Improved DSN Support
+
+Changes by iskandar introduce improved support for using DSNs to connect to Redis. You can now utilize the following formatted strings for the REDIS_BACKEND environment variable to connect:
+
+* `host`
+* `host:port`
+* `redis://host:port`
+* `redis://host:port/db`
+* `redis://user:pass@host:port/` (username is required but will be ignored)
+* `tcp://user:pass@host:port/` (username is required but will be ignored)
+
 ### Other Improvements/Changes
 
 * **COMPATIBILITY BREAKING**: The bundled worker manager `resque.php` has been moved to `bin/resque`, and is available as `vendor/bin/resque` when php-resque is installed as a Composer package.
