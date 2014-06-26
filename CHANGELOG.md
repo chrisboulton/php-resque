@@ -17,15 +17,11 @@ Composer support has been improved and is now the recommended method for includi
 ### Other Improvements/Changes
 
 * **COMPATIBILITY BREAKING**: The bundled worker manager `resque.php` has been moved to `bin/resque`, and is available as `vendor/bin/resque` when php-resque is installed as a Composer package.
-
 * Restructure tests and test bootstrapping. Autoload tests via Composer (install test dependencies with `composer install --dev`)
-
 * Add `SETEX` to list of commands which supply a key as the first argument in Redisent (danhunsaker)
-
 * Fix an issue where a lost connection to Redis could cause an infinite loop (atorres757)
-
 * Add a helper method to `Resque_Redis` to remove the namespace applied to Redis keys (tonypiper)
-
+* Call beforePerform hook before retrieivng an instance of the job class (allows beforePerform to cancel a job with DontPerform before initialising your application)
 
 ## 1.2 (2012-10-13) ##
 
