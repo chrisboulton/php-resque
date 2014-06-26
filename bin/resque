@@ -30,7 +30,15 @@ if(empty($QUEUE)) {
     die("Set QUEUE env var containing the list of queues to work.\n");
 }
 
+/**
+ * REDIS_BACKEND can have simple 'host:port' format or use a DSN-style format like this:
+ * - redis://user:pass@host:port
+ *
+ * Note: the 'user' part of the DSN URI is required but is not used.
+ */
 $REDIS_BACKEND = getenv('REDIS_BACKEND');
+
+// A redis database number
 $REDIS_BACKEND_DB = getenv('REDIS_BACKEND_DB');
 if(!empty($REDIS_BACKEND)) {
     if (empty($REDIS_BACKEND_DB))
