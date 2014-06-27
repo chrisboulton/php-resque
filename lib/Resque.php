@@ -178,14 +178,27 @@ class Resque
 	 */
 	public static function enqueue($queue, $class, $args = null, $trackStatus = false)
 	{
-		$result = Resque_Job::create($queue, $class, $args, $trackStatus);
-		if ($result) {
-			Resque_Event::trigger('afterEnqueue', array(
-				'class' => $class,
-				'args'  => $args,
-				'queue' => $queue,
-				'id'    => $result,
-			));
+		$beforeEnqueue = true;
+		$beforeEnqueue = Resque_Event::trigger('beforeEnqueue', array(
+			'class' => $class,
+			'args' => $args,
+			'queue' => $queue
+		));
+
+		// Only queue job if we have a true boolean value back from the event trigger.
+		if ($beforeEnqueue) {
+			$result = Resque_Job::create($queue, $class, $args, $trackStatus);
+			if ($result) {
+				Resque_Event::trigger('afterEnqueue', array(
+					'class' => $class,
+					'args'  => $args,
+					'queue' => $queue,
+					'id'    => $result,
+				));
+			}
+		}
+		else {
+			$result = 'Job not queued up due to event trigger beforeEnqueue returning FALSE.';
 		}
 
 		return $result;
