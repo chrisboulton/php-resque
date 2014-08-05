@@ -49,6 +49,13 @@ class Resque_Worker
 	 */
 	private $child = null;
 
+    /**
+     * number of jobs to run per fork
+     * @var int
+     * @access public
+     */
+    public static $jobsPerFork = 1;
+
 	/**
 	 * Return all workers known to Resque as instantiated instances.
 	 * @return array
@@ -107,18 +114,19 @@ class Resque_Worker
 		$this->id = $workerId;
 	}
 
-	/**
-	 * Instantiate a new worker, given a list of queues that it should be working
-	 * on. The list of queues should be supplied in the priority that they should
-	 * be checked for jobs (first come, first served)
-	 *
-	 * Passing a single '*' allows the worker to work on all queues in alphabetical
-	 * order. You can easily add new queues dynamically and have them worked on using
-	 * this method.
-	 *
-	 * @param string|array $queues String with a single queue name, array with multiple.
-	 */
-	public function __construct($queues)
+    /**
+     * Instantiate a new worker, given a list of queues that it should be working
+     * on. The list of queues should be supplied in the priority that they should
+     * be checked for jobs (first come, first served)
+     *
+     * Passing a single '*' allows the worker to work on all queues in alphabetical
+     * order. You can easily add new queues dynamically and have them worked on using
+     * this method.
+     *
+     * @param string|array $queues String with a single queue name, array with multiple.
+     * @param              $jobsPerFork number of jobs per fork
+     */
+	public function __construct($queues, $jobsPerFork)
 	{
 		if(!is_array($queues)) {
 			$queues = array($queues);
@@ -133,6 +141,8 @@ class Resque_Worker
 		}
 		$this->hostname = $hostname;
 		$this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
+
+        self::$jobsPerFork = $jobsPerFork;
 	}
 
 	/**
@@ -229,12 +239,51 @@ class Resque_Worker
 		$this->unregisterWorker();
 	}
 
+    /**
+     * Process some jobs starting with the one provided
+     * and processing more jobs as required by $jobs_per_fork amount
+     *
+     * @param object|null $job The job to be processed.
+     */
+    public function perform(Resque_Job $job)
+    {
+        Resque_Event::trigger('beforePerformJobsPerFork');
+        $this->logger->log(Psr\Log\LogLevel::INFO, "Starting PerformJobsPerFork... ");
+        $jobs_performed = 0;
+        while ($jobs_performed < self::$jobs_per_fork) {
+            if ($jobs_performed == 0 && $job) {
+                parent::perform($job);
+                $this->doneWorking();
+            } else {
+                $job = false;
+                $job = $this->reserve();
+                if (!$job) {
+                    usleep(2 * 1000000);
+                } else {
+                    $this->logger->log(Psr\Log\LogLevel::INFO, 'got ' . $job);
+                    $this->workingOn($job);
+                    $this->logger->log(
+                        Psr\Log\LogLevel::INFO,
+                        'Processing ' . $job->queue . ' since ' . strftime('%F %T')
+                    );
+                    $this->doPerform($job);
+                    $this->doneWorking();
+                }
+            }
+            $jobs_performed++;
+        }
+        $jobs_performed = null;
+        $this->logger->log(Psr\Log\LogLevel::INFO, "Ending PerformJobsPerFork... ");
+        Resque_Event::trigger('afterPerformJobsPerFork');
+    }
+
+
 	/**
 	 * Process a single job.
 	 *
 	 * @param Resque_Job $job The job to be processed.
 	 */
-	public function perform(Resque_Job $job)
+	public function doPerform(Resque_Job $job)
 	{
 		try {
 			Resque_Event::trigger('afterFork', $job);

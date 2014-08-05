@@ -97,7 +97,7 @@ if($count > 1) {
         // Child, start the worker
         else if(!$pid) {
             $queues = explode(',', $QUEUE);
-            $worker = new Resque_WorkerJobsPerFork($queues, $jobs_per_fork);
+            $worker = new Resque_Worker($queues, $jobs_per_fork);
             $worker->setLogger($logger);
             $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
             $worker->work($interval, $BLOCKING);
@@ -108,7 +108,7 @@ if($count > 1) {
 // Start a single worker
 else {
     $queues = explode(',', $QUEUE);
-    $worker = new Resque_WorkerJobsPerFork($queues, $jobs_per_fork);
+    $worker = new Resque_Worker($queues, $jobs_per_fork);
     $worker->setLogger($logger);
 
     $PIDFILE = getenv('PIDFILE');
