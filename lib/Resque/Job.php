@@ -186,10 +186,10 @@ class Resque_Job
 	 */
 	public function perform()
 	{
-		$instance = $this->getInstance();
 		try {
 			Resque_Event::trigger('beforePerform', $this);
 
+			$instance = $this->getInstance();
 			if(method_exists($instance, 'setUp')) {
 				$instance->setUp();
 			}

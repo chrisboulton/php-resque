@@ -2,7 +2,7 @@ php-resque: PHP Resque Worker (and Enqueue) [![Build Status](https://secure.trav
 ===========================================
 
 Resque is a Redis-backed library for creating background jobs, placing
-those jobs on multiple queues, and processing them later.
+those jobs on one or more queues, and processing them later.
 
 ## Background ##
 
@@ -24,7 +24,7 @@ The PHP port provides much the same features as the Ruby version:
 
 * Workers can be distributed between multiple machines
 * Includes support for priorities (queues)
-* Resilient to memory leaks (fork)
+* Resilient to memory leaks (forking)
 * Expects failure
 
 It also supports the following additional features:
@@ -53,9 +53,9 @@ If you're not familiar with Composer, please see <http://getcomposer.org/>.
 
 ```json
 {
-    //...
+    // ...
     "require": {
-        "chrisboulton/php-resque": "1.2.x"
+        "chrisboulton/php-resque": "1.2.x"	// Most recent tagged version
     },
     // ...
 }
@@ -88,7 +88,7 @@ Resque::enqueue('default', 'My_Job', $args);
 
 ### Defining Jobs ###
 
-Each job should be in it's own class, and include a `perform` method.
+Each job should be in its own class, and include a `perform` method.
 
 ```php
 class My_Job
@@ -111,7 +111,7 @@ result in a job failing.
 
 Jobs can also have `setUp` and `tearDown` methods. If a `setUp` method
 is defined, it will be called before the `perform` method is run.
-The `tearDown` method if defined, will be called after the job finishes.
+The `tearDown` method, if defined, will be called after the job finishes.
 
 
 ```php
@@ -138,7 +138,7 @@ class My_Job
 
 php-resque has the ability to perform basic status tracking of a queued
 job. The status information will allow you to check if a job is in the
-queue, currently being run, has finished, or failed.
+queue, is currently being run, has finished, or has failed.
 
 To track the status of a job, pass `true` as the fourth argument to
 `Resque::enqueue`. A token used for tracking the job status will be
@@ -185,9 +185,11 @@ not having a single environment such as with Ruby, the PHP port makes
 *no* assumptions about your setup.
 
 To start a worker, it's very similar to the Ruby version:
+
 ```sh
 $ QUEUE=file_serve php bin/resque
 ```
+
 It's your responsibility to tell the worker which file to include to get
 your application underway. You do so by setting the `APP_INCLUDE` environment
 variable:
@@ -203,6 +205,10 @@ your application too!*
 Getting your application underway also includes telling the worker your job
 classes, by means of either an autoloader or including them.
 
+Alternately, you can always `include('bin/resque')` from your application and
+skip setting `APP_INCLUDE` altogether.  Just be sure the various environment
+variables are set (`setenv`) before you do.
+
 ### Logging ###
 
 The port supports the same environment variables for logging to STDOUT.
@@ -210,8 +216,8 @@ Setting `VERBOSE` will print basic debugging information and `VVERBOSE`
 will print detailed information.
 
 ```sh
-$ VERBOSE QUEUE=file_serve bin/resque
-$ VVERBOSE QUEUE=file_serve bin/resque
+$ VERBOSE=1 QUEUE=file_serve bin/resque
+$ VVERBOSE=1 QUEUE=file_serve bin/resque
 ```
 
 ### Priorities and Queue Lists ###
@@ -236,17 +242,22 @@ All queues are supported in the same manner and processed in alphabetical
 order:
 
 ```sh
-$ QUEUE=* bin/resque
+$ QUEUE='*' bin/resque
 ```
 
 ### Running Multiple Workers ###
 
-Multiple workers ca be launched and automatically worked by supplying
-the `COUNT` environment variable:
+Multiple workers can be launched simultaneously by supplying the `COUNT`
+environment variable:
 
 ```sh
 $ COUNT=5 bin/resque
 ```
+
+Be aware, however, that each worker is its own fork, and the original process
+will shut down as soon as it has spawned `COUNT` forks.  If you need to keep
+track of your workers using an external application such as `monit`, you'll
+need to work around this limitation.
 
 ### Custom prefix ###
 
@@ -272,9 +283,9 @@ the job.
 Signals also work on supported platforms exactly as in the Ruby
 version of Resque:
 
-* `QUIT` - Wait for child to finish processing then exit
-* `TERM` / `INT` - Immediately kill child then exit
-* `USR1` - Immediately kill child but don't exit
+* `QUIT` - Wait for job to finish processing then exit
+* `TERM` / `INT` - Immediately kill job then exit
+* `USR1` - Immediately kill job but don't exit
 * `USR2` - Pause worker, no new jobs will be processed
 * `CONT` - Resume worker.
 
@@ -286,11 +297,12 @@ and any forked children also set their process title with the job
 being run. This helps identify running processes on the server and
 their resque status.
 
-**PHP does not have this functionality by default.**
+**PHP does not have this functionality by default until 5.5.**
 
 A PECL module (<http://pecl.php.net/package/proctitle>) exists that
-adds this funcitonality to PHP, so if you'd like process titles updated,
-install the PECL module as well. php-resque will detect and use it.
+adds this functionality to PHP before 5.5, so if you'd like process
+titles updated, install the PECL module as well. php-resque will
+automatically detect and use it.
 
 ## Event/Hook System ##
 
@@ -310,7 +322,7 @@ Resque_Event::listen('eventName', [callback]);
 * A string with the name of a function
 * An array containing an object and method to call
 * An array containing an object and a static method to call
-* A closure (PHP 5.3)
+* A closure (PHP 5.3+)
 
 Events may pass arguments (documented below), so your callback should accept
 these arguments.
@@ -342,20 +354,20 @@ Called before php-resque forks to run a job. Argument passed contains the instan
 `Resque_Job` for the job about to be run.
 
 `beforeFork` is triggered in the **parent** process. Any changes made will be permanent
-for as long as the worker lives.
+for as long as the **worker** lives.
 
 #### afterFork ####
 
 Called after php-resque forks to run a job (but before the job is run). Argument
 passed contains the instance of `Resque_Job` for the job about to be run.
 
-`afterFork` is triggered in the child process after forking out to complete a job. Any
-changes made will only live as long as the job is being processed.
+`afterFork` is triggered in the **child** process after forking out to complete a job. Any
+changes made will only live as long as the **job** is being processed.
 
 #### beforePerform ####
 
 Called before the `setUp` and `perform` methods on a job are run. Argument passed
-contains the instance of `Resque_Job` about for the job about to be run.
+contains the instance of `Resque_Job` for the job about to be run.
 
 You can prevent execution of the job by throwing an exception of `Resque_Job_DontPerform`.
 Any other exceptions thrown will be treated as if they were thrown in a job, causing the
@@ -384,27 +396,60 @@ Called after a job has been queued using the `Resque::enqueue` method. Arguments
 * Class - string containing the name of scheduled job
 * Arguments - array of arguments supplied to the job
 * Queue - string containing the name of the queue the job was added to
+* ID - string containing the new token of the enqueued job
+
+## Step-By-Step ##
+
+For a more in-depth look at what php-resque does under the hood (without 
+needing to directly examine the code), have a look at `HOWITWORKS.md`.
 
 ## Contributors ##
 
-* chrisboulton 
-* thedotedge
-* hobodave
-* scraton
-* KevBurnsJr
-* jmathai
-* dceballos
-* patrickbajao
-* andrewjshults
-* warezthebeef
-* d11wtq
-* hlegius
-* salimane
-* humancopy
-* pedroarnal
-* chaitanyakuber
-* maetl
-* Matt Heath
-* jjfrey
-* scragg0x
-* ruudk
+### Project Lead ###
+
+* @chrisboulton
+
+### Others ###
+
+* @acinader
+* @ajbonner
+* @andrewjshults
+* @atorres757
+* @benjisg
+* @cballou
+* @chaitanyakuber
+* @charly22
+* @CyrilMazur
+* @d11wtq
+* @danhunsaker
+* @dceballos
+* @ebernhardson
+* @hlegius
+* @hobodave
+* @humancopy
+* @iskandar
+* @JesseObrien
+* @jjfrey
+* @jmathai
+* @joshhawthorne
+* @KevBurnsJr
+* @lboynton
+* @maetl
+* @matteosister
+* @MattHeath
+* @mickhrmweb
+* @Olden
+* @patrickbajao
+* @pedroarnal
+* @ptrofimov
+* @rajibahmed
+* @richardkmiller
+* @Rockstar04
+* @ruudk
+* @salimane
+* @scragg0x
+* @scraton
+* @thedotedge
+* @tonypiper
+* @trimbletodd
+* @warezthebeef

@@ -56,6 +56,38 @@ class Resque_Worker
      */
     public static $jobsPerFork = 1;
 
+    /**
+     * Instantiate a new worker, given a list of queues that it should be working
+     * on. The list of queues should be supplied in the priority that they should
+     * be checked for jobs (first come, first served)
+     *
+     * Passing a single '*' allows the worker to work on all queues in alphabetical
+     * order. You can easily add new queues dynamically and have them worked on using
+     * this method.
+     *
+     * @param string|array $queues String with a single queue name, array with multiple.
+     */
+    public function __construct($queues, $jobsPerFork)
+    {
+        $this->logger = new Resque_Log();
+
+        if(!is_array($queues)) {
+            $queues = array($queues);
+        }
+
+        $this->queues = $queues;
+        if(function_exists('gethostname')) {
+            $hostname = gethostname();
+        }
+        else {
+            $hostname = php_uname('n');
+        }
+        $this->hostname = $hostname;
+        $this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);v
+
+        self::$jobsPerFork = $jobsPerFork;
+    }
+
 	/**
 	 * Return all workers known to Resque as instantiated instances.
 	 * @return array
@@ -99,7 +131,7 @@ class Resque_Worker
 
 		list($hostname, $pid, $queues) = explode(':', $workerId, 3);
 		$queues = explode(',', $queues);
-		$worker = new self($queues);
+		$worker = new self($queues, self::$jobsPerFork);
 		$worker->setId($workerId);
 		return $worker;
 	}
@@ -114,19 +146,18 @@ class Resque_Worker
 		$this->id = $workerId;
 	}
 
-    /**
-     * Instantiate a new worker, given a list of queues that it should be working
-     * on. The list of queues should be supplied in the priority that they should
-     * be checked for jobs (first come, first served)
-     *
-     * Passing a single '*' allows the worker to work on all queues in alphabetical
-     * order. You can easily add new queues dynamically and have them worked on using
-     * this method.
-     *
-     * @param string|array $queues String with a single queue name, array with multiple.
-     * @param              $jobsPerFork number of jobs per fork
-     */
-	public function __construct($queues, $jobsPerFork)
+	/**
+	 * Instantiate a new worker, given a list of queues that it should be working
+	 * on. The list of queues should be supplied in the priority that they should
+	 * be checked for jobs (first come, first served)
+	 *
+	 * Passing a single '*' allows the worker to work on all queues in alphabetical
+	 * order. You can easily add new queues dynamically and have them worked on using
+	 * this method.
+	 *
+	 * @param string|array $queues String with a single queue name, array with multiple.
+	 */
+	public function __construct($queues)
 	{
 		if(!is_array($queues)) {
 			$queues = array($queues);
@@ -141,8 +172,6 @@ class Resque_Worker
 		}
 		$this->hostname = $hostname;
 		$this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
-
-        self::$jobsPerFork = $jobsPerFork;
 	}
 
 	/**
@@ -373,8 +402,12 @@ class Resque_Worker
 	 */
 	private function updateProcLine($status)
 	{
-		if(function_exists('setproctitle')) {
-			setproctitle('resque-' . Resque::VERSION . ': ' . $status);
+		$processTitle = 'resque-' . Resque::VERSION . ': ' . $status;
+		if(function_exists('cli_set_process_title')) {
+			cli_set_process_title($processTitle);
+		}
+		else if(function_exists('setproctitle')) {
+			setproctitle($processTitle);
 		}
 	}
 
@@ -399,7 +432,6 @@ class Resque_Worker
 		pcntl_signal(SIGUSR1, array($this, 'killChild'));
 		pcntl_signal(SIGUSR2, array($this, 'pauseProcessing'));
 		pcntl_signal(SIGCONT, array($this, 'unPauseProcessing'));
-		pcntl_signal(SIGPIPE, array($this, 'reestablishRedisConnection'));
 		$this->logger->log(Psr\Log\LogLevel::DEBUG, 'Registered signals');
 	}
 
@@ -420,16 +452,6 @@ class Resque_Worker
 	{
 		$this->logger->log(Psr\Log\LogLevel::NOTICE, 'CONT received; resuming job processing');
 		$this->paused = false;
-	}
-
-	/**
-	 * Signal handler for SIGPIPE, in the event the redis connection has gone away.
-	 * Attempts to reconnect to redis, or raises an Exception.
-	 */
-	public function reestablishRedisConnection()
-	{
-		$this->logger->log(Psr\Log\LogLevel::NOTICE, 'SIGPIPE received; attempting to reconnect');
-		Resque::redis()->establishConnection();
 	}
 
 	/**
