@@ -5,6 +5,11 @@ use Psr\Log\LoggerInterface;
  * Resque worker that handles checking queues for jobs, fetching them
  * off the queues, running them and handling the result.
  *
+ * Modified for Speakap
+ * Changes:
+ *  - Fork first, then dequeue jobs
+ *  - Propagate signals to the child process
+ *
  * @package        Resque/Worker
  * @author         Chris Boulton <chris@bigcommerce.com>
  * @license        http://www.opensource.org/licenses/mit-license.php
@@ -163,12 +168,68 @@ class Resque_Worker
     public function work($interval = Resque::DEFAULT_INTERVAL, $blocking = false)
     {
         $this->updateProcLine('Starting');
+
         $this->startup();
 
-        while (true) {
-            if ($this->shutdown) {
-                break;
+        while (!$this->shutdown) {
+
+            $this->child = Resque::fork();
+
+            // Forked and we're the child. Run the job.
+            if ($this->child === 0 || $this->child === false) {
+                $status = 'Processing since ' . strftime('%F %T');
+                $this->updateProcLine($status);
+                $this->logger->log(Psr\Log\LogLevel::INFO, $status);
+
+                $this->workerChildLoop($interval, $blocking, self::$jobsPerFork);
+
+                if ($this->child === 0) {
+                    exit(0);
+                }
             }
+
+            if ($this->child > 0) {
+                // Parent process, sit and wait
+                $status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
+                $this->updateProcLine($status);
+                $this->logger->log(Psr\Log\LogLevel::INFO, $status);
+
+                // Wait until the child process finishes before continuing
+                pcntl_wait($status);
+                $this->logger->notice('Child {child} returned', array('child' => $this->child));
+
+                $exitStatus = pcntl_wexitstatus($status);
+                if ($exitStatus !== 0) {
+                    $job = $this->job(); // we need to know which job the child was last working on
+                    if ($job) {
+                        $job->fail(
+                            new Resque_Job_DirtyExitException(
+                                'Job exited with exit code ' . $exitStatus
+                            )
+                        );
+                    }
+                }
+            }
+
+            $this->child = null;
+            $this->doneWorking();
+        }
+
+        $this->unregisterWorker();
+    }
+
+    /**
+     * Executed in CHILD process
+     *
+     * @param $interval
+     * @param $blocking
+     */
+    private function workerChildLoop($interval, $blocking, $numJobs)
+    {
+        $jobsProcessed = 0;
+
+        while (!$this->shutdown && $jobsProcessed < $numJobs) {
+            pcntl_signal_dispatch();
 
             // Attempt to find and reserve a job
             $job = false;
@@ -199,8 +260,8 @@ class Resque_Worker
                     // If no job was found, we sleep for $interval before continuing and checking again
                     $this->logger->log(
                         Psr\Log\LogLevel::INFO,
-                        'Sleeping for {interval}',
-                        array('interval' => $interval)
+                        'Sleeping for {interval}, {jobsProcessed} jobs processed',
+                        array('interval' => $interval, 'jobsProcessed' => $jobsProcessed)
                     );
                     if ($this->paused) {
                         $this->updateProcLine('Paused');
@@ -215,108 +276,27 @@ class Resque_Worker
             }
 
             $this->logger->log(Psr\Log\LogLevel::NOTICE, 'Starting work on {job}', array('job' => $job));
-            Resque_Event::trigger('beforeFork', $job);
+
             $this->workingOn($job);
 
-            $this->child = Resque::fork();
+            try {
+                $job->perform();
+                $job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
+                $this->logger->log(Psr\Log\LogLevel::NOTICE, '{job} has finished', array('job' => $job));
+            } catch (Exception $e) {
+                $this->logger->log(
+                    Psr\Log\LogLevel::CRITICAL,
+                    '{job} has failed {stack}',
+                    array('job' => $job, 'stack' => $e->getMessage())
+                );
+                $job->fail($e);
 
-            // Forked and we're the child. Run the job.
-            if ($this->child === 0 || $this->child === false) {
-                $status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
-                $this->updateProcLine($status);
-                $this->logger->log(Psr\Log\LogLevel::INFO, $status);
-                $this->perform($job);
-                if ($this->child === 0) {
-                    exit(0);
-                }
-            }
-
-            if ($this->child > 0) {
-                // Parent process, sit and wait
-                $status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
-                $this->updateProcLine($status);
-                $this->logger->log(Psr\Log\LogLevel::INFO, $status);
-
-                // Wait until the child process finishes before continuing
-                pcntl_wait($status);
-                $exitStatus = pcntl_wexitstatus($status);
-                if ($exitStatus !== 0) {
-                    $job->fail(
-                        new Resque_Job_DirtyExitException(
-                            'Job exited with exit code ' . $exitStatus
-                        )
-                    );
-                }
-            }
-
-            $this->child = null;
-            $this->doneWorking();
-        }
-
-        $this->unregisterWorker();
-    }
-
-    /**
-     * Process some jobs starting with the one provided
-     * and processing more jobs as required by $jobs_per_fork amount
-     *
-     * @param object|null $job The job to be processed.
-     */
-    public function perform(Resque_Job $job)
-    {
-        Resque_Event::trigger('beforePerformJobsPerFork');
-        $this->logger->log(Psr\Log\LogLevel::INFO, "Starting PerformJobsPerFork... ");
-        $jobs_performed = 0;
-        while ($jobs_performed < self::$jobs_per_fork) {
-            if ($jobs_performed == 0 && $job) {
-                parent::perform($job);
+                break; // terminate the child when a job fails
+            } finally {
                 $this->doneWorking();
-            } else {
-                $job = false;
-                $job = $this->reserve();
-                if (!$job) {
-                    usleep(2 * 1000000);
-                } else {
-                    $this->logger->log(Psr\Log\LogLevel::INFO, 'got ' . $job);
-                    $this->workingOn($job);
-                    $this->logger->log(
-                        Psr\Log\LogLevel::INFO,
-                        'Processing ' . $job->queue . ' since ' . strftime('%F %T')
-                    );
-                    $this->doPerform($job);
-                    $this->doneWorking();
-                }
+                $jobsProcessed++;
             }
-            $jobs_performed++;
         }
-        $jobs_performed = null;
-        $this->logger->log(Psr\Log\LogLevel::INFO, "Ending PerformJobsPerFork... ");
-        Resque_Event::trigger('afterPerformJobsPerFork');
-    }
-
-    /**
-     * Process a single job.
-     *
-     * @param Resque_Job $job The job to be processed.
-     */
-    public function doPerform(Resque_Job $job)
-    {
-        try {
-            Resque_Event::trigger('afterFork', $job);
-            $job->perform();
-        } catch (Exception $e) {
-            $this->logger->log(
-                Psr\Log\LogLevel::CRITICAL,
-                '{job} has failed {stack}',
-                array('job' => $job, 'stack' => $e->getMessage())
-            );
-            $job->fail($e);
-
-            return;
-        }
-
-        $job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
-        $this->logger->log(Psr\Log\LogLevel::NOTICE, '{job} has finished', array('job' => $job));
     }
 
     /**
@@ -417,13 +397,13 @@ class Resque_Worker
     private function registerSigHandlers()
     {
         if (!function_exists('pcntl_signal')) {
-            return;
+            throw new \RuntimeException('pcntl required');
         }
 
         declare(ticks = 1);
-        pcntl_signal(SIGTERM, array($this, 'shutDownNow'));
-        pcntl_signal(SIGINT, array($this, 'shutDownNow'));
-        pcntl_signal(SIGQUIT, array($this, 'shutdown'));
+        pcntl_signal(SIGTERM, array($this, 'shutDownNow'), false);
+        pcntl_signal(SIGINT, array($this, 'shutDownNow'), false);
+        pcntl_signal(SIGQUIT, array($this, 'shutdown'), false);
         pcntl_signal(SIGUSR1, array($this, 'killChild'));
         pcntl_signal(SIGUSR2, array($this, 'pauseProcessing'));
         pcntl_signal(SIGCONT, array($this, 'unPauseProcessing'));
@@ -437,6 +417,7 @@ class Resque_Worker
     {
         $this->logger->log(Psr\Log\LogLevel::NOTICE, 'USR2 received; pausing job processing');
         $this->paused = true;
+        $this->signalChild(SIGUSR2);
     }
 
     /**
@@ -447,6 +428,7 @@ class Resque_Worker
     {
         $this->logger->log(Psr\Log\LogLevel::NOTICE, 'CONT received; resuming job processing');
         $this->paused = false;
+        $this->signalChild(SIGCONT);
     }
 
     /**
@@ -456,6 +438,12 @@ class Resque_Worker
     public function shutdown()
     {
         $this->shutdown = true;
+        if ($this->child) {
+            // tell the child to stop after the current job
+            $this->signalChild(SIGQUIT);
+        } else {
+            $this->logger->debug('No child to kill');
+        }
         $this->logger->log(Psr\Log\LogLevel::NOTICE, 'Shutting down');
     }
 
@@ -466,7 +454,7 @@ class Resque_Worker
     public function shutdownNow()
     {
         $this->shutdown();
-        $this->killChild();
+        $this->signalChild(SIGKILL);
     }
 
     /**
@@ -475,21 +463,37 @@ class Resque_Worker
      */
     public function killChild()
     {
+        $this->signalChild(SIGKILL);
+    }
+
+    /**
+     * Send signal to the child (if any)
+     *
+     * @param integer $signal
+     */
+    public function signalChild($signal)
+    {
         if (!$this->child) {
-            $this->logger->log(Psr\Log\LogLevel::DEBUG, 'No child to kill.');
+            $this->logger->log(Psr\Log\LogLevel::DEBUG, 'No child to send signal.');
 
             return;
         }
 
-        $this->logger->log(Psr\Log\LogLevel::INFO, 'Killing child at {child}', array('child' => $this->child));
+        $this->logger->log(
+            Psr\Log\LogLevel::INFO,
+            'Sending signal {signal} to child at {child}',
+            array('child' => $this->child, 'signal' => $signal)
+        );
         if (exec('ps -o pid,state -p ' . $this->child, $output, $returnCode) && $returnCode != 1) {
             $this->logger->log(
                 Psr\Log\LogLevel::DEBUG,
                 'Child {child} found, killing.',
                 array('child' => $this->child)
             );
-            posix_kill($this->child, SIGKILL);
-            $this->child = null;
+            posix_kill($this->child, $signal);
+            if ($signal === SIGKILL) {
+                $this->child = null;
+            }
         } else {
             $this->logger->log(
                 Psr\Log\LogLevel::INFO,
