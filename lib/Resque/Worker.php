@@ -202,9 +202,11 @@ class Resque_Worker
                 if ($exitStatus !== 0) {
                     $job = $this->job(); // we need to know which job the child was last working on
                     if ($job) {
+                        $this->logger->critical('Child exited with exit code ' . $exitStatus);
+
                         $job->fail(
                             new Resque_Job_DirtyExitException(
-                                'Job exited with exit code ' . $exitStatus
+                                'Child exited with exit code ' . $exitStatus
                             )
                         );
                     }
@@ -411,7 +413,7 @@ class Resque_Worker
         pcntl_signal(SIGTERM, array($this, 'shutDownNow'), false);
         pcntl_signal(SIGINT, array($this, 'shutDownNow'), false);
         pcntl_signal(SIGQUIT, array($this, 'shutdown'), false);
-        pcntl_signal(SIGUSR1, array($this, 'killChild', false));
+        pcntl_signal(SIGUSR1, array($this, 'killChild'), false);
         pcntl_signal(SIGUSR2, array($this, 'pauseProcessing'), false);
         pcntl_signal(SIGCONT, array($this, 'unPauseProcessing'), false);
         $this->logger->log(Psr\Log\LogLevel::DEBUG, 'Registered signals');
