@@ -221,8 +221,8 @@ class Resque_Worker
     /**
      * Executed in CHILD process
      *
-     * @param $interval
-     * @param $blocking
+     * @param float   $interval
+     * @param boolean $blocking
      */
     private function workerChildLoop($interval, $blocking, $numJobs)
     {
@@ -230,6 +230,13 @@ class Resque_Worker
 
         while (!$this->shutdown && $jobsProcessed < $numJobs) {
             pcntl_signal_dispatch();
+
+            if (posix_getppid() === 1) {
+                // parent died for some reason, so it's probably best to terminate
+                $this->logger->notice('Parent died, shutting down');
+
+                break;
+            }
 
             // Attempt to find and reserve a job
             $job = false;
@@ -404,9 +411,9 @@ class Resque_Worker
         pcntl_signal(SIGTERM, array($this, 'shutDownNow'), false);
         pcntl_signal(SIGINT, array($this, 'shutDownNow'), false);
         pcntl_signal(SIGQUIT, array($this, 'shutdown'), false);
-        pcntl_signal(SIGUSR1, array($this, 'killChild'));
-        pcntl_signal(SIGUSR2, array($this, 'pauseProcessing'));
-        pcntl_signal(SIGCONT, array($this, 'unPauseProcessing'));
+        pcntl_signal(SIGUSR1, array($this, 'killChild', false));
+        pcntl_signal(SIGUSR2, array($this, 'pauseProcessing'), false);
+        pcntl_signal(SIGCONT, array($this, 'unPauseProcessing'), false);
         $this->logger->log(Psr\Log\LogLevel::DEBUG, 'Registered signals');
     }
 
@@ -415,9 +422,12 @@ class Resque_Worker
      */
     public function pauseProcessing()
     {
-        $this->logger->log(Psr\Log\LogLevel::NOTICE, 'USR2 received; pausing job processing');
         $this->paused = true;
-        $this->signalChild(SIGUSR2);
+
+        $this->logger->log(Psr\Log\LogLevel::NOTICE, 'USR2 received; pausing job processing');
+        if ($this->child) {
+            $this->signalChild(SIGUSR2);
+        }
     }
 
     /**
@@ -426,9 +436,12 @@ class Resque_Worker
      */
     public function unPauseProcessing()
     {
-        $this->logger->log(Psr\Log\LogLevel::NOTICE, 'CONT received; resuming job processing');
         $this->paused = false;
-        $this->signalChild(SIGCONT);
+        $this->logger->log(Psr\Log\LogLevel::NOTICE, 'CONT received; resuming job processing');
+
+        if ($this->child) {
+            $this->signalChild(SIGCONT);
+        }
     }
 
     /**
