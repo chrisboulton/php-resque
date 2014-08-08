@@ -62,6 +62,7 @@ class Resque_Job
 			'class'	=> $class,
 			'args'	=> array($args),
 			'id'	=> $id,
+			'queue_time' => microtime(true),
 		));
 
 		if($monitor) {
