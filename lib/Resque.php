@@ -120,39 +120,55 @@ class Resque
 		return json_decode($item, true);
 	}
 
-    /**
-     * Pop an item off the end of the specified queues, using blocking list pop,
-     * decode it and return it.
-     *
-     * @param array         $queues
-     * @param int           $timeout
-     * @return null|array   Decoded item from the queue.
-     */
-    public static function blpop(array $queues, $timeout)
-    {
-        $list = array();
-        foreach($queues AS $queue) {
-            $list[] = 'queue:' . $queue;
-        }
+	/**
+	 * Remove items of the specified queue
+	 *
+	 * @param string $queue The name of the queue to fetch an item from.
+	 * @param array $items
+	 * @return integer number of deleted items
+	 */
+	public static function dequeue($queue, $items = Array())
+	{
+	    if(count($items) > 0) {
+		return self::removeItems($queue, $items);
+	    } else {
+		return self::removeList($queue);
+	    }
+	}
+    
+	/**
+	 * Pop an item off the end of the specified queues, using blocking list pop,
+	 * decode it and return it.
+	 *
+	 * @param array         $queues
+	 * @param int           $timeout
+	 * @return null|array   Decoded item from the queue.
+	 */
+	public static function blpop(array $queues, $timeout)
+	{
+	    $list = array();
+	    foreach($queues AS $queue) {
+		$list[] = 'queue:' . $queue;
+	    }
 
-        $item = self::redis()->blpop($list, (int)$timeout);
+	    $item = self::redis()->blpop($list, (int)$timeout);
 
-        if(!$item) {
-            return;
-        }
+	    if(!$item) {
+		return;
+	    }
 
-        /**
-         * Normally the Resque_Redis class returns queue names without the prefix
-         * But the blpop is a bit different. It returns the name as prefix:queue:name
-         * So we need to strip off the prefix:queue: part
-         */
-        $queue = substr($item[0], strlen(self::redis()->getPrefix() . 'queue:'));
+	    /**
+	     * Normally the Resque_Redis class returns queue names without the prefix
+	     * But the blpop is a bit different. It returns the name as prefix:queue:name
+	     * So we need to strip off the prefix:queue: part
+	     */
+	    $queue = substr($item[0], strlen(self::redis()->getPrefix() . 'queue:'));
 
-        return array(
-            'queue'   => $queue,
-            'payload' => json_decode($item[1], true)
-        );
-    }
+	    return array(
+		'queue'   => $queue,
+		'payload' => json_decode($item[1], true)
+	    );
+	}
 
 	/**
 	 * Return the size (number of pending jobs) of the specified queue.
@@ -215,4 +231,72 @@ class Resque
 		}
 		return $queues;
 	}
+
+	/**
+	 * Remove Items from the queue
+	 * Safely moving each item to a temporary queue before processing it
+	 * If the Job matches, counts otherwise puts it in a requeue_queue
+	 * which at the end eventually be copied back into the original queue
+	 *
+	 * @private
+	 *
+	 * @param string $queue The name of the queue
+	 * @param array $items
+	 * @return integer number of deleted items
+	 */
+	private static function removeItems($queue, $items = Array())
+	{
+	    $counter = 0;
+	    $originalQueue = 'queue:'. $queue;
+	    $tempQueue = $originalQueue. ':temp:'. time();
+	    $requeueQueue = $tempQueue. ':requeue';
+
+	    // move each item from original queue to temp queue and process it
+	    $finished = false;
+	    while(!$finished) {
+		$string = self::redis()->rpoplpush($originalQueue, self::redis()->getPrefix() . $tempQueue);
+
+		if(!empty($string)) {
+		    $decoded = json_decode($string, true);
+		    if(in_array($decoded['class'], $items)) {
+			$counter++;
+		    } else {
+			self::redis()->rpoplpush($tempQueue, self::redis()->getPrefix() . $requeueQueue);
+		    }
+		} else {
+		    $finished = true;
+		}
+	    }
+
+	    // move back from temp queue to original queue
+	    $finished = false;
+	    while(!$finished) {
+		$string = self::redis()->rpoplpush($requeueQueue, self::redis()->getPrefix() .$originalQueue);
+		if (empty($string)) {
+		    $finished = true;
+		}
+	    }
+
+	    // remove temp queue and requeue queue
+	    self::redis()->del($requeueQueue);
+	    self::redis()->del($tempQueue);
+
+	    return $counter;
+	}
+
+	/**
+	 * Remove List
+	 *
+	 * @private
+	 * 
+	 * @params string $queue the name of the queue
+	 * @return integer number of deleted items belongs to this list
+	 */
+	private static function removeList($queue)
+	{
+	    $counter = self::size($queue);
+	    $result = self::redis()->del('queue:' . $queue);
+	    return ($result == 1) ? $counter : 0;
+	}
 }
+
