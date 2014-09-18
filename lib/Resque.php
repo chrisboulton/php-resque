@@ -181,7 +181,7 @@ class Resque
 		$beforeEnqueue = true;
 		$beforeEnqueue = Resque_Event::trigger('beforeEnqueue', array(
 			'class' => $class,
-			'args' => $args,
+			'args' => &$args,
 			'queue' => $queue
 		));
 
