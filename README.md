@@ -413,6 +413,18 @@ Called whenever a job fails. Arguments passed (in this order) include:
 * Exception - The exception that was thrown when the job failed
 * Resque_Job - The job that failed
 
+#### beforeEnqueue ####
+
+Called immediately before a job is enqueued using the `Resque::enqueue` method.
+Arguments passed (in this order) include:
+
+* Class - string containing the name of the job to be enqueued
+* Arguments - array of arguments for the job
+* Queue - string containing the name of the queue the job is to be enqueued in
+* ID - string containing the token of the job to be enqueued
+
+You can prevent enqueing of the job by throwing an exception of `Resque_Job_DontCreate`.
+
 #### afterEnqueue ####
 
 Called after a job has been queued using the `Resque::enqueue` method. Arguments passed

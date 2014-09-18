@@ -201,17 +201,24 @@ class Resque
 	 */
 	public static function enqueue($queue, $class, $args = null, $trackStatus = false)
 	{
-		$result = Resque_Job::create($queue, $class, $args, $trackStatus);
-		if ($result) {
-			Resque_Event::trigger('afterEnqueue', array(
-				'class' => $class,
-				'args'  => $args,
-				'queue' => $queue,
-				'id'    => $result,
-			));
+		$id         = Resque::generateJobId();
+		$hookParams = array(
+			'class' => $class,
+			'args'  => $args,
+			'queue' => $queue,
+			'id'    => $id,
+		);
+		try {
+			Resque_Event::trigger('beforeEnqueue', $hookParams);
+		}
+		catch(Resque_Job_DontCreate $e) {
+			return $id;
 		}
 
-		return $result;
+		Resque_Job::create($queue, $class, $args, $trackStatus, $id);
+		Resque_Event::trigger('afterEnqueue', $hookParams);
+
+		return $id;
 	}
 
 	/**
@@ -340,6 +347,16 @@ class Resque
 	    $counter = self::size($queue);
 	    $result = self::redis()->del('queue:' . $queue);
 	    return ($result == 1) ? $counter : 0;
+	}
+
+	/*
+	 * Generate an identifier to attach to a job for status tracking.
+	 *
+	 * @return string
+	 */
+	public static function generateJobId()
+	{
+		return md5(uniqid('', true));
 	}
 }
 
