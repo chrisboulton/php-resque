@@ -257,8 +257,7 @@ class Resque
 		$string = self::redis()->rpoplpush($originalQueue, self::redis()->getPrefix() . $tempQueue);
 
 		if(!empty($string)) {
-		    $decoded = json_decode($string, true);
-		    if(in_array($decoded['class'], $items)) {
+		    if(self::matchItem($string, $items)) {
 			$counter++;
 		    } else {
 			self::redis()->rpoplpush($tempQueue, self::redis()->getPrefix() . $requeueQueue);
@@ -282,6 +281,43 @@ class Resque
 	    self::redis()->del($tempQueue);
 
 	    return $counter;
+	}
+
+	/**
+	 * matching item
+	 * item can be ['class'] or ['class' => 'id'] or ['class' => {:foo => 1, :bar => 2}]
+	 * @private
+	 *
+	 * @params string $string redis result in json
+	 * @params $items
+	 *
+	 * @return (bool)
+	 */
+	private static function matchItem($string, $items)
+	{
+	    $decoded = json_decode($string, true);
+
+	    foreach($items as $key => $val) {
+		# class name only  ex: item[0] = ['class']
+		if (is_numeric($key)) {
+		    if($decoded['class'] == $val) {
+			return true;
+		    }
+		# class name with args , example: item[0] = ['class' => {'foo' => 1, 'bar' => 2}]
+    		} elseif (is_array($val)) {
+		    $decodedArgs = (array)$decoded['args'][0];
+		    if ($decoded['class'] == $key &&
+			count($decodedArgs) > 0 && count(array_diff($decodedArgs, $val)) == 0) {
+			return true;
+			}
+		# class name with ID, example: item[0] = ['class' => 'id']
+		} else {
+		    if ($decoded['class'] == $key && $decoded['id'] == $val) {
+			return true;
+		    }
+		}
+	    }
+	    return false;
 	}
 
 	/**

@@ -77,7 +77,7 @@ class Resque_Redis
 		'zscore',
 		'zremrangebyscore',
 		'sort',
-		'rename'
+		'rename',
 		'rpoplpush'
 	);
 	// sinterstore
