@@ -134,6 +134,31 @@ class My_Job
 }
 ```
 
+### Dequeueing Jobs ###
+
+This method can be used to conveniently remove a job from a queue.
+
+```php
+// Removes job class 'My_Job' of queue 'default'
+Resque::dequeue('default', ['My_Job']);
+
+// Removes job class 'My_Job' with Job ID '087df5819a790ac666c9608e2234b21e' of queue 'default'
+Resuque::dequeue('default', ['My_Job' => '087df5819a790ac666c9608e2234b21e']);
+
+// Removes job class 'My_Job' with arguments of queue 'default'
+Resque::dequeue('default', ['My_Job' => array('foo' => 1, 'bar' => 2)]);
+
+// Removes multiple jobs
+Resque::dequeue('default', ['My_Job', 'My_Job2']);
+```
+
+If no jobs are given, this method will dequeue all jobs matching the provided queue.
+
+```php
+// Removes all jobs of queue 'default'
+Resque::dequeue('default');
+```
+
 ### Tracking Job Statuses ###
 
 php-resque has the ability to perform basic status tracking of a queued
