@@ -33,6 +33,8 @@ class Resque
 	 * the redis server that Resque will talk to.
 	 *
 	 * @param mixed $server Host/port combination separated by a colon, DSN-formatted URI, or
+	 *                      a callable that receives the configured database ID
+	 *                      and returns a Resque_Redis instance, or
 	 *                      a nested array of servers with host/port pairs.
 	 * @param int $database
 	 */
@@ -54,10 +56,15 @@ class Resque
 			return self::$redis;
 		}
 
-		self::$redis = new Resque_Redis(self::$redisServer, self::$redisDatabase);
+		if (is_callable(self::$redisServer)) {
+			self::$redis = call_user_func(self::$redisServer, self::$redisDatabase);
+		} else {
+			self::$redis = new Resque_Redis(self::$redisServer, self::$redisDatabase);
+		}
+
 		return self::$redis;
 	}
-	
+
 	/**
 	 * fork() helper method for php-resque that handles issues PHP socket
 	 * and phpredis have with passing around sockets between child/parent
@@ -135,7 +142,7 @@ class Resque
 		return self::removeList($queue);
 	    }
 	}
-    
+
 	/**
 	 * Pop an item off the end of the specified queues, using blocking list pop,
 	 * decode it and return it.
@@ -324,7 +331,7 @@ class Resque
 	 * Remove List
 	 *
 	 * @private
-	 * 
+	 *
 	 * @params string $queue the name of the queue
 	 * @return integer number of deleted items belongs to this list
 	 */
