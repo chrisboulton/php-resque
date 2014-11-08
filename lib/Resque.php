@@ -265,6 +265,7 @@ class Resque
 
 		if(!empty($string)) {
 		    if(self::matchItem($string, $items)) {
+		    	self::redis()->rpop($tempQueue);
 			$counter++;
 		    } else {
 			self::redis()->rpoplpush($tempQueue, self::redis()->getPrefix() . $requeueQueue);
