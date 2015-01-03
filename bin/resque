@@ -130,8 +130,10 @@ if($count > 1) {
 					
 					$PIDFILE = getenv('PIDFILE');
 					if ($PIDFILE) {
-						file_put_contents($PIDFILE, getmypid()) or
-							die('Could not write PID information to ' . $PIDFILE);
+						file_put_contents($PIDFILE, getmypid()) or (
+							$logger->log(Psr\Log\LogLevel::NOTICE, 'Could not write PID information to {pidfile}', array('pidfile' => $PIDFILE)) and
+							die(2)
+                                                    );
 					}
 					
 					$registered = TRUE;
@@ -171,11 +173,13 @@ else {
 	$worker->logLevel = $logLevel;
 	$worker->hasParent = FALSE;
 
-    $PIDFILE = getenv('PIDFILE');
-    if ($PIDFILE) {
-        file_put_contents($PIDFILE, getmypid()) or
-            die('Could not write PID information to ' . $PIDFILE);
-    }
+	$PIDFILE = getenv('PIDFILE');
+	if ($PIDFILE) {
+		file_put_contents($PIDFILE, getmypid()) or (
+			$logger->log(Psr\Log\LogLevel::NOTICE, 'Could not write PID information to {pidfile}', array('pidfile' => $PIDFILE)) and
+			die(2)
+                    );
+	}
 
     $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
     $worker->work($interval, $BLOCKING);
