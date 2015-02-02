@@ -197,7 +197,7 @@ class Resque
 	 * @param array $args Any optional arguments that should be passed when the job is executed.
 	 * @param boolean $trackStatus Set to true to be able to monitor the status of a job.
 	 *
-	 * @return string
+	 * @return string|boolean Job ID when the job was created, false if creation was cancelled due to beforeEnqueue
 	 */
 	public static function enqueue($queue, $class, $args = null, $trackStatus = false)
 	{
@@ -212,7 +212,7 @@ class Resque
 			Resque_Event::trigger('beforeEnqueue', $hookParams);
 		}
 		catch(Resque_Job_DontCreate $e) {
-			return $id;
+			return false;
 		}
 
 		Resque_Job::create($queue, $class, $args, $trackStatus, $id);
