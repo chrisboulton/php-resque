@@ -298,6 +298,29 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$this->assertEquals(Resque::dequeue($queue, $test), 1);
 		#$this->assertEquals(Resque::size($queue), 1);
 	}
+	
+	public function testDequeueSeveralItemsWithArgs()
+	{
+		// GIVEN
+		$queue = 'jobs';
+		$args = array('foo' => 1, 'bar' => 10);
+		$removeArgs = array('foo' => 1, 'bar' => 2);
+		Resque::enqueue($queue, 'Test_Job_Dequeue9', $args);
+		Resque::enqueue($queue, 'Test_Job_Dequeue9', $removeArgs);
+		Resque::enqueue($queue, 'Test_Job_Dequeue9', $removeArgs);
+		$this->assertEquals(Resque::size($queue), 3);
+		
+		// WHEN
+		$test = array('Test_Job_Dequeue9' => $removeArgs);
+		$removedItems = Resque::dequeue($queue, $test);
+		
+		// THEN
+		$this->assertEquals($removedItems, 2);
+		$this->assertEquals(Resque::size($queue), 1);
+		$item = Resque::pop($queue);
+		$this->assertInternalType('array', $item['args']);
+		$this->assertEquals(10, $item['args'][0]['bar'], 'Wrong items were dequeued from queue!');
+	}
 
 	public function testDequeueItemWithUnorderedArg()
 	{

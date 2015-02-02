@@ -253,41 +253,42 @@ class Resque
 	 */
 	private static function removeItems($queue, $items = Array())
 	{
-	    $counter = 0;
-	    $originalQueue = 'queue:'. $queue;
-	    $tempQueue = $originalQueue. ':temp:'. time();
-	    $requeueQueue = $tempQueue. ':requeue';
-
-	    // move each item from original queue to temp queue and process it
-	    $finished = false;
-	    while(!$finished) {
-		$string = self::redis()->rpoplpush($originalQueue, self::redis()->getPrefix() . $tempQueue);
-
-		if(!empty($string)) {
-		    if(self::matchItem($string, $items)) {
-			$counter++;
-		    } else {
-			self::redis()->rpoplpush($tempQueue, self::redis()->getPrefix() . $requeueQueue);
-		    }
-		} else {
-		    $finished = true;
+		$counter = 0;
+		$originalQueue = 'queue:'. $queue;
+		$tempQueue = $originalQueue. ':temp:'. time();
+		$requeueQueue = $tempQueue. ':requeue';
+		
+		// move each item from original queue to temp queue and process it
+		$finished = false;
+		while (!$finished) {
+			$string = self::redis()->rpoplpush($originalQueue, self::redis()->getPrefix() . $tempQueue);
+	
+			if (!empty($string)) {
+				if(self::matchItem($string, $items)) {
+					self::redis()->rpop($tempQueue);
+					$counter++;
+				} else {
+					self::redis()->rpoplpush($tempQueue, self::redis()->getPrefix() . $requeueQueue);
+				}
+			} else {
+				$finished = true;
+			}
 		}
-	    }
 
-	    // move back from temp queue to original queue
-	    $finished = false;
-	    while(!$finished) {
-		$string = self::redis()->rpoplpush($requeueQueue, self::redis()->getPrefix() .$originalQueue);
-		if (empty($string)) {
-		    $finished = true;
+		// move back from temp queue to original queue
+		$finished = false;
+		while (!$finished) {
+			$string = self::redis()->rpoplpush($requeueQueue, self::redis()->getPrefix() .$originalQueue);
+			if (empty($string)) {
+			    $finished = true;
+			}
 		}
-	    }
 
-	    // remove temp queue and requeue queue
-	    self::redis()->del($requeueQueue);
-	    self::redis()->del($tempQueue);
-
-	    return $counter;
+		// remove temp queue and requeue queue
+		self::redis()->del($requeueQueue);
+		self::redis()->del($tempQueue);
+		
+		return $counter;
 	}
 
 	/**
