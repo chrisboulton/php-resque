@@ -106,9 +106,10 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 		Resque_Event::listen('beforeEnqueue', array($this, $callback));
 		Resque_Event::listen('afterEnqueue', array($this, 'afterEnqueueEventCallback'));
 
-		Resque::enqueue('test_job', 'TestClass');
+		$result = Resque::enqueue('test_job', 'TestClass');
 		$this->assertContains($callback, $this->callbacksHit, $callback . ' callback was not called');
 		$this->assertNotContains('afterEnqueueEventCallback', $this->callbacksHit, 'afterEnqueue was still called, even though it should not have been');
+		$this->assertFalse($result);
 	}
 
 	public function testAfterEnqueueEventCallbackFires()
