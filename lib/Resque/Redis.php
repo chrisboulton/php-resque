@@ -142,7 +142,7 @@ class Resque_Redis
 			}
 		}
 		catch(CredisException $e) {
-			throw new Resque_RedisException($e);
+			throw new Resque_RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
 		}
 	}
 
@@ -245,7 +245,7 @@ class Resque_Redis
 			return $this->driver->__call($name, $args);
 		}
 		catch (CredisException $e) {
-			throw new Resque_RedisException($e);
+			throw new Resque_RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
 		}
 	}
 
