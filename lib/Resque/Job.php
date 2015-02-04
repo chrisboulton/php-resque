@@ -47,17 +47,21 @@ class Resque_Job
 	 * @param string $class The name of the class that contains the code to execute the job.
 	 * @param array $args Any optional arguments that should be passed when the job is executed.
 	 * @param boolean $monitor Set to true to be able to monitor the status of a job.
+	 * @param string $id Unique identifier for tracking the job. Generated if not supplied.
 	 *
 	 * @return string
 	 */
-	public static function create($queue, $class, $args = null, $monitor = false)
+	public static function create($queue, $class, $args = null, $monitor = false, $id = null)
 	{
+		if (is_null($id)) {
+			$id = Resque::generateJobId();
+		}
+
 		if($args !== null && !is_array($args)) {
 			throw new InvalidArgumentException(
 				'Supplied $args must be an array.'
 			);
 		}
-		$id = md5(uniqid('', true));
 		Resque::push($queue, array(
 			'class'	=> $class,
 			'args'	=> array($args),

@@ -197,21 +197,28 @@ class Resque
 	 * @param array $args Any optional arguments that should be passed when the job is executed.
 	 * @param boolean $trackStatus Set to true to be able to monitor the status of a job.
 	 *
-	 * @return string
+	 * @return string|boolean Job ID when the job was created, false if creation was cancelled due to beforeEnqueue
 	 */
 	public static function enqueue($queue, $class, $args = null, $trackStatus = false)
 	{
-		$result = Resque_Job::create($queue, $class, $args, $trackStatus);
-		if ($result) {
-			Resque_Event::trigger('afterEnqueue', array(
-				'class' => $class,
-				'args'  => $args,
-				'queue' => $queue,
-				'id'    => $result,
-			));
+		$id         = Resque::generateJobId();
+		$hookParams = array(
+			'class' => $class,
+			'args'  => $args,
+			'queue' => $queue,
+			'id'    => $id,
+		);
+		try {
+			Resque_Event::trigger('beforeEnqueue', $hookParams);
+		}
+		catch(Resque_Job_DontCreate $e) {
+			return false;
 		}
 
-		return $result;
+		Resque_Job::create($queue, $class, $args, $trackStatus, $id);
+		Resque_Event::trigger('afterEnqueue', $hookParams);
+
+		return $id;
 	}
 
 	/**
@@ -341,6 +348,16 @@ class Resque
 	    $counter = self::size($queue);
 	    $result = self::redis()->del('queue:' . $queue);
 	    return ($result == 1) ? $counter : 0;
+	}
+
+	/*
+	 * Generate an identifier to attach to a job for status tracking.
+	 *
+	 * @return string
+	 */
+	public static function generateJobId()
+	{
+		return md5(uniqid('', true));
 	}
 }
 
