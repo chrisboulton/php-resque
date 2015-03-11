@@ -98,7 +98,7 @@ class Resque_Redis
 	 */
 	public static function prefix($namespace)
 	{
-	    if (strpos($namespace, ':') === false) {
+	    if (substr($namespace, -1) !== ':') {
 	        $namespace .= ':';
 	    }
 	    self::$defaultNamespace = $namespace;

@@ -166,7 +166,21 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		
 		$this->assertTrue(Test_Job_With_TearDown::$called);
 	}
-	
+
+	public function testNamespaceNaming() {
+		$fixture = array(
+			array('test' => 'more:than:one:with:', 'assertValue' => 'more:than:one:with:'),
+			array('test' => 'more:than:one:without', 'assertValue' => 'more:than:one:without:'),
+			array('test' => 'resque', 'assertValue' => 'resque:'),
+			array('test' => 'resque:', 'assertValue' => 'resque:'),
+		);
+
+		foreach($fixture as $item) {
+			Resque_Redis::prefix($item['test']);
+			$this->assertEquals(Resque_Redis::getPrefix(), $item['assertValue']);
+		}
+	}
+
 	public function testJobWithNamespace()
 	{
 	    Resque_Redis::prefix('php');
@@ -176,7 +190,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
         
         $this->assertEquals(Resque::queues(), array('jobs'));
         $this->assertEquals(Resque::size($queue), 1);
-        
+
         Resque_Redis::prefix('resque');
         $this->assertEquals(Resque::size($queue), 0);        
 	}
