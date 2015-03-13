@@ -144,6 +144,19 @@ class Resque
 	}
 
 	/**
+	 * Remove specified queue
+	 *
+	 * @param string $queue The name of the queue to remove.
+	 * @return integer number of deleted items
+	 */
+	public static function removeQueue($queue)
+	{
+	    $num = self::removeList($queue);
+	    self::redis()->srem('queues', $queue);
+	    return $num;
+	}
+
+	/**
 	 * Pop an item off the end of the specified queues, using blocking list pop,
 	 * decode it and return it.
 	 *
@@ -264,12 +277,12 @@ class Resque
 		$originalQueue = 'queue:'. $queue;
 		$tempQueue = $originalQueue. ':temp:'. time();
 		$requeueQueue = $tempQueue. ':requeue';
-		
+
 		// move each item from original queue to temp queue and process it
 		$finished = false;
 		while (!$finished) {
 			$string = self::redis()->rpoplpush($originalQueue, self::redis()->getPrefix() . $tempQueue);
-	
+
 			if (!empty($string)) {
 				if(self::matchItem($string, $items)) {
 					self::redis()->rpop($tempQueue);
@@ -294,7 +307,7 @@ class Resque
 		// remove temp queue and requeue queue
 		self::redis()->del($requeueQueue);
 		self::redis()->del($tempQueue);
-		
+
 		return $counter;
 	}
 
