@@ -158,10 +158,7 @@ class Resque_Worker
 			// is redis still alive?
 			try {
 			    if (Resque::redis()->ping() === false) {
-			        $this->logger->log(Psr\Log\LogLevel::ERROR, 'redis went away. trying to reconnect');
-			        Resque::$redis = null;
-			        usleep($interval * 1000000);
-			        continue;
+			        throw new CredisException();
 			    }
 			} catch (CredisException $e) {
 			    $this->logger->log(Psr\Log\LogLevel::ERROR, 'redis went away. trying to reconnect');
