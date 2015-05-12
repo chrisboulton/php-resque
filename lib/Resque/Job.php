@@ -19,7 +19,7 @@ class Resque_Job
 	public $worker;
 
 	/**
-	 * @var object Object containing details of the job.
+	 * @var array Array containing details of the job.
 	 */
 	public $payload;
 
