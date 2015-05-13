@@ -144,6 +144,19 @@ class Resque
 	}
 
 	/**
+	 * Remove specified queue
+	 *
+	 * @param string $queue The name of the queue to remove.
+	 * @return integer Number of deleted items
+	 */
+	public static function removeQueue($queue)
+	{
+	    $num = self::removeList($queue);
+	    self::redis()->srem('queues', $queue);
+	    return $num;
+	}
+
+	/**
 	 * Pop an item off the end of the specified queues, using blocking list pop,
 	 * decode it and return it.
 	 *
