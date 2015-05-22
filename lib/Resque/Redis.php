@@ -4,6 +4,21 @@ if (class_exists('Redis', false))
 {
 	class Resque_Redis extends Redis
 	{
+		/**
+		 * A default host to connect to
+		 */
+		const DEFAULT_HOST = 'localhost';
+
+		/**
+		 * The default Redis port
+		 */
+		const DEFAULT_PORT = 6379;
+
+		/**
+		 * The default Redis Database number
+		 */
+		const DEFAULT_DATABASE = 0;
+
 		private static $defaultNamespace = 'resque:';
 		public $password = null;
         public $database = 0;
@@ -12,11 +27,11 @@ if (class_exists('Redis', false))
 		{
 			parent::__construct();
 			$server = explode(':', $host);
-			$this->host = $server[0];
-			$this->port = $server[1];
+			$this->host = (!empty($server[0])) ? $server[0] : self::DEFAULT_HOST;
+			$this->port = (!empty($server[1])) ? $server[1] : self::DEFAULT_PORT;
 			$this->password = $password;
 			$this->timeout = $timeout;
-            $this->database = $database;
+            $this->database = (!empty($database)) ? $database : self::DEFAULT_DATABASE;
 			$this->establishConnection();
 		}
 		
