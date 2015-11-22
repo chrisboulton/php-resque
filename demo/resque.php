@@ -4,4 +4,4 @@ require 'bad_job.php';
 require 'job.php';
 require 'php_error_job.php';
 
-require __DIR__ . '../bin/resque.php';
+require __DIR__ . '/../bin/resque.php';
