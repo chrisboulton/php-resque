@@ -260,6 +260,20 @@ class Resque
 	}
 
 	/**
+	 * Retrieve all the items of a list with Redis
+	 *
+	 * @return array Array of items.
+	 */
+	public static function lrange($list,$start,$stop)
+	{
+		$list = self::redis()->lrange($list,$start,$stop );
+		if(!is_array($list)) {
+			$list = array();
+		}
+		return $list;
+	}
+
+	/**
 	 * Remove Items from the queue
 	 * Safely moving each item to a temporary queue before processing it
 	 * If the Job matches, counts otherwise puts it in a requeue_queue
