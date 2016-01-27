@@ -215,6 +215,8 @@ class Resque_Job
 				$instance->tearDown();
 			}
 
+			$this->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
+
 			Resque_Event::trigger('afterPerform', $this);
 		}
 		// beforePerform/setUp have said don't perform this job. Return.

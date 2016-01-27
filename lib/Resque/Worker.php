@@ -265,7 +265,6 @@ class Resque_Worker
 			return;
 		}
 
-		$job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
 		$this->logger->log(Psr\Log\LogLevel::NOTICE, '{job} has finished', array('job' => $job));
 	}
 
