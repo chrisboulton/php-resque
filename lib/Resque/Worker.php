@@ -69,22 +69,39 @@ class Resque_Worker
         }
 
         $this->queues = $queues;
-        if(function_exists('gethostname')) {
-            $hostname = gethostname();
-        }
-        else {
-            $hostname = php_uname('n');
-        }
-        $this->hostname = $hostname;
+        $this->hostname = self::getHostname();
         $this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
     }
 
 	/**
+	 * Determines the local hostname for this worker.
+	 *
+	 * @return string
+	 */
+	private static function getHostname()
+	{
+		if(function_exists('gethostname')) {
+			$hostname = gethostname();
+		}
+		else {
+			$hostname = php_uname('n');
+		}
+
+		return $hostname;
+	}
+
+	/**
 	 * Return all workers known to Resque as instantiated instances.
+	 *
+	 * @param bool $prune If true, prune dead workers before returning a list of workers.
 	 * @return array
 	 */
-	public static function all()
+	public static function all($prune = true)
 	{
+		if ($prune) {
+			self::pruneDeadWorkers();
+		}
+
 		$workers = Resque::redis()->smembers('workers');
 		if(!is_array($workers)) {
 			$workers = array();
@@ -429,17 +446,17 @@ class Resque_Worker
 	 * server may have been killed and the Resque workers did not die gracefully
 	 * and therefore leave state information in Redis.
 	 */
-	public function pruneDeadWorkers()
+	public static function pruneDeadWorkers()
 	{
-		$workerPids = $this->workerPids();
-		$workers = self::all();
+		$workerPids = self::workerPids();
+		$workers = self::all(false);
 		foreach($workers as $worker) {
 			if (is_object($worker)) {
 				list($host, $pid, $queues) = explode(':', (string)$worker, 3);
-				if($host != $this->hostname || in_array($pid, $workerPids) || $pid == getmypid()) {
+				if($host != self::getHostname() || in_array($pid, $workerPids) || $pid == getmypid()) {
 					continue;
 				}
-				$this->logger->log(Psr\Log\LogLevel::INFO, 'Pruning dead worker: {worker}', array('worker' => (string)$worker));
+//				$this->logger->log(Psr\Log\LogLevel::INFO, 'Pruning dead worker: {worker}', array('worker' => (string)$worker));
 				$worker->unregisterWorker();
 			}
 		}
@@ -451,7 +468,7 @@ class Resque_Worker
 	 *
 	 * @return array Array of Resque worker process IDs.
 	 */
-	public function workerPids()
+	public static function workerPids()
 	{
 		$pids = array();
 		exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);

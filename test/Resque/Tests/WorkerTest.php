@@ -217,11 +217,34 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 		$worker->setId($workerId[0].':2:high,low');
 		$worker->registerWorker();
 
-		$this->assertEquals(3, count(Resque_Worker::all()));
+		$this->assertEquals(3, count(Resque_Worker::all(false)));
 
 		$goodWorker->pruneDeadWorkers();
 
 		// There should only be $goodWorker left now
+		$this->assertEquals(1, count(Resque_Worker::all()));
+	}
+
+	public function testWorkerCleansUpDeadWorkersOnAll()
+	{
+		// Register a good worker
+		$goodWorker = new Resque_Worker('jobs');
+		$goodWorker->setLogger(new Resque_Log());
+		$goodWorker->registerWorker();
+		$workerId = explode(':', $goodWorker);
+
+		// Register some bad workers
+		$worker = new Resque_Worker('jobs');
+		$worker->setLogger(new Resque_Log());
+		$worker->setId($workerId[0].':1:jobs');
+		$worker->registerWorker();
+
+		$worker = new Resque_Worker(array('high', 'low'));
+		$worker->setLogger(new Resque_Log());
+		$worker->setId($workerId[0].':2:high,low');
+		$worker->registerWorker();
+
+		$this->assertEquals(3, count(Resque_Worker::all(false)));
 		$this->assertEquals(1, count(Resque_Worker::all()));
 	}
 
@@ -240,7 +263,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 		$worker->setId('my.other.host:1:jobs');
 		$worker->registerWorker();
 
-		$this->assertEquals(2, count(Resque_Worker::all()));
+		$this->assertEquals(2, count(Resque_Worker::all(false)));
 
 		$worker->pruneDeadWorkers();
 
