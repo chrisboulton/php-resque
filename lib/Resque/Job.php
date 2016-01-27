@@ -232,12 +232,13 @@ class Resque_Job
 	 */
 	public function fail($exception)
 	{
+		$this->updateStatus(Resque_Job_Status::STATUS_FAILED);
+
 		Resque_Event::trigger('onFailure', array(
 			'exception' => $exception,
 			'job' => $this,
 		));
 
-		$this->updateStatus(Resque_Job_Status::STATUS_FAILED);
 		Resque_Failure::create(
 			$this->payload,
 			$exception,
