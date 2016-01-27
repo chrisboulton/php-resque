@@ -33,6 +33,17 @@ class Resque_Job_Status
 	);
 
 	/**
+	 * Gets whether a given status is considered "complete" (i.e. no more work left to do).
+	 *
+	 * @param int $status
+	 * @return bool
+	 */
+	public static function isComplete($status)
+	{
+		return in_array($status, self::$completeStatuses);
+	}
+
+	/**
 	 * Setup a new instance of the job monitor class for the supplied job ID.
 	 *
 	 * @param string $id The ID of the job to manage the status for.

@@ -22,6 +22,15 @@ class Resque_Tests_JobStatusTest extends Resque_Tests_TestCase
 		$this->worker->setLogger(new Resque_Log());
 	}
 
+	public function testJobStatusIsComplete()
+	{
+		$this->assertTrue(Resque_Job_Status::isComplete(Resque_Job_Status::STATUS_COMPLETE));
+		$this->assertTrue(Resque_Job_Status::isComplete(Resque_Job_Status::STATUS_FAILED));
+		$this->assertFalse(Resque_Job_Status::isComplete(Resque_Job_Status::STATUS_WAITING));
+		$this->assertFalse(Resque_Job_Status::isComplete(Resque_Job_Status::STATUS_RUNNING));
+		$this->assertFalse(Resque_Job_Status::isComplete('bogus'));
+	}
+
 	public function testJobStatusCanBeTracked()
 	{
 		$token = Resque::enqueue('jobs', 'Test_Job', null, true);
