@@ -62,6 +62,14 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 		$this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback .') was not called');
 	}
 
+	/**
+	 * @expectedException InvalidArgumentException
+	 */
+	public function testRegisterBadCallbackThrowsException()
+	{
+		Resque_Event::listen('beforeFork', new \stdClass());
+	}
+
 	public function testBeforeForkEventCallbackFires()
 	{
 		$event = 'beforeFork';

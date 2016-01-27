@@ -44,11 +44,16 @@ class Resque_Event
 	 * Listen in on a given event to have a specified callback fired.
 	 *
 	 * @param string $event Name of event to listen on.
-	 * @param mixed $callback Any callback callable by call_user_func_array.
+	 * @param callable $callback Any callback callable by call_user_func_array.
+	 * @throws InvalidArgumentException If invalid callback is provided, an exception will be thrown.
 	 * @return true
 	 */
 	public static function listen($event, $callback)
 	{
+		if (!is_callable($callback)) {
+			throw new InvalidArgumentException('Provided callback for listen() is not callable');
+		}
+
 		if (!isset(self::$events[$event])) {
 			self::$events[$event] = array();
 		}
