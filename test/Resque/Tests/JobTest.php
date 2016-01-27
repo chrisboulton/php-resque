@@ -67,6 +67,14 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$this->assertEquals($args, $job->getArguments());
 	}
 
+	public function testJobGetIdMatchesReturnValue()
+	{
+		$jobId = Resque::enqueue('jobs', 'Test_Job');
+		$job = Resque_Job::reserve('jobs');
+
+		$this->assertEquals($jobId, $job->getId());
+	}
+
 	public function testAfterJobIsReservedItIsRemoved()
 	{
 		Resque::enqueue('jobs', 'Test_Job');

@@ -41,6 +41,16 @@ class Resque_Job
 	}
 
 	/**
+	 * Gets the Job ID for this instance.
+	 *
+	 * @return string Job ID
+	 */
+	public function getId()
+	{
+		return isset($this->payload['id']) ? $this->payload['id'] : null;
+	}
+
+	/**
 	 * Create a new job and save it to the specified queue.
 	 *
 	 * @param string $queue The name of the queue to place the job in.
