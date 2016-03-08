@@ -31,4 +31,3 @@ class Resque_Failure_Redis implements Resque_Failure_Interface
 		Resque::redis()->rpush('failed', $data);
 	}
 }
-?>

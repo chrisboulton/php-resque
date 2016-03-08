@@ -564,4 +564,3 @@ class Resque_Worker
 		$this->logger = $logger;
 	}
 }
-?>
