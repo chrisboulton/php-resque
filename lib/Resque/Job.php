@@ -273,4 +273,3 @@ class Resque_Job
 		return '(' . implode(' | ', $name) . ')';
 	}
 }
-?>
