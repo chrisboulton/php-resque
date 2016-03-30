@@ -63,7 +63,7 @@ class Resque_Worker
     public function __construct($queues)
     {
         $this->logger = new Resque_Log();
-        
+
         if(!is_array($queues)) {
             $queues = array($queues);
         }
