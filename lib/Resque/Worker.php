@@ -169,6 +169,8 @@ class Resque_Worker
 
 		while(true) {
 			if($this->shutdown) {
+				// Do not find a new job, complete shutdown
+				$this->shutdownNow();
 				break;
 			}
 
@@ -195,6 +197,7 @@ class Resque_Worker
 				{
 					// If no job was found, we sleep for $interval before continuing and checking again
 					$this->logger->log(Psr\Log\LogLevel::INFO, 'Sleeping for {interval}', array('interval' => $interval));
+					
 					if($this->paused) {
 						$this->updateProcLine('Paused');
 					}
