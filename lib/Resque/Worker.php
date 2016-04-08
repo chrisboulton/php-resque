@@ -73,6 +73,29 @@ class Resque_Worker
         $this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
     }
 
+	public function getId()
+	{
+		return $this->id;
+	}
+
+	public function getQueues()
+	{
+		return $this->queues;
+	}
+
+	public function getStatus()
+	{
+		if ($this->paused) {
+			return 'Paused';
+		}
+
+		if ($this->shutdown) {
+			return 'Shutdown';
+		}
+
+		return 'Active';
+	}
+
 	/**
 	 * Determines the local hostname for this worker.
 	 *
