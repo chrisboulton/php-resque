@@ -410,7 +410,13 @@ class Resque_Worker
 		}
 
 		$this->logger->log(Psr\Log\LogLevel::INFO, 'Killing child at {child}', array('child' => $this->child));
-		if(exec('ps -o pid,state -p ' . $this->child, $output, $returnCode) && $returnCode != 1) {
+		if ('SunOS' == PHP_OS) {
+			$cmd = 'ps -o pid,s -p';
+		} else {
+			$cmd = 'ps -o pid,state -p';
+		}
+
+		if(exec($cmd . ' ' . $this->child, $output, $returnCode) && $returnCode != 1) {
 			$this->logger->log(Psr\Log\LogLevel::DEBUG, 'Child {child} found, killing.', array('child' => $this->child));
 			posix_kill($this->child, SIGKILL);
 			$this->child = null;
@@ -454,7 +460,14 @@ class Resque_Worker
 	public function workerPids()
 	{
 		$pids = array();
-		exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
+
+		if ('SunOS' == PHP_OS) {
+			$cmd = 'ps -A -o pid,comm';
+		} else {
+			$cmd = 'ps -A -o pid,command';
+		}
+
+		exec($cmd . ' | grep [r]esque', $cmdOutput);
 		foreach($cmdOutput as $line) {
 			list($pids[],) = explode(' ', trim($line), 2);
 		}
