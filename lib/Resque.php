@@ -77,7 +77,7 @@ class Resque
 	public static function fork()
 	{
 		if(!function_exists('pcntl_fork')) {
-			return -1;
+			return false;
 		}
 
 		// Close the connection to Redis before forking.
