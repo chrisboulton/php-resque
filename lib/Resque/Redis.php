@@ -122,8 +122,10 @@ class Resque_Redis
 			// Look for known Credis_Client options
 			$timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
 			$persistent = isset($options['persistent']) ? $options['persistent'] : '';
+			$maxRetries = isset($options['max_connect_retries']) ? $options['max_connect_retries'] : 0;
 
 			$this->driver = new Credis_Client($host, $port, $timeout, $persistent);
+			$this->driver->setMaxConnectRetries($maxRetries);
 			if ($password){
 				$this->driver->auth($password);
 			}
