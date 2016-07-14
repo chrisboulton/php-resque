@@ -63,7 +63,7 @@ class Resque_Worker
     public function __construct($queues)
     {
         $this->logger = new Resque_Log();
-        
+
         if(!is_array($queues)) {
             $queues = array($queues);
         }
@@ -327,7 +327,7 @@ class Resque_Worker
 	private function updateProcLine($status)
 	{
 		$processTitle = 'resque-' . Resque::VERSION . ': ' . $status;
-		if(function_exists('cli_set_process_title')) {
+		if(function_exists('cli_set_process_title') && PHP_OS !== 'Darwin') {
 			cli_set_process_title($processTitle);
 		}
 		else if(function_exists('setproctitle')) {
