@@ -63,7 +63,7 @@ class Resque_Worker
     public function __construct($queues)
     {
         $this->logger = new Resque_Log();
-        
+
         if(!is_array($queues)) {
             $queues = array($queues);
         }
@@ -326,13 +326,16 @@ class Resque_Worker
 	 */
 	private function updateProcLine($status)
 	{
-		$processTitle = 'resque-' . Resque::VERSION . ': ' . $status;
-		if(function_exists('cli_set_process_title')) {
-			cli_set_process_title($processTitle);
-		}
-		else if(function_exists('setproctitle')) {
-			setproctitle($processTitle);
-		}
+	    $processTitle = 'resque-' . Resque::VERSION . ': ' . $status;
+
+	    $done = false;
+	    if(function_exists('cli_set_process_title')) {
+	        $done = @cli_set_process_title($processTitle);
+	    }
+
+	    if (!$done && function_exists('setproctitle')) {
+	        setproctitle($processTitle);
+	    }
 	}
 
 	/**
