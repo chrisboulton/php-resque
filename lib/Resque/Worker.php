@@ -311,6 +311,8 @@ class Resque_Worker
 	 */
 	private function startup()
 	{
+		declare(ticks = 1);
+		
 		$this->registerSigHandlers();
 		$this->pruneDeadWorkers();
 		Resque_Event::trigger('beforeFirstFork', $this);
@@ -349,7 +351,6 @@ class Resque_Worker
 			return;
 		}
 
-		declare(ticks = 1);
 		pcntl_signal(SIGTERM, array($this, 'shutDownNow'));
 		pcntl_signal(SIGINT, array($this, 'shutDownNow'));
 		pcntl_signal(SIGQUIT, array($this, 'shutdown'));
