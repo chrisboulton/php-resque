@@ -148,6 +148,7 @@ class Resque_Redis
 	 * - host:port
 	 * - redis://user:pass@host:port/db?option1=val1&option2=val2
 	 * - tcp://user:pass@host:port/db?option1=val1&option2=val2
+	 * - unix:///path/to/redis.sock
 	 *
 	 * Note: the 'user' part of the DSN is not used.
 	 *
@@ -160,6 +161,16 @@ class Resque_Redis
 		if ($dsn == '') {
 			// Use a sensible default for an empty DNS string
 			$dsn = 'redis://' . self::DEFAULT_HOST;
+		}
+		if(substr($dsn, 0, 7) === 'unix://') {
+			return array(
+				$dsn,
+				null,
+				null,
+				null,
+				null,
+				null,
+			);
 		}
 		$parts = parse_url($dsn);
 
