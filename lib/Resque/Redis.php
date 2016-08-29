@@ -166,7 +166,7 @@ class Resque_Redis
 			return array(
 				$dsn,
 				null,
-				null,
+				false,
 				null,
 				null,
 				null,
