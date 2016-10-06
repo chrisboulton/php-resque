@@ -6,7 +6,7 @@
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Job
+class Resque_Job implements Resque_JobInterface
 {
 	/**
 	 * @var string The name of the queue that this job belongs to.
@@ -24,9 +24,14 @@ class Resque_Job
 	public $payload;
 
 	/**
-	 * @var object Instance of the class performing work for this job.
+	 * @var Resque_JobInterface Instance of the class performing work for this job.
 	 */
 	private $instance;
+
+    /**
+     * @var Resque_Job_FactoryInterface
+     */
+    private $jobFactory;
 
 	/**
 	 * Instantiate a new instance of a job.
@@ -40,17 +45,18 @@ class Resque_Job
 		$this->payload = $payload;
 	}
 
-	/**
-	 * Create a new job and save it to the specified queue.
-	 *
-	 * @param string $queue The name of the queue to place the job in.
-	 * @param string $class The name of the class that contains the code to execute the job.
-	 * @param array $args Any optional arguments that should be passed when the job is executed.
-	 * @param boolean $monitor Set to true to be able to monitor the status of a job.
-	 * @param string $id Unique identifier for tracking the job. Generated if not supplied.
-	 *
-	 * @return string
-	 */
+    /**
+     * Create a new job and save it to the specified queue.
+     *
+     * @param string $queue The name of the queue to place the job in.
+     * @param string $class The name of the class that contains the code to execute the job.
+     * @param array $args Any optional arguments that should be passed when the job is executed.
+     * @param boolean $monitor Set to true to be able to monitor the status of a job.
+     * @param string $id Unique identifier for tracking the job. Generated if not supplied.
+     *
+     * @return string
+     * @throws \InvalidArgumentException
+     */
 	public static function create($queue, $class, $args = null, $monitor = false, $id = null)
 	{
 		if (is_null($id)) {
@@ -81,7 +87,7 @@ class Resque_Job
      * instance of Resque_Job for it.
      *
      * @param string $queue The name of the queue to check for a job in.
-     * @return null|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
+     * @return false|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
      */
     public static function reserve($queue)
     {
@@ -99,7 +105,7 @@ class Resque_Job
      *
      * @param array             $queues
      * @param int               $timeout
-     * @return null|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
+     * @return false|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
      */
     public static function reserveBlocking(array $queues, $timeout = null)
     {
@@ -152,11 +158,11 @@ class Resque_Job
 		return $this->payload['args'][0];
 	}
 
-	/**
-	 * Get the instantiated object for this job that will be performing work.
-	 *
-	 * @return object Instance of the object that this job belongs to.
-	 */
+    /**
+     * Get the instantiated object for this job that will be performing work.
+     * @return Resque_JobInterface Instance of the object that this job belongs to.
+     * @throws Resque_Exception
+     */
 	public function getInstance()
 	{
 		if (!is_null($this->instance)) {
@@ -175,7 +181,11 @@ class Resque_Job
 			);
 		}
 
-		$this->instance = new $this->payload['class'];
+        if ($this->jobFactory !== null) {
+            $this->instance = $this->jobFactory->create();
+        } else {
+            $this->instance = new $this->payload['class'];
+        }
 		$this->instance->job = $this;
 		$this->instance->args = $this->getArguments();
 		$this->instance->queue = $this->queue;
@@ -272,4 +282,15 @@ class Resque_Job
 		}
 		return '(' . implode(' | ', $name) . ')';
 	}
+
+    /**
+     * @param Resque_Job_FactoryInterface $jobFactory
+     * @return Resque_Job
+     */
+    public function setJobFactory(Resque_Job_FactoryInterface $jobFactory)
+    {
+        $this->jobFactory = $jobFactory;
+
+        return $this;
+    }
 }

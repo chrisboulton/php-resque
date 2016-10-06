@@ -362,4 +362,44 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$this->assertEquals(Resque::size($queue), 2);
 	}
 
+	public function testUseFactoryToGetJobInstance()
+    {
+        $payload = array(
+            'class' => Some_Job_Class::class,
+            'args' => null
+        );
+        $job = new Resque_Job('jobs', $payload);
+        $factory = $this->getMock(Resque_Job_FactoryInterface::class);
+        $job->setJobFactory($factory);
+        $testJob = $this->getMock(Resque_JobInterface::class);
+        $factory->expects(self::once())->method('create')->will($this->returnValue($testJob));
+        $instance = $job->getInstance();
+        $this->assertInstanceOf(Resque_JobInterface::class, $instance);
+    }
+
+    public function testDoNotUseFactoryToGetInstance()
+    {
+        $payload = array(
+            'class' => Some_Job_Class::class,
+            'args' => null
+        );
+        $job = new Resque_Job('jobs', $payload);
+        $factory = $this->getMock(Resque_Job_FactoryInterface::class);
+        $testJob = $this->getMock(Resque_JobInterface::class);
+        $factory->expects(self::never())->method('create')->will(self::returnValue($testJob));
+        $instance = $job->getInstance();
+        $this->assertInstanceOf(Resque_JobInterface::class, $instance);
+    }
+}
+
+class Some_Job_Class implements Resque_JobInterface
+{
+
+    /**
+     * @return bool
+     */
+    public function perform()
+    {
+        return true;
+    }
 }

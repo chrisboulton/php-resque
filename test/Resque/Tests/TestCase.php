@@ -11,6 +11,11 @@ class Resque_Tests_TestCase extends PHPUnit_Framework_TestCase
 	protected $resque;
 	protected $redis;
 
+    public static function setUpBeforeClass()
+    {
+        date_default_timezone_set('UTC');
+    }
+
 	public function setUp()
 	{
 		$config = file_get_contents(REDIS_CONF);
