@@ -3,7 +3,8 @@
 interface Resque_Job_FactoryInterface
 {
     /**
+     * @param $className
      * @return Resque_JobInterface
      */
-    public function create();
+    public function create($className);
 }
