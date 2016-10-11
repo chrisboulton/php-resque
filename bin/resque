@@ -96,7 +96,7 @@ if(!empty($PREFIX)) {
 if($count > 1) {
     for($i = 0; $i < $count; ++$i) {
         $pid = Resque::fork();
-        if($pid == -1) {
+        if($pid === false || pid === -1) {
             $logger->log(Psr\Log\LogLevel::EMERGENCY, 'Could not fork worker {count}', array('count' => $i));
             die();
         }
