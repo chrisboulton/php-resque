@@ -71,13 +71,8 @@ class Resque_Worker
         }
 
         $this->queues = $queues;
-        if(function_exists('gethostname')) {
-            $hostname = gethostname();
-        }
-        else {
-            $hostname = php_uname('n');
-        }
-        $this->hostname = $hostname;
+        $this->hostname = php_uname('n');
+
         $this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
     }
 
