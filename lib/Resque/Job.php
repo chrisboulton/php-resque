@@ -182,13 +182,14 @@ class Resque_Job implements Resque_JobInterface
 		}
 
         if ($this->jobFactory !== null) {
-            $this->instance = $this->jobFactory->create($this->payload['class']);
-        } else {
-            $this->instance = new $this->payload['class'];
+            $this->instance = $this->jobFactory->create($this->payload['class'], $this->getArguments(), $this->queue);
+            return $this->instance;
         }
-		$this->instance->job = $this;
-		$this->instance->args = $this->getArguments();
-		$this->instance->queue = $this->queue;
+        $this->instance = new $this->payload['class'];
+        $this->instance->job = $this;
+        $this->instance->args = $this->getArguments();
+        $this->instance->queue = $this->queue;
+
 		return $this->instance;
 	}
 
