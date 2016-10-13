@@ -183,16 +183,16 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 
 	public function testJobWithNamespace()
 	{
-	    Resque_Redis::prefix('php');
-	    $queue = 'jobs';
-	    $payload = array('another_value');
-        Resque::enqueue($queue, 'Test_Job_With_TearDown', $payload);
-        
-        $this->assertEquals(Resque::queues(), array('jobs'));
-        $this->assertEquals(Resque::size($queue), 1);
+		Resque_Redis::prefix('php');
+		$queue = 'jobs';
+		$payload = array('another_value');
+		Resque::enqueue($queue, 'Test_Job_With_TearDown', $payload);
 
-        Resque_Redis::prefix('resque');
-        $this->assertEquals(Resque::size($queue), 0);        
+		$this->assertEquals(Resque::queues(), array('jobs'));
+		$this->assertEquals(Resque::size($queue), 1);
+
+		Resque_Redis::prefix('resque');
+		$this->assertEquals(Resque::size($queue), 0);
 	}
 
 	public function testDequeueAll()
@@ -363,56 +363,56 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 	}
 
 	public function testUseFactoryToGetJobInstance()
-    {
-        $payload = array(
-            'class' => 'Some_Job_Class',
-            'args' => null
-        );
-        $job = new Resque_Job('jobs', $payload);
-        $factory = new Some_Stub_Factory();
-        $job->setJobFactory($factory);
-        $instance = $job->getInstance();
-        $this->assertInstanceOf('Resque_JobInterface', $instance);
-    }
+	{
+		$payload = array(
+			'class' => 'Some_Job_Class',
+			'args' => null
+		);
+		$job = new Resque_Job('jobs', $payload);
+		$factory = new Some_Stub_Factory();
+		$job->setJobFactory($factory);
+		$instance = $job->getInstance();
+		$this->assertInstanceOf('Resque_JobInterface', $instance);
+	}
 
-    public function testDoNotUseFactoryToGetInstance()
-    {
-        $payload = array(
-            'class' => 'Some_Job_Class',
-            'args' => null
-        );
-        $job = new Resque_Job('jobs', $payload);
-        $factory = $this->getMock('Resque_Job_FactoryInterface');
-        $testJob = $this->getMock('Resque_JobInterface');
-        $factory->expects(self::never())->method('create')->will(self::returnValue($testJob));
-        $instance = $job->getInstance();
-        $this->assertInstanceOf('Resque_JobInterface', $instance);
-    }
+	public function testDoNotUseFactoryToGetInstance()
+	{
+		$payload = array(
+			'class' => 'Some_Job_Class',
+			'args' => null
+		);
+		$job = new Resque_Job('jobs', $payload);
+		$factory = $this->getMock('Resque_Job_FactoryInterface');
+		$testJob = $this->getMock('Resque_JobInterface');
+		$factory->expects(self::never())->method('create')->will(self::returnValue($testJob));
+		$instance = $job->getInstance();
+		$this->assertInstanceOf('Resque_JobInterface', $instance);
+	}
 }
 
 class Some_Job_Class implements Resque_JobInterface
 {
 
-    /**
-     * @return bool
-     */
-    public function perform()
-    {
-        return true;
-    }
+	/**
+	 * @return bool
+	 */
+	public function perform()
+	{
+		return true;
+	}
 }
 
 class Some_Stub_Factory implements Resque_Job_FactoryInterface
 {
 
-    /**
-     * @param $className
-     * @param array $args
-     * @param $queue
-     * @return Resque_JobInterface
-     */
-    public function create($className, array $args, $queue)
-    {
-        return new Some_Job_Class();
-    }
+	/**
+	 * @param $className
+	 * @param array $args
+	 * @param $queue
+	 * @return Resque_JobInterface
+	 */
+	public function create($className, array $args, $queue)
+	{
+		return new Some_Job_Class();
+	}
 }

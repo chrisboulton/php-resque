@@ -28,10 +28,10 @@ class Resque_Job implements Resque_JobInterface
 	 */
 	private $instance;
 
-    /**
-     * @var Resque_Job_FactoryInterface
-     */
-    private $jobFactory;
+	/**
+	 * @var Resque_Job_FactoryInterface
+	 */
+	private $jobFactory;
 
 	/**
 	 * Instantiate a new instance of a job.
@@ -45,18 +45,18 @@ class Resque_Job implements Resque_JobInterface
 		$this->payload = $payload;
 	}
 
-    /**
-     * Create a new job and save it to the specified queue.
-     *
-     * @param string $queue The name of the queue to place the job in.
-     * @param string $class The name of the class that contains the code to execute the job.
-     * @param array $args Any optional arguments that should be passed when the job is executed.
-     * @param boolean $monitor Set to true to be able to monitor the status of a job.
-     * @param string $id Unique identifier for tracking the job. Generated if not supplied.
-     *
-     * @return string
-     * @throws \InvalidArgumentException
-     */
+	/**
+	 * Create a new job and save it to the specified queue.
+	 *
+	 * @param string $queue The name of the queue to place the job in.
+	 * @param string $class The name of the class that contains the code to execute the job.
+	 * @param array $args Any optional arguments that should be passed when the job is executed.
+	 * @param boolean $monitor Set to true to be able to monitor the status of a job.
+	 * @param string $id Unique identifier for tracking the job. Generated if not supplied.
+	 *
+	 * @return string
+	 * @throws \InvalidArgumentException
+	 */
 	public static function create($queue, $class, $args = null, $monitor = false, $id = null)
 	{
 		if (is_null($id)) {
@@ -82,41 +82,41 @@ class Resque_Job implements Resque_JobInterface
 		return $id;
 	}
 
-    /**
-     * Find the next available job from the specified queue and return an
-     * instance of Resque_Job for it.
-     *
-     * @param string $queue The name of the queue to check for a job in.
-     * @return false|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
-     */
-    public static function reserve($queue)
-    {
-        $payload = Resque::pop($queue);
-        if(!is_array($payload)) {
-            return false;
-        }
+	/**
+	 * Find the next available job from the specified queue and return an
+	 * instance of Resque_Job for it.
+	 *
+	 * @param string $queue The name of the queue to check for a job in.
+	 * @return false|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
+	 */
+	public static function reserve($queue)
+	{
+		$payload = Resque::pop($queue);
+		if(!is_array($payload)) {
+			return false;
+		}
 
-        return new Resque_Job($queue, $payload);
-    }
+		return new Resque_Job($queue, $payload);
+	}
 
-    /**
-     * Find the next available job from the specified queues using blocking list pop
-     * and return an instance of Resque_Job for it.
-     *
-     * @param array             $queues
-     * @param int               $timeout
-     * @return false|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
-     */
-    public static function reserveBlocking(array $queues, $timeout = null)
-    {
-        $item = Resque::blpop($queues, $timeout);
+	/**
+	 * Find the next available job from the specified queues using blocking list pop
+	 * and return an instance of Resque_Job for it.
+	 *
+	 * @param array             $queues
+	 * @param int               $timeout
+	 * @return false|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
+	 */
+	public static function reserveBlocking(array $queues, $timeout = null)
+	{
+		$item = Resque::blpop($queues, $timeout);
 
-        if(!is_array($item)) {
-            return false;
-        }
+		if(!is_array($item)) {
+			return false;
+		}
 
-        return new Resque_Job($item['queue'], $item['payload']);
-    }
+		return new Resque_Job($item['queue'], $item['payload']);
+	}
 
 	/**
 	 * Update the status of the current job.
@@ -158,11 +158,11 @@ class Resque_Job implements Resque_JobInterface
 		return $this->payload['args'][0];
 	}
 
-    /**
-     * Get the instantiated object for this job that will be performing work.
-     * @return Resque_JobInterface Instance of the object that this job belongs to.
-     * @throws Resque_Exception
-     */
+	/**
+	 * Get the instantiated object for this job that will be performing work.
+	 * @return Resque_JobInterface Instance of the object that this job belongs to.
+	 * @throws Resque_Exception
+	 */
 	public function getInstance()
 	{
 		if (!is_null($this->instance)) {
@@ -181,14 +181,14 @@ class Resque_Job implements Resque_JobInterface
 			);
 		}
 
-        if ($this->jobFactory !== null) {
-            $this->instance = $this->jobFactory->create($this->payload['class'], $this->getArguments(), $this->queue);
-            return $this->instance;
-        }
-        $this->instance = new $this->payload['class'];
-        $this->instance->job = $this;
-        $this->instance->args = $this->getArguments();
-        $this->instance->queue = $this->queue;
+		if ($this->jobFactory !== null) {
+			$this->instance = $this->jobFactory->create($this->payload['class'], $this->getArguments(), $this->queue);
+			return $this->instance;
+		}
+		$this->instance = new $this->payload['class'];
+		$this->instance->job = $this;
+		$this->instance->args = $this->getArguments();
+		$this->instance->queue = $this->queue;
 
 		return $this->instance;
 	}
@@ -284,14 +284,14 @@ class Resque_Job implements Resque_JobInterface
 		return '(' . implode(' | ', $name) . ')';
 	}
 
-    /**
-     * @param Resque_Job_FactoryInterface $jobFactory
-     * @return Resque_Job
-     */
-    public function setJobFactory(Resque_Job_FactoryInterface $jobFactory)
-    {
-        $this->jobFactory = $jobFactory;
+	/**
+	 * @param Resque_Job_FactoryInterface $jobFactory
+	 * @return Resque_Job
+	 */
+	public function setJobFactory(Resque_Job_FactoryInterface $jobFactory)
+	{
+		$this->jobFactory = $jobFactory;
 
-        return $this;
-    }
+		return $this;
+	}
 }
