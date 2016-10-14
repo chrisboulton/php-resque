@@ -362,11 +362,22 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$this->assertEquals(Resque::size($queue), 2);
 	}
 
-	public function testUseFactoryToGetJobInstance()
+	public function testUseDefaultFactoryToGetJobInstance()
 	{
 		$payload = array(
 			'class' => 'Some_Job_Class',
 			'args' => null
+		);
+		$job = new Resque_Job('jobs', $payload);
+		$instance = $job->getInstance();
+		$this->assertInstanceOf('Some_Job_Class', $instance);
+	}
+
+	public function testUseFactoryToGetJobInstance()
+	{
+		$payload = array(
+			'class' => 'Some_Job_Class',
+			'args' => array(array())
 		);
 		$job = new Resque_Job('jobs', $payload);
 		$factory = new Some_Stub_Factory();
@@ -379,7 +390,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 	{
 		$payload = array(
 			'class' => 'Some_Job_Class',
-			'args' => null
+			'args' => array(array())
 		);
 		$job = new Resque_Job('jobs', $payload);
 		$factory = $this->getMock('Resque_Job_FactoryInterface');
@@ -411,7 +422,7 @@ class Some_Stub_Factory implements Resque_Job_FactoryInterface
 	 * @param $queue
 	 * @return Resque_JobInterface
 	 */
-	public function create($className, array $args, $queue)
+	public function create($className, $args, $queue)
 	{
 		return new Some_Job_Class();
 	}

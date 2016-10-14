@@ -6,7 +6,7 @@
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Job implements Resque_JobInterface
+class Resque_Job
 {
 	/**
 	 * @var string The name of the queue that this job belongs to.
@@ -24,7 +24,7 @@ class Resque_Job implements Resque_JobInterface
 	public $payload;
 
 	/**
-	 * @var Resque_JobInterface Instance of the class performing work for this job.
+	 * @var object|Resque_JobInterface Instance of the class performing work for this job.
 	 */
 	private $instance;
 
@@ -169,28 +169,9 @@ class Resque_Job implements Resque_JobInterface
 			return $this->instance;
 		}
 
-		if(!class_exists($this->payload['class'])) {
-			throw new Resque_Exception(
-				'Could not find job class ' . $this->payload['class'] . '.'
-			);
-		}
-
-		if(!method_exists($this->payload['class'], 'perform')) {
-			throw new Resque_Exception(
-				'Job class ' . $this->payload['class'] . ' does not contain a perform method.'
-			);
-		}
-
-		if ($this->jobFactory !== null) {
-			$this->instance = $this->jobFactory->create($this->payload['class'], $this->getArguments(), $this->queue);
-			return $this->instance;
-		}
-		$this->instance = new $this->payload['class'];
-		$this->instance->job = $this;
-		$this->instance->args = $this->getArguments();
-		$this->instance->queue = $this->queue;
-
-		return $this->instance;
+        $this->instance = $this->getJobFactory()->create($this->payload['class'], $this->getArguments(), $this->queue);
+        $this->instance->job = $this;
+        return $this->instance;
 	}
 
 	/**
@@ -294,4 +275,15 @@ class Resque_Job implements Resque_JobInterface
 
 		return $this;
 	}
+
+    /**
+     * @return Resque_Job_FactoryInterface
+     */
+    public function getJobFactory()
+    {
+        if ($this->jobFactory === null) {
+            $this->jobFactory = new Resque_Job_Factory();
+        }
+        return $this->jobFactory;
+    }
 }

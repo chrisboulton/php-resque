@@ -8,5 +8,5 @@ interface Resque_Job_FactoryInterface
 	 * @param $queue
 	 * @return Resque_JobInterface
 	 */
-	public function create($className, array $args, $queue);
+	public function create($className, $args, $queue);
 }
