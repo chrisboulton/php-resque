@@ -1,13 +1,21 @@
 <?php
 /**
- * Resque_Redis DSN tests.
+ * Resque_Event tests.
  *
  * @package		Resque/Tests
- * @author		Iskandar Najmuddin <github@iskandar.co.uk>
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Tests_DsnTest extends Resque_Tests_TestCase
+class Resque_Tests_RedisTest extends Resque_Tests_TestCase
 {
+	/**
+	 * @expectedException Resque_RedisException
+	 */
+	public function testRedisExceptionsAreSurfaced()
+	{
+		$redis = new Resque_Redis('redis://255.255.255.255:1234');
+		$redis->ping();
+	}
 
 	/**
 	 * These DNS strings are considered valid.
@@ -178,5 +186,4 @@ class Resque_Tests_DsnTest extends Resque_Tests_TestCase
 		// The next line should throw an InvalidArgumentException
 		$result = Resque_Redis::parseDsn($dsn);
 	}
-
 }

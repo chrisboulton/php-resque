@@ -26,6 +26,15 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$this->assertTrue((bool)Resque::enqueue('jobs', 'Test_Job'));
 	}
 
+	/**
+	 * @expectedException Resque_RedisException
+	 */
+	public function testRedisErrorThrowsExceptionOnJobCreation()
+	{
+		Resque::setBackend('redis://255.255.255.255:1234');
+		Resque::enqueue('jobs', 'This is a test');
+	}
+
 	public function testQeueuedJobCanBeReserved()
 	{
 		Resque::enqueue('jobs', 'Test_Job');
