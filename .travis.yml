@@ -1,22 +1,16 @@
 language: php
-php:
-  - 5.3
-  - 5.4
-  - 5.5
-  - 5.6
-  - 7.0
-  - hhvm
-  
 matrix:
-    allow_failures:
-        - php: hhvm
-        - php: 7.0
-env:
-  - REDIS_STANDALONE=0
-  - REDIS_STANDALONE=1
-  
+  include:
+    - php: 5.6
+      env: ENABLE_REDIS_EXT=0
+    - php: 5.6
+      env: ENABLE_REDIS_EXT=1
+    - php: 7.0
+      env: ENABLE_REDIS_EXT=0
+    - php: 7.0
+      env: ENABLE_REDIS_EXT=1
+    - php: hhvm
+      env: ENABLE_REDIS_EXT=0
 before_script:
-  - sh -c "if [ $REDIS_STANDALONE -eq 0 ]; then wget https://github.com/nicolasff/phpredis/archive/2.2.3.zip -O php-redis.zip && unzip php-redis.zip; fi"
-  - sh -c "if [ $REDIS_STANDALONE -eq 0 ]; then cd phpredis-2.2.3/ && phpize && ./configure && make && make install; fi"
-  - sh -c "if [ $REDIS_STANDALONE -eq 0 ]; then echo \"extension=redis.so\" >> `php --ini | grep \"Loaded Configuration\" | sed -e \"s|.*:\s*||\"`; fi"
+  - sh -c "if [ $ENABLE_REDIS_EXT -eq 1 ]; then echo \"extension=redis.so\" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi"
   - composer install
