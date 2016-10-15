@@ -1,16 +1,15 @@
 language: php
+php:
+  - 5.6
+  - 7.0
+  - hhvm
 matrix:
-  include:
-    - php: 5.6
-      env: ENABLE_REDIS_EXT=0
-    - php: 5.6
-      env: ENABLE_REDIS_EXT=1
-    - php: 7.0
-      env: ENABLE_REDIS_EXT=0
-    - php: 7.0
-      env: ENABLE_REDIS_EXT=1
+  exclude:
     - php: hhvm
-      env: ENABLE_REDIS_EXT=0
+      env: ENABLE_REDIS_EXT=1
+env:
+  - ENABLE_REDIS_EXT=0
+  - ENABLE_REDIS_EXT=1
 before_script:
   - sh -c "if [ $ENABLE_REDIS_EXT -eq 1 ]; then echo \"extension=redis.so\" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi"
   - composer install
