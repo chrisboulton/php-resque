@@ -108,12 +108,16 @@ class Resque_Redis
 	 * @param string|array $server A DSN or array
 	 * @param int $database A database number to select. However, if we find a valid database number in the DSN the
 	 *                      DSN-supplied value will be used instead and this parameter is ignored.
+	 * @param object $client Optional Credis_Cluster or Credis_Client instance instantiated by you
 	 */
-    public function __construct($server, $database = null)
+    public function __construct($server, $database = null, $client = null)
 	{
 		try {
 			if (is_array($server)) {
 				$this->driver = new Credis_Cluster($server);
+			}
+			else if (is_object($client)) {
+				$this->driver = $client;
 			}
 			else {
 				list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);

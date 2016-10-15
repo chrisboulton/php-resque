@@ -31,7 +31,15 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 	 */
 	public function testRedisErrorThrowsExceptionOnJobCreation()
 	{
-		Resque::setBackend('redis://255.255.255.255:1234');
+		$mockCredis = $this->getMockBuilder('Credis_Client')
+			->setMethods(['connect', '__call'])
+			->getMock();
+		$mockCredis->expects($this->any())->method('__call')
+			->will($this->throwException(new CredisException('failure')));
+
+		Resque::setBackend(function($database) use ($mockCredis) {
+			return new Resque_Redis('localhost:6379', $database, $mockCredis);
+		});
 		Resque::enqueue('jobs', 'This is a test');
 	}
 

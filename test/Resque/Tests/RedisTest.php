@@ -13,8 +13,16 @@ class Resque_Tests_RedisTest extends Resque_Tests_TestCase
 	 */
 	public function testRedisExceptionsAreSurfaced()
 	{
-		$redis = new Resque_Redis('redis://255.255.255.255:1234');
-		$redis->ping();
+		$mockCredis = $this->getMockBuilder('Credis_Client')
+			->setMethods(['connect', '__call'])
+			->getMock();
+		$mockCredis->expects($this->any())->method('__call')
+			->will($this->throwException(new CredisException('failure')));
+
+		Resque::setBackend(function($database) use ($mockCredis) {
+			return new Resque_Redis('localhost:6379', $database, $mockCredis);
+		});
+		Resque::redis()->ping();
 	}
 
 	/**
