@@ -29,6 +29,20 @@ class Resque_Failure
 	}
 
 	/**
+	 * Create a new failed job on the backend from PHP 7 errors.
+	 *
+	 * @param object $payload        The contents of the job that has just failed.
+	 * @param \Error $exception  The PHP 7 error generated when the job failed to run.
+	 * @param \Resque_Worker $worker Instance of Resque_Worker that was running this job when it failed.
+	 * @param string $queue          The name of the queue that this job was fetched from.
+	 */
+	public static function createFromError($payload, Error $exception, Resque_Worker $worker, $queue)
+	{
+		$backend = self::getBackend();
+		new $backend($payload, $exception, $worker, $queue);
+	}
+
+	/**
 	 * Return an instance of the backend for saving job failures.
 	 *
 	 * @return object Instance of backend object.

@@ -220,12 +220,21 @@ class Resque_Job
 		));
 
 		$this->updateStatus(Resque_Job_Status::STATUS_FAILED);
-		Resque_Failure::create(
-			$this->payload,
-			$exception,
-			$this->worker,
-			$this->queue
-		);
+		if ($exception instanceof Error) {
+			Resque_Failure::createFromError(
+				$this->payload,
+				$exception,
+				$this->worker,
+				$this->queue
+			);
+		} else {
+			Resque_Failure::create(
+				$this->payload,
+				$exception,
+				$this->worker,
+				$this->queue
+			);
+		}
 		Resque_Stat::incr('failed');
 		Resque_Stat::incr('failed:' . $this->worker);
 	}
