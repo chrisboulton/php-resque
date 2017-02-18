@@ -10,8 +10,11 @@ class Resque_Log extends Psr\Log\AbstractLogger
 {
 	public $verbose;
 
-	public function __construct($verbose = false) {
+    public $debug;
+
+	public function __construct($verbose = false, $debug = false) {
 		$this->verbose = $verbose;
+        $this->debug = $debug;
 	}
 
 	/**
@@ -32,12 +35,14 @@ class Resque_Log extends Psr\Log\AbstractLogger
 			return;
 		}
 
-		if (!($level === Psr\Log\LogLevel::INFO || $level === Psr\Log\LogLevel::DEBUG)) {
-			fwrite(
-				STDOUT,
-				'[' . $level . '] ' . $this->interpolate($message, $context) . PHP_EOL
-			);
-		}
+		if($this->debug) {
+            if (!($level === Psr\Log\LogLevel::INFO || $level === Psr\Log\LogLevel::DEBUG)) {
+                fwrite(
+                    STDOUT,
+                    '[' . $level . '] ' . $this->interpolate($message, $context) . PHP_EOL
+                );
+            }
+        }
 	}
 
 	/**
