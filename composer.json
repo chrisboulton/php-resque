@@ -1,14 +1,18 @@
 {
-	"name": "chrisboulton/php-resque",
+	"name": "spiritdead/php-resque",
 	"type": "library",
 	"description": "Redis backed library for creating background jobs and processing them later. Based on resque for Ruby.",
 	"keywords": ["job", "background", "redis", "resque"],
-	"homepage": "http://www.github.com/chrisboulton/php-resque/",
+	"homepage": "http://www.github.com/spiritdead/php-resque/",
 	"license": "MIT",
 	"authors": [
 		{
 			"name": "Chris Boulton",
 			"email": "chris@bigcommerce.com"
+		},
+		{
+			"name": "Carlos Rodriguez",
+			"email": "mundofreakuc@gmail.com"
 		}
 	],
 	"repositories": [
