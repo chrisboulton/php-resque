@@ -101,16 +101,14 @@ if ($count > 1) {
         if ($pid === false || $pid === -1) {
             $logger->log(Psr\Log\LogLevel::EMERGENCY, 'Could not fork worker {count}', array('count' => $i));
             die();
-        } // Child, start the worker
-        else {
-            if (!$pid) {
-                $queues = explode(',', $QUEUE);
-                $worker = new Resque_Worker($queues);
-                $worker->setLogger($logger);
-                $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
-                $worker->work($interval, $BLOCKING);
-                break;
-            }
+        } elseif (!$pid) {
+            // Child, start the worker
+            $queues = explode(',', $QUEUE);
+            $worker = new Resque_Worker($queues);
+            $worker->setLogger($logger);
+            $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
+            $worker->work($interval, $BLOCKING);
+            break;
         }
     }
 } // Start a single worker
