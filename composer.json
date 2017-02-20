@@ -1,45 +1,50 @@
 {
-	"name": "spiritdead/php-resque",
-	"type": "library",
-	"description": "Redis backed library for creating background jobs and processing them later. Based on resque for Ruby.",
-	"keywords": ["job", "background", "redis", "resque"],
-	"homepage": "http://www.github.com/spiritdead/php-resque/",
-	"license": "MIT",
-	"authors": [
-		{
-			"name": "Chris Boulton",
-			"email": "chris@bigcommerce.com"
-		},
-		{
-			"name": "Carlos Rodriguez",
-			"email": "mundofreakuc@gmail.com"
-		}
-	],
-	"repositories": [
-		{
-			"type": "vcs",
-			"url": "https://github.com/chrisboulton/credis"
-		}
-	],
-	"require": {
-		"php": ">=5.3.0",
-		"ext-pcntl": "*",
-		"colinmollenhour/credis": "~1.7",
-		"psr/log": "1.0.0"
-	},
-	"suggest": {
-		"ext-proctitle": "Allows php-resque to rename the title of UNIX processes to show the status of a worker.",
-		"ext-redis": "Native PHP extension for Redis connectivity. Credis will automatically utilize when available."
-	},
-	"require-dev": {
-		"phpunit/phpunit": "3.7.*"
-	},
-	"bin": [
-		"bin/resque"
-	],
-	"autoload": {
-		"psr-0": {
-			"Resque": "lib"
-		}
-	}
+  "name": "spiritdead/php-resque",
+  "type": "library",
+  "description": "Redis backed library for creating background jobs and processing them later. Based on resque for Ruby.",
+  "keywords": [
+    "job",
+    "background",
+    "redis",
+    "resque"
+  ],
+  "homepage": "http://www.github.com/spiritdead/php-resque/",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Chris Boulton",
+      "email": "chris@bigcommerce.com"
+    },
+    {
+      "name": "Carlos Rodriguez",
+      "email": "mundofreakuc@gmail.com"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/chrisboulton/credis"
+    }
+  ],
+  "require": {
+    "php": ">=5.3.0",
+    "ext-pcntl": "*",
+    "colinmollenhour/credis": "~1.7",
+    "psr/log": "1.0.0"
+  },
+  "suggest": {
+    "ext-proctitle": "Allows php-resque to rename the title of UNIX processes to show the status of a worker.",
+    "ext-redis": "Native PHP extension for Redis connectivity. Credis will automatically utilize when available."
+  },
+  "require-dev": {
+    "phpunit/phpunit": "3.7.*"
+  },
+  "bin": [
+    "bin/resque"
+  ],
+  "autoload": {
+    "psr-0": {
+      "Resque": "lib"
+    }
+  }
 }

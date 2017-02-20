@@ -1,8 +1,9 @@
 <?php
+
 class Long_PHP_Job
 {
-	public function perform()
-	{
-		sleep(600);
-	}
+    public function perform()
+    {
+        sleep(600);
+    }
 }
