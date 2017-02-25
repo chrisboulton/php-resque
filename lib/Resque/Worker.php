@@ -47,6 +47,11 @@ class Resque_Worker
     private $currentJob = null;
 
     /**
+     * @var boolean for display if this worker is working or not
+     */
+    private $working = false;
+
+    /**
      * @var int Process ID of child worker processes.
      */
     private $child = null;
@@ -196,7 +201,7 @@ class Resque_Worker
 
             // Forked and we're the child. Run the job.
             if ($this->child === 0 || $this->child === false) {
-                $status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
+                $status = 'Processing ' . $job->queue . ' since ' . date('d/m/Y h:i:s a');
                 $this->updateProcLine($status);
                 $this->logger->log(Psr\Log\LogLevel::INFO, $status);
                 $this->perform($job);
@@ -207,7 +212,7 @@ class Resque_Worker
 
             if ($this->child > 0) {
                 // Parent process, sit and wait
-                $status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
+                $status = 'Forked ' . $this->child . ' at ' . date('d/m/Y h:i:s a');
                 $this->updateProcLine($status);
                 $this->logger->log(Psr\Log\LogLevel::INFO, $status);
 
@@ -257,7 +262,7 @@ class Resque_Worker
     {
         $queues = $this->queues();
         if (!is_array($queues)) {
-            return;
+            return false;
         }
 
         if ($blocking === true) {
@@ -427,7 +432,7 @@ class Resque_Worker
      */
     public function pruneDeadWorkers()
     {
-        $workerPids = $this->workerPids();
+        $workerPids = self::workerPids();
         $workers = self::all();
         foreach ($workers as $worker) {
             if (is_object($worker)) {
@@ -448,7 +453,7 @@ class Resque_Worker
      *
      * @return array Array of Resque worker process IDs.
      */
-    public function workerPids()
+    public static function workerPids()
     {
         $pids = [];
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
@@ -501,6 +506,7 @@ class Resque_Worker
     {
         $job->worker = $this;
         $this->currentJob = $job;
+        $this->working = true;
         $job->updateStatus(Resque_Job_Status::STATUS_RUNNING);
         $data = json_encode([
             'queue' => $job->queue,
@@ -511,12 +517,20 @@ class Resque_Worker
     }
 
     /**
+     * @return boolean get for the private attribute
+     */
+    public function getWorking(){
+        return $this->working;
+    }
+
+    /**
      * Notify Redis that we've finished working on a job, clearing the working
      * state and incrementing the job stats.
      */
     public function doneWorking()
     {
         $this->currentJob = null;
+        $this->working = false;
         Resque_Stat::incr('processed');
         Resque_Stat::incr('processed:' . (string)$this);
         Resque::redis()->del('worker:' . (string)$this);
@@ -535,7 +549,7 @@ class Resque_Worker
     /**
      * Return an object describing the job this worker is currently working on.
      *
-     * @return object Object with details of current job.
+     * @return object|array Object with details of current job.
      */
     public function job()
     {
