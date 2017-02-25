@@ -1,8 +1,9 @@
 <?php
+
 class PHP_Error_Job
 {
-	public function perform()
-	{
-		callToUndefinedFunction();
-	}
+    public function perform()
+    {
+        callToUndefinedFunction();
+    }
 }
