@@ -12,6 +12,11 @@ declare(ticks = 1);
 class Resque_Worker
 {
 	/**
+	 * @var string Prefix for the process name
+	 */
+	public static $processPrefix = 'resque-';
+
+	/**
 	* @var LoggerInterface Logging object that impliments the PSR-3 LoggerInterface
 	*/
 	public $logger;
@@ -323,7 +328,7 @@ class Resque_Worker
 	 */
 	private function updateProcLine($status)
 	{
-		$processTitle = 'resque-' . Resque::VERSION . ': ' . $status;
+		$processTitle = static::$processPrefix . Resque::VERSION . ': ' . $status;
 		if(function_exists('cli_set_process_title') && PHP_OS !== 'Darwin') {
 			cli_set_process_title($processTitle);
 		}
