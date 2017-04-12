@@ -212,7 +212,12 @@ class Resque_Worker
 				$this->logger->log(Psr\Log\LogLevel::INFO, $status);
 
 				// Wait until the child process finishes before continuing
-				pcntl_wait($status);
+				while(pcntl_wait($status, WNOHANG) === 0) {
+					pcntl_signal_dispatch();
+
+					// Pause for a half a second to conserve system resources
+					usleep(500000);
+				}
 				$exitStatus = pcntl_wexitstatus($status);
 				if($exitStatus !== 0) {
 					$job->fail(new Resque_Job_DirtyExitException(
