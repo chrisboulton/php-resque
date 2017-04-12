@@ -8,10 +8,10 @@
  */
 class Resque_Tests_JobStatusTest extends Resque_Tests_TestCase
 {
-    /**
-     * @var \Resque_Worker
-     */
-    protected $worker;
+	/**
+	 * @var \Resque_Worker
+	 */
+	protected $worker;
 
 	public function setUp()
 	{

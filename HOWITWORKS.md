@@ -101,47 +101,50 @@ How do the workers process the queues?
         8. `Resque_Job->fail()` returns control to the worker (still in
            `Resque_Worker::work()`) without a value
       * Job
-        1. The job calls `Resque_Worker->perform()` with the `Resque_Job` as its
+        1. `Resque_Job_PID` is created, registering the PID of the actual process
+            doing the job.
+        2. The job calls `Resque_Worker->perform()` with the `Resque_Job` as its
            only argument.
-        2. `Resque_Worker->perform()` sets up a `try...catch` block so it can
+        3. `Resque_Worker->perform()` sets up a `try...catch` block so it can
            properly handle exceptions by marking jobs as failed (by calling
            `Resque_Job->fail()`, as above)
-        3. Inside the `try...catch`, `Resque_Worker->perform()` triggers an
+        4. Inside the `try...catch`, `Resque_Worker->perform()` triggers an
            `afterFork` event
-        4. Still inside the `try...catch`, `Resque_Worker->perform()` calls
+        5. Still inside the `try...catch`, `Resque_Worker->perform()` calls
            `Resque_Job->perform()` with no arguments
-        5. `Resque_Job->perform()` calls `Resque_Job->getInstance()` with no
+        6. `Resque_Job->perform()` calls `Resque_Job->getInstance()` with no
            arguments
-        6. If `Resque_Job->getInstance()` has already been called, it returns the
+        7. If `Resque_Job->getInstance()` has already been called, it returns the
            existing instance; otherwise:
-        7. `Resque_Job->getInstance()` checks that the job's class (type) exists
+        8. `Resque_Job->getInstance()` checks that the job's class (type) exists
            and has a `perform()` method; if not, in either case, it throws an
            exception which will be caught by `Resque_Worker->perform()`
-        8. `Resque_Job->getInstance()` creates an instance of the job's class, and
+        9. `Resque_Job->getInstance()` creates an instance of the job's class, and
            initializes it with a reference to the `Resque_Job` itself, the job's
            arguments (which it gets by calling `Resque_Job->getArguments()`, which
            in turn simply returns the value of `args[0]`, or an empty array if no
            arguments were passed), and the queue name
-        9. `Resque_Job->getInstance()` returns control, along with the job class
+        10. `Resque_Job->getInstance()` returns control, along with the job class
            instance, to `Resque_Job->perform()`
-        10. `Resque_Job->perform()` sets up its own `try...catch` block to handle
+        11. `Resque_Job->perform()` sets up its own `try...catch` block to handle
             `Resque_Job_DontPerform` exceptions; any other exceptions are passed
             up to `Resque_Worker->perform()`
-        11. `Resque_Job->perform()` triggers a `beforePerform` event
-        12. `Resque_Job->perform()` calls `setUp()` on the instance, if it exists
-        13. `Resque_Job->perform()` calls `perform()` on the instance
-        14. `Resque_Job->perform()` calls `tearDown()` on the instance, if it
+        12. `Resque_Job->perform()` triggers a `beforePerform` event
+        13. `Resque_Job->perform()` calls `setUp()` on the instance, if it exists
+        14. `Resque_Job->perform()` calls `perform()` on the instance
+        15. `Resque_Job->perform()` calls `tearDown()` on the instance, if it
             exists
-        15. `Resque_Job->perform()` triggers an `afterPerform` event
-        16. The `try...catch` block ends, suppressing `Resque_Job_DontPerform`
+        16. `Resque_Job->perform()` triggers an `afterPerform` event
+        17. The `try...catch` block ends, suppressing `Resque_Job_DontPerform`
             exceptions by returning control, and the value `FALSE`, to
             `Resque_Worker->perform()`; any other situation returns the value
             `TRUE` along with control, instead
-        17. The `try...catch` block in `Resque_Worker->perform()` ends
-        18. `Resque_Worker->perform()` updates the job status from `RUNNING` to
+        18. The `try...catch` block in `Resque_Worker->perform()` ends
+        19. `Resque_Worker->perform()` updates the job status from `RUNNING` to
             `COMPLETE`, then returns control, with no value, to the worker (again
             still in `Resque_Worker::work()`)
-        19. `Resque_Worker::work()` calls `exit(0)` to terminate the job process
+        20. `Resque_Job_PID()` is removed, the forked process will terminate soon
+        21. `Resque_Worker::work()` calls `exit(0)` to terminate the job process
             cleanly
       * SPECIAL CASE: Non-forking OS (Windows)
         1. Same as the job above, except it doesn't call `exit(0)` when done

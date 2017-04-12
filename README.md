@@ -193,6 +193,19 @@ or failed, and are then automatically expired. A status can also
 forcefully be expired by calling the `stop()` method on a status
 class.
 
+### Obtaining job PID ###
+
+You can obtain the PID of the actual process doing the work through `Resque_Job_PID`. On a forking OS this will be the
+PID of the forked process.
+
+CAUTION: on a non-forking OS, the PID returned will be of the worker itself.
+
+```php
+echo Resque_Job_PID::get($token);
+```
+
+Function returns `0` if the `perform` hasn't started yet, or if it has already ended.
+
 ## Workers ##
 
 Workers work in the exact same way as the Ruby workers. For complete
