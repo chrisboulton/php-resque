@@ -1,4 +1,7 @@
 <?php
+
+use Resque\Reserver\ReserverFactory;
+
 /**
  * Resque_Job_Status tests.
  *
@@ -17,9 +20,13 @@ class Resque_Tests_JobStatusTest extends Resque_Tests_TestCase
 	{
 		parent::setUp();
 
+        $logger = new Resque_Log();
+        $reserverFactory = new ReserverFactory($logger);
+        $reserver = $reserverFactory->createDefaultReserver(array('jobs'));
+
 		// Register a worker to test with
-		$this->worker = new Resque_Worker('jobs');
-		$this->worker->setLogger(new Resque_Log());
+		$this->worker = new Resque_Worker($reserver, 'jobs');
+		$this->worker->setLogger($logger);
 	}
 
 	public function testJobStatusCanBeTracked()

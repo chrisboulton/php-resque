@@ -9,6 +9,8 @@
 
 $loader = require __DIR__ . '/../vendor/autoload.php';
 
+use Resque\Reserver\ReserverFactory;
+
 define('TEST_MISC', realpath(__DIR__ . '/misc/'));
 define('REDIS_CONF', TEST_MISC . '/redis.conf');
 
@@ -35,6 +37,9 @@ if(!preg_match('#^\s*port\s+([0-9]+)#m', $config, $matches)) {
 }
 
 Resque::setBackend('localhost:' . $matches[1]);
+
+$reserverFactory = new ReserverFactory(new Resque_Log());
+Resque_Worker::setReserverFactory($reserverFactory);
 
 // Shutdown
 function killRedis($pid)
