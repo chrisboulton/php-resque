@@ -189,6 +189,7 @@ class Resque_Worker
 			}
 
 			$this->logger->log(Psr\Log\LogLevel::NOTICE, 'Starting work on {job}', array('job' => $job));
+			// Save job data somewhere here ?
 			Resque_Event::trigger('beforeFork', $job);
 			$this->workingOn($job);
 
