@@ -37,5 +37,10 @@
 		"psr-0": {
 			"Resque": "lib"
 		}
+	},
+	"autoload-dev": {
+		"psr-0": {
+			"Resque": "test/"
+		}
 	}
 }
