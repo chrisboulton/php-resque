@@ -14,7 +14,7 @@ class Resque_Worker
 	/**
 	 * @var string Prefix for the process name
 	 */
-	public static $processPrefix = 'resque-';
+	private static $processPrefix = 'resque-';
 
 	/**
 	* @var LoggerInterface Logging object that impliments the PSR-3 LoggerInterface
@@ -80,6 +80,15 @@ class Resque_Worker
 
         $this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
     }
+
+	/**
+	 * Set the process prefix of the workers to the given prefix string.
+	 * @param string $prefix The new process prefix
+	 */
+	public static function setProcessPrefix($prefix)
+	{
+		self::$processPrefix = $prefix;
+	}
 
 	/**
 	 * Return all workers known to Resque as instantiated instances.
