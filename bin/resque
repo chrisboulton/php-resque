@@ -25,6 +25,9 @@ if (!class_exists('Composer\Autoload\ClassLoader', false)) {
     );
 }
 
+use Resque\Reserver\ReserverFactory;
+use Resque\Reserver\UnknownReserverException;
+
 $QUEUE = getenv('QUEUE');
 if(empty($QUEUE)) {
     die("Set QUEUE env var containing the list of queues to work.\n");
@@ -73,7 +76,22 @@ if (!isset($logger) || !is_object($logger)) {
     $logger = new Resque_Log($logLevel);
 }
 
-$BLOCKING = getenv('BLOCKING') !== FALSE;
+$reserverFactory = new ReserverFactory($logger);
+Resque_Worker::setReserverFactory($reserverFactory);
+
+$queues = explode(',', $QUEUE);
+if (!is_array($queues)) {
+    $queues = array($queues);
+}
+
+$reserver = null;
+try {
+    $reserver = $reserverFactory->createReserverFromEnvironment($queues);
+} catch (UnknownReserverException $exception) {
+    $logger->emergency("Could not create reserver: {error}", ['error' => $exception->getMessage()]);
+    die;
+}
+
 
 $interval = 5;
 $INTERVAL = getenv('INTERVAL');
@@ -102,19 +120,17 @@ if($count > 1) {
         }
         // Child, start the worker
         else if(!$pid) {
-            $queues = explode(',', $QUEUE);
-            $worker = new Resque_Worker($queues);
+            $worker = new Resque_Worker($reserver, $queues);
             $worker->setLogger($logger);
             $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
-            $worker->work($interval, $BLOCKING);
+            $worker->work($interval);
             break;
         }
     }
 }
 // Start a single worker
 else {
-    $queues = explode(',', $QUEUE);
-    $worker = new Resque_Worker($queues);
+    $worker = new Resque_Worker($reserver, $queues);
     $worker->setLogger($logger);
 
     $PIDFILE = getenv('PIDFILE');
@@ -124,6 +140,5 @@ else {
     }
 
     $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
-    $worker->work($interval, $BLOCKING);
+    $worker->work($interval);
 }
-?>

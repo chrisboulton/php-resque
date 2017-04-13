@@ -44,6 +44,32 @@ class ReserverFactory
     }
 
     /**
+     * Creates a reserver based off the environment configuration.
+     *
+     * The following environment vars are checked (in this order):
+     * - BLOCKING: Creates a BlockingListPopReserver (any non empty value)
+     * - RESERVER: Creates a reserver specified in snake case format without the reserver suffix, eg. 'random_queue_order'
+     *
+     * If neither var is specified, the default resever (QueueOrderReserver) is created.
+     *
+     * @param array $queues
+     * @return ReserverInterface
+     * @throws UnknownReserverException If the reserver specified in RESERVER could not be found.
+     */
+    public function createReserverFromEnvironment(array $queues)
+    {
+        if (!empty(getenv('BLOCKING'))) {
+            $reserver = $this->createBlockingListPopReserver($queues);
+        } elseif (getenv('RESERVER') !== false) {
+            $reserver = $this->createReserverFromName((string)getenv('RESERVER'), $queues);
+        } else {
+            $reserver = $this->createDefaultReserver($queues);
+        }
+
+        return $reserver;
+    }
+
+    /**
      * Creates the default reserver.
      *
      * @param array $queues
