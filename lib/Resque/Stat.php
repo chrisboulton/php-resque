@@ -8,6 +8,8 @@
  */
 class Resque_Stat
 {
+	protected static $enabled = true;
+
 	/**
 	 * Get the value of the supplied statistic counter for the specified statistic.
 	 *
@@ -16,7 +18,7 @@ class Resque_Stat
 	 */
 	public static function get($stat)
 	{
-		return (int)Resque::redis()->get('stat:' . $stat);
+		return self::$enabled ? (int)Resque::redis()->get('stat:' . $stat) : 0;
 	}
 
 	/**
@@ -28,7 +30,7 @@ class Resque_Stat
 	 */
 	public static function incr($stat, $by = 1)
 	{
-		return (bool)Resque::redis()->incrby('stat:' . $stat, $by);
+		return self::$enabled ? (bool)Resque::redis()->incrby('stat:' . $stat, $by) : true;
 	}
 
 	/**
@@ -40,7 +42,7 @@ class Resque_Stat
 	 */
 	public static function decr($stat, $by = 1)
 	{
-		return (bool)Resque::redis()->decrby('stat:' . $stat, $by);
+		return self::$enabled ? (bool)Resque::redis()->decrby('stat:' . $stat, $by) : true;
 	}
 
 	/**
@@ -51,6 +53,24 @@ class Resque_Stat
 	 */
 	public static function clear($stat)
 	{
-		return (bool)Resque::redis()->del('stat:' . $stat);
+		return self::$enabled ? (bool)Resque::redis()->del('stat:' . $stat) : true;
+	}
+
+	/**
+	 * Disable stats submissions
+	 *
+	 * @return void
+	 */
+	public static function disable() {
+		self::$enabled = false;
+	}
+
+	/**
+	 * (Re-)enable stats submissions
+	 *
+	 * @return void
+	 */
+	public static function enable() {
+		self::$enabled = true;
 	}
 }
