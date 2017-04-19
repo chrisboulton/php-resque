@@ -91,6 +91,7 @@ if (!is_array($queues)) {
 $reserver = null;
 try {
     $reserver = $reserverFactory->createReserverFromEnvironment($queues);
+    $logger->notice('Using reserver {reserver}', array('reserver' => $reserver->getName()));
 } catch (UnknownReserverException $exception) {
     $logger->emergency("Could not create reserver: {error}", ['error' => $exception->getMessage()]);
     die;
