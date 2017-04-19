@@ -1,5 +1,7 @@
 <?php
 
+use Resque\Reserver\ReserverFactory;
+
 /**
  * Resque_Job tests.
  *
@@ -15,9 +17,13 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 	{
 		parent::setUp();
 
+		$logger = new Resque_Log();
+		$reserverFactory = new ReserverFactory($logger);
+		$reserver = $reserverFactory->createDefaultReserver(array('jobs'));
+
 		// Register a worker to test with
-		$this->worker = new Resque_Worker('jobs');
-		$this->worker->setLogger(new Resque_Log());
+		$this->worker = new Resque_Worker($reserver, 'jobs');
+		$this->worker->setLogger($logger);
 		$this->worker->registerWorker();
 	}
 
@@ -153,7 +159,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$job->worker = $this->worker;
 		$job->perform();
 	}
-	
+
 	public function testJobWithSetUpCallbackFiresSetUp()
 	{
 		$payload = array(
@@ -165,10 +171,10 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		);
 		$job = new Resque_Job('jobs', $payload);
 		$job->perform();
-		
+
 		$this->assertTrue(Test_Job_With_SetUp::$called);
 	}
-	
+
 	public function testJobWithTearDownCallbackFiresTearDown()
 	{
 		$payload = array(
@@ -180,7 +186,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		);
 		$job = new Resque_Job('jobs', $payload);
 		$job->perform();
-		
+
 		$this->assertTrue(Test_Job_With_TearDown::$called);
 	}
 
@@ -329,7 +335,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		$this->assertEquals(Resque::dequeue($queue, $test), 1);
 		#$this->assertEquals(Resque::size($queue), 1);
 	}
-	
+
 	public function testDequeueSeveralItemsWithArgs()
 	{
 		// GIVEN
@@ -340,11 +346,11 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 		Resque::enqueue($queue, 'Test_Job_Dequeue9', $removeArgs);
 		Resque::enqueue($queue, 'Test_Job_Dequeue9', $removeArgs);
 		$this->assertEquals(Resque::size($queue), 3);
-		
+
 		// WHEN
 		$test = array('Test_Job_Dequeue9' => $removeArgs);
 		$removedItems = Resque::dequeue($queue, $test);
-		
+
 		// THEN
 		$this->assertEquals($removedItems, 2);
 		$this->assertEquals(Resque::size($queue), 1);

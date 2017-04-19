@@ -1,4 +1,7 @@
 <?php
+
+use Resque\Reserver\ReserverFactory;
+
 /**
  * Resque_Event tests.
  *
@@ -14,9 +17,13 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 	{
 		Test_Job::$called = false;
 
+		$logger = new Resque_Log();
+		$reserverFactory = new ReserverFactory($logger);
+		$reserver = $reserverFactory->createDefaultReserver(array('jobs'));
+
 		// Register a worker to test with
-		$this->worker = new Resque_Worker('jobs');
-		$this->worker->setLogger(new Resque_Log());
+		$this->worker = new Resque_Worker($reserver, 'jobs');
+		$this->worker->setLogger($logger);
 		$this->worker->registerWorker();
 	}
 

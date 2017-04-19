@@ -1,4 +1,7 @@
 <?php
+
+use Resque\Reserver\ReserverFactory;
+
 /**
  * Resque_Worker tests.
  *
@@ -8,10 +11,28 @@
  */
 class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 {
+	/**
+	 * Gets a worker configured for the given queues.
+	 *
+	 * @param array $queues
+	 * @return Resque_Worker
+	 */
+	private function getWorker(array $queues)
+	{
+		$logger = new Resque_Log();
+
+		$reserverFactory = new ReserverFactory($logger);
+		$reserver = $reserverFactory->createDefaultReserver($queues);
+
+		$worker = new Resque_Worker($reserver, $queues);
+		$worker->setLogger($logger);
+
+		return $worker;
+	}
+
 	public function testWorkerRegistersInList()
 	{
-		$worker = new Resque_Worker('*');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('*'));
 		$worker->registerWorker();
 
 		// Make sure the worker is in the list
@@ -23,8 +44,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 		$num = 3;
 		// Register a few workers
 		for($i = 0; $i < $num; ++$i) {
-			$worker = new Resque_Worker('queue_' . $i);
-			$worker->setLogger(new Resque_Log());
+			$worker = $this->getWorker(array('queue_' . $i));
 			$worker->registerWorker();
 		}
 
@@ -34,8 +54,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testGetWorkerById()
 	{
-		$worker = new Resque_Worker('*');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('*'));
 		$worker->registerWorker();
 
 		$newWorker = Resque_Worker::find((string)$worker);
@@ -49,8 +68,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testWorkerCanUnregister()
 	{
-		$worker = new Resque_Worker('*');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('*'));
 		$worker->registerWorker();
 		$worker->unregisterWorker();
 
@@ -61,8 +79,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testPausedWorkerDoesNotPickUpJobs()
 	{
-		$worker = new Resque_Worker('*');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('*'));
 		$worker->pauseProcessing();
 		Resque::enqueue('jobs', 'Test_Job');
 		$worker->work(0);
@@ -72,8 +89,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testResumedWorkerPicksUpJobs()
 	{
-		$worker = new Resque_Worker('*');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('*'));
 		$worker->pauseProcessing();
 		Resque::enqueue('jobs', 'Test_Job');
 		$worker->work(0);
@@ -85,11 +101,10 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testWorkerCanWorkOverMultipleQueues()
 	{
-		$worker = new Resque_Worker(array(
+		$worker = $this->getWorker(array(
 			'queue1',
-			'queue2'
+			'queue2',
 		));
-		$worker->setLogger(new Resque_Log());
 		$worker->registerWorker();
 		Resque::enqueue('queue1', 'Test_Job_1');
 		Resque::enqueue('queue2', 'Test_Job_2');
@@ -103,12 +118,11 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testWorkerWorksQueuesInSpecifiedOrder()
 	{
-		$worker = new Resque_Worker(array(
+		$worker = $this->getWorker(array(
 			'high',
 			'medium',
-			'low'
+			'low',
 		));
-		$worker->setLogger(new Resque_Log());
 		$worker->registerWorker();
 
 		// Queue the jobs in a different order
@@ -129,8 +143,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testWildcardQueueWorkerWorksAllQueues()
 	{
-		$worker = new Resque_Worker('*');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('*'));
 		$worker->registerWorker();
 
 		Resque::enqueue('queue1', 'Test_Job_1');
@@ -145,8 +158,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testWorkerDoesNotWorkOnUnknownQueues()
 	{
-		$worker = new Resque_Worker('queue1');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('queue1'));
 		$worker->registerWorker();
 		Resque::enqueue('queue2', 'Test_Job');
 
@@ -156,8 +168,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 	public function testWorkerClearsItsStatusWhenNotWorking()
 	{
 		Resque::enqueue('jobs', 'Test_Job');
-		$worker = new Resque_Worker('jobs');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('jobs'));
 		$job = $worker->reserve();
 		$worker->workingOn($job);
 		$worker->doneWorking();
@@ -166,8 +177,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testWorkerRecordsWhatItIsWorkingOn()
 	{
-		$worker = new Resque_Worker('jobs');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('jobs'));
 		$worker->registerWorker();
 
 		$payload = array(
@@ -189,8 +199,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 		Resque::enqueue('jobs', 'Test_Job');
 		Resque::enqueue('jobs', 'Invalid_Job');
 
-		$worker = new Resque_Worker('jobs');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('jobs'));
 		$worker->work(0);
 		$worker->work(0);
 
@@ -201,19 +210,16 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 	public function testWorkerCleansUpDeadWorkersOnStartup()
 	{
 		// Register a good worker
-		$goodWorker = new Resque_Worker('jobs');
-		$goodWorker->setLogger(new Resque_Log());
+		$goodWorker = $this->getWorker(array('jobs'));
 		$goodWorker->registerWorker();
 		$workerId = explode(':', $goodWorker);
 
 		// Register some bad workers
-		$worker = new Resque_Worker('jobs');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('jobs'));
 		$worker->setId($workerId[0].':1:jobs');
 		$worker->registerWorker();
 
-		$worker = new Resque_Worker(array('high', 'low'));
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('high', 'low'));
 		$worker->setId($workerId[0].':2:high,low');
 		$worker->registerWorker();
 
@@ -228,15 +234,13 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 	public function testDeadWorkerCleanUpDoesNotCleanUnknownWorkers()
 	{
 		// Register a bad worker on this machine
-		$worker = new Resque_Worker('jobs');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('jobs'));
 		$workerId = explode(':', $worker);
 		$worker->setId($workerId[0].':1:jobs');
 		$worker->registerWorker();
 
 		// Register some other false workers
-		$worker = new Resque_Worker('jobs');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('jobs'));
 		$worker->setId('my.other.host:1:jobs');
 		$worker->registerWorker();
 
@@ -252,8 +256,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
 	public function testWorkerFailsUncompletedJobsOnExit()
 	{
-		$worker = new Resque_Worker('jobs');
-		$worker->setLogger(new Resque_Log());
+		$worker = $this->getWorker(array('jobs'));
 		$worker->registerWorker();
 
 		$payload = array(
@@ -269,8 +272,7 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
     public function testBlockingListPop()
     {
-        $worker = new Resque_Worker('jobs');
-		$worker->setLogger(new Resque_Log());
+        $worker = $this->getWorker(array('jobs'));
         $worker->registerWorker();
 
         Resque::enqueue('jobs', 'Test_Job_1');
