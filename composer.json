@@ -19,13 +19,13 @@
 	],
 	"require": {
 		"php": ">=5.3.0",
-		"ext-pcntl": "*",
 		"colinmollenhour/credis": "~1.7",
 		"psr/log": "~1.0"
 	},
 	"suggest": {
 		"ext-proctitle": "Allows php-resque to rename the title of UNIX processes to show the status of a worker.",
-		"ext-redis": "Native PHP extension for Redis connectivity. Credis will automatically utilize when available."
+		"ext-redis": "Native PHP extension for Redis connectivity. Credis will automatically utilize when available.",
+		"ext-pcntl": "PHP extension for OS operations. Witout this extension, Resque cannot fork the jobs.",
 	},
 	"require-dev": {
 		"phpunit/phpunit": "3.7.*"
