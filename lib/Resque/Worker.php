@@ -157,9 +157,9 @@ class Resque_Worker
 			if(!$this->paused) {
 				if($blocking === true) {
 					$this->logger->log(Psr\Log\LogLevel::INFO, 'Starting blocking with timeout of {interval}', array('interval' => $interval));
-					$this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with blocking timeout ' . $interval);
+					$this->updateProcLine('Waiting with blocking timeout ' . $interval);
 				} else {
-					$this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $interval);
+					$this->updateProcLine('Waiting with interval ' . $interval);
 				}
 
 				$job = $this->reserve($blocking, $interval);
@@ -179,7 +179,7 @@ class Resque_Worker
 						$this->updateProcLine('Paused');
 					}
 					else {
-						$this->updateProcLine('Waiting for ' . implode(',', $this->queues));
+						$this->updateProcLine('Waiting');
 					}
 
 					usleep($interval * 1000000);
@@ -323,7 +323,7 @@ class Resque_Worker
 	 */
 	private function updateProcLine($status)
 	{
-		$processTitle = 'resque-' . Resque::VERSION . ': ' . $status;
+		$processTitle = 'resque-' . Resque::VERSION . ' (' . implode(',', $this->queues) . '): ' . $status;
 		if(function_exists('cli_set_process_title') && PHP_OS !== 'Darwin') {
 			cli_set_process_title($processTitle);
 		}
