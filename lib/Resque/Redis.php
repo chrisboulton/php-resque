@@ -116,8 +116,8 @@ class Resque_Redis
 			if (is_array($server)) {
 				$this->driver = new Credis_Cluster($server);
 			}
-			else if (is_object($client)) {
-				$this->driver = $client;
+			else if (is_object($server)) {
+				$this->driver = $server;
 			}
 			else {
 				list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
