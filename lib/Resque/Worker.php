@@ -262,6 +262,11 @@ class Resque_Worker
 		}
 
 		if($blocking === true) {
+		    if(empty($queues)){
+                $this->logger->log(Psr\Log\LogLevel::INFO, 'No queue was found, sleeping for {interval}', array('interval' => $timeout));
+                usleep($timeout * 1000000);
+                return false;
+            }
 			$job = Resque_Job::reserveBlocking($queues, $timeout);
 			if($job) {
 				$this->logger->log(Psr\Log\LogLevel::INFO, 'Found job on {queue}', array('queue' => $job->queue));
