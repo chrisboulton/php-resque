@@ -291,6 +291,15 @@ use a custom prefix to separate the Resque data:
 $ PREFIX=my-app-name bin/resque
 ```
 
+### Setting Redis backend ###
+
+When you have the Redis database on a different host than the one the workers 
+are running, you must set the `REDIS_BACKEND` environment variable:
+
+```sh
+$ REDIS_BACKEND=my-redis-ip:my-redis-port bin/resque
+```
+
 ### Forking ###
 
 Similarly to the Ruby versions, supported platforms will immediately
