@@ -24,9 +24,14 @@ class Resque_Job
 	public $payload;
 
 	/**
-	 * @var object Instance of the class performing work for this job.
+	 * @var object|Resque_JobInterface Instance of the class performing work for this job.
 	 */
 	private $instance;
+
+	/**
+	 * @var Resque_Job_FactoryInterface
+	 */
+	private $jobFactory;
 
 	/**
 	 * Instantiate a new instance of a job.
@@ -60,6 +65,7 @@ class Resque_Job
 	 * @param string $id Unique identifier for tracking the job. Generated if not supplied.
 	 *
 	 * @return string
+	 * @throws \InvalidArgumentException
 	 */
 	public static function create($queue, $class, $args = null, $monitor = false, $id = null)
 	{
@@ -86,41 +92,41 @@ class Resque_Job
 		return $id;
 	}
 
-    /**
-     * Find the next available job from the specified queue and return an
-     * instance of Resque_Job for it.
-     *
-     * @param string $queue The name of the queue to check for a job in.
-     * @return null|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
-     */
-    public static function reserve($queue)
-    {
-        $payload = Resque::pop($queue);
-        if(!is_array($payload)) {
-            return false;
-        }
+	/**
+	 * Find the next available job from the specified queue and return an
+	 * instance of Resque_Job for it.
+	 *
+	 * @param string $queue The name of the queue to check for a job in.
+	 * @return false|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
+	 */
+	public static function reserve($queue)
+	{
+		$payload = Resque::pop($queue);
+		if(!is_array($payload)) {
+			return false;
+		}
 
-        return new Resque_Job($queue, $payload);
-    }
+		return new Resque_Job($queue, $payload);
+	}
 
-    /**
-     * Find the next available job from the specified queues using blocking list pop
-     * and return an instance of Resque_Job for it.
-     *
-     * @param array             $queues
-     * @param int               $timeout
-     * @return null|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
-     */
-    public static function reserveBlocking(array $queues, $timeout = null)
-    {
-        $item = Resque::blpop($queues, $timeout);
+	/**
+	 * Find the next available job from the specified queues using blocking list pop
+	 * and return an instance of Resque_Job for it.
+	 *
+	 * @param array             $queues
+	 * @param int               $timeout
+	 * @return false|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
+	 */
+	public static function reserveBlocking(array $queues, $timeout = null)
+	{
+		$item = Resque::blpop($queues, $timeout);
 
-        if(!is_array($item)) {
-            return false;
-        }
+		if(!is_array($item)) {
+			return false;
+		}
 
-        return new Resque_Job($item['queue'], $item['payload']);
-    }
+		return new Resque_Job($item['queue'], $item['payload']);
+	}
 
 	/**
 	 * Update the status of the current job.
@@ -164,8 +170,8 @@ class Resque_Job
 
 	/**
 	 * Get the instantiated object for this job that will be performing work.
-	 *
-	 * @return object Instance of the object that this job belongs to.
+	 * @return Resque_JobInterface Instance of the object that this job belongs to.
+	 * @throws Resque_Exception
 	 */
 	public function getInstance()
 	{
@@ -173,23 +179,9 @@ class Resque_Job
 			return $this->instance;
 		}
 
-		if(!class_exists($this->payload['class'])) {
-			throw new Resque_Exception(
-				'Could not find job class ' . $this->payload['class'] . '.'
-			);
-		}
-
-		if(!method_exists($this->payload['class'], 'perform')) {
-			throw new Resque_Exception(
-				'Job class ' . $this->payload['class'] . ' does not contain a perform method.'
-			);
-		}
-
-		$this->instance = new $this->payload['class'];
-		$this->instance->job = $this;
-		$this->instance->args = $this->getArguments();
-		$this->instance->queue = $this->queue;
-		return $this->instance;
+        $this->instance = $this->getJobFactory()->create($this->payload['class'], $this->getArguments(), $this->queue);
+        $this->instance->job = $this;
+        return $this->instance;
 	}
 
 	/**
@@ -285,5 +277,26 @@ class Resque_Job
 		}
 		return '(' . implode(' | ', $name) . ')';
 	}
+
+	/**
+	 * @param Resque_Job_FactoryInterface $jobFactory
+	 * @return Resque_Job
+	 */
+	public function setJobFactory(Resque_Job_FactoryInterface $jobFactory)
+	{
+		$this->jobFactory = $jobFactory;
+
+		return $this;
+	}
+
+    /**
+     * @return Resque_Job_FactoryInterface
+     */
+    public function getJobFactory()
+    {
+        if ($this->jobFactory === null) {
+            $this->jobFactory = new Resque_Job_Factory();
+        }
+        return $this->jobFactory;
+    }
 }
-?>

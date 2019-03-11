@@ -1,4 +1,6 @@
 <?php
+declare(ticks = 1);
+
 /**
  * Resque worker that handles checking queues for jobs, fetching them
  * off the queues, running them and handling the result.
@@ -63,7 +65,7 @@ class Resque_Worker
     public function __construct($queues)
     {
         $this->logger = new Resque_Log();
-        
+
         if(!is_array($queues)) {
             $queues = array($queues);
         }
@@ -73,45 +75,38 @@ class Resque_Worker
         $this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
     }
 
-	public function getId()
-	{
-		return $this->id;
-	}
+    public function getId()
+    {
+        return $this->id;
+    }
 
-	public function getQueues()
-	{
-		return $this->queues;
-	}
+    public function getQueues()
+    {
+        return $this->queues;
+    }
 
-	public function getStatus()
-	{
-		if ($this->paused) {
-			return 'Paused';
-		}
+    public function getStatus()
+    {
+        if ($this->paused) {
+            return 'Paused';
+        }
 
-		if ($this->shutdown) {
-			return 'Shutdown';
-		}
+        if ($this->shutdown) {
+            return 'Shutdown';
+        }
 
-		return 'Active';
-	}
+        return 'Active';
+    }
 
-	/**
-	 * Determines the local hostname for this worker.
-	 *
-	 * @return string
-	 */
-	private static function getHostname()
-	{
-		if(function_exists('gethostname')) {
-			$hostname = gethostname();
-		}
-		else {
-			$hostname = php_uname('n');
-		}
-
-		return $hostname;
-	}
+    /**
+     * Determines the local hostname for this worker.
+     *
+     * @return string
+     */
+    private static function getHostname()
+    {
+        return php_uname('n');
+    }
 
 	/**
 	 * Return all workers known to Resque as instantiated instances.
@@ -220,7 +215,7 @@ class Resque_Worker
 				{
 					// If no job was found, we sleep for $interval before continuing and checking again
 					$this->logger->log(Psr\Log\LogLevel::INFO, 'Sleeping for {interval}', array('interval' => $interval));
-					
+
 					if($this->paused) {
 						$this->updateProcLine('Paused');
 					}
@@ -286,11 +281,12 @@ class Resque_Worker
 			$job->perform();
 		}
 		catch(Exception $e) {
-			$this->logger->log(Psr\Log\LogLevel::CRITICAL, '{job} has failed {stack}', array('job' => $job, 'stack' => $e->getMessage()));
+			$this->logger->log(Psr\Log\LogLevel::CRITICAL, '{job} has failed {stack}', array('job' => $job, 'stack' => $e));
 			$job->fail($e);
 			return;
 		}
 
+		$job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
 		$this->logger->log(Psr\Log\LogLevel::NOTICE, '{job} has finished', array('job' => $job));
 	}
 
@@ -369,7 +365,7 @@ class Resque_Worker
 	private function updateProcLine($status)
 	{
 		$processTitle = 'resque-' . Resque::VERSION . ': ' . $status;
-		if(function_exists('cli_set_process_title')) {
+		if(function_exists('cli_set_process_title') && PHP_OS !== 'Darwin') {
 			cli_set_process_title($processTitle);
 		}
 		else if(function_exists('setproctitle')) {
@@ -606,4 +602,3 @@ class Resque_Worker
 		$this->logger = $logger;
 	}
 }
-?>

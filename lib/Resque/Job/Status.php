@@ -151,4 +151,3 @@ class Resque_Job_Status
 		return 'job:' . $this->id . ':status';
 	}
 }
-?>

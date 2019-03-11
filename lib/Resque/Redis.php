@@ -98,7 +98,7 @@ class Resque_Redis
 	 */
 	public static function prefix($namespace)
 	{
-	    if (substr($namespace, -1) !== ':') {
+	    if (substr($namespace, -1) !== ':' && $namespace != '') {
 	        $namespace .= ':';
 	    }
 	    self::$defaultNamespace = $namespace;
@@ -108,35 +108,45 @@ class Resque_Redis
 	 * @param string|array $server A DSN or array
 	 * @param int $database A database number to select. However, if we find a valid database number in the DSN the
 	 *                      DSN-supplied value will be used instead and this parameter is ignored.
+	 * @param object $client Optional Credis_Cluster or Credis_Client instance instantiated by you
 	 */
-    public function __construct($server, $database = null)
+    public function __construct($server, $database = null, $client = null)
 	{
-		if (is_array($server)) {
-			$this->driver = new Credis_Cluster($server);
-		}
-		else {
+		try {
+			if (is_array($server)) {
+				$this->driver = new Credis_Cluster($server);
+			}
+			else if (is_object($client)) {
+				$this->driver = $client;
+			}
+			else {
+				list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
+				// $user is not used, only $password
 
-			list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
-			// $user is not used, only $password
+				// Look for known Credis_Client options
+				$timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
+				$persistent = isset($options['persistent']) ? $options['persistent'] : '';
+				$maxRetries = isset($options['max_connect_retries']) ? $options['max_connect_retries'] : 0;
 
-			// Look for known Credis_Client options
-			$timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
-			$persistent = isset($options['persistent']) ? $options['persistent'] : '';
+				$this->driver = new Credis_Client($host, $port, $timeout, $persistent);
+				$this->driver->setMaxConnectRetries($maxRetries);
+				if ($password){
+					$this->driver->auth($password);
+				}
 
-			$this->driver = new Credis_Client($host, $port, $timeout, $persistent);
-			if ($password){
-				$this->driver->auth($password);
+				// If we have found a database in our DSN, use it instead of the `$database`
+				// value passed into the constructor.
+				if ($dsnDatabase !== false) {
+					$database = $dsnDatabase;
+				}
 			}
 
-			// If we have found a database in our DSN, use it instead of the `$database`
-			// value passed into the constructor.
-			if ($dsnDatabase !== false) {
-				$database = $dsnDatabase;
+			if ($database !== null) {
+				$this->driver->select($database);
 			}
 		}
-
-		if ($database !== null) {
-			$this->driver->select($database);
+		catch(CredisException $e) {
+			throw new Resque_RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
 		}
 	}
 
@@ -146,6 +156,7 @@ class Resque_Redis
 	 * - host:port
 	 * - redis://user:pass@host:port/db?option1=val1&option2=val2
 	 * - tcp://user:pass@host:port/db?option1=val1&option2=val2
+	 * - unix:///path/to/redis.sock
 	 *
 	 * Note: the 'user' part of the DSN is not used.
 	 *
@@ -158,6 +169,16 @@ class Resque_Redis
 		if ($dsn == '') {
 			// Use a sensible default for an empty DNS string
 			$dsn = 'redis://' . self::DEFAULT_HOST;
+		}
+		if(substr($dsn, 0, 7) === 'unix://') {
+			return array(
+				$dsn,
+				null,
+				false,
+				null,
+				null,
+				null,
+			);
 		}
 		$parts = parse_url($dsn);
 
@@ -228,7 +249,7 @@ class Resque_Redis
 			return $this->driver->__call($name, $args);
 		}
 		catch (CredisException $e) {
-			return false;
+			throw new Resque_RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
 		}
 	}
 

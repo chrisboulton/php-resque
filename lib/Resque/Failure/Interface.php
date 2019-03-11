@@ -18,4 +18,3 @@ interface Resque_Failure_Interface
 	 */
 	public function __construct($payload, $exception, $worker, $queue);
 }
-?>

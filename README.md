@@ -53,11 +53,9 @@ If you're not familiar with Composer, please see <http://getcomposer.org/>.
 
 ```json
 {
-    // ...
     "require": {
-        "chrisboulton/php-resque": "1.2.x"	// Most recent tagged version
-    },
-    // ...
+        "chrisboulton/php-resque": "1.2.x"
+    }
 }
 ```
 
@@ -143,7 +141,7 @@ This method can be used to conveniently remove a job from a queue.
 Resque::dequeue('default', ['My_Job']);
 
 // Removes job class 'My_Job' with Job ID '087df5819a790ac666c9608e2234b21e' of queue 'default'
-Resuque::dequeue('default', ['My_Job' => '087df5819a790ac666c9608e2234b21e']);
+Resque::dequeue('default', ['My_Job' => '087df5819a790ac666c9608e2234b21e']);
 
 // Removes job class 'My_Job' with arguments of queue 'default'
 Resque::dequeue('default', ['My_Job' => array('foo' => 1, 'bar' => 2)]);

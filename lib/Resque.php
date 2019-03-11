@@ -72,12 +72,12 @@ class Resque
 	 *
 	 * Will close connection to Redis before forking.
 	 *
-	 * @return int Return vars as per pcntl_fork()
+	 * @return int Return vars as per pcntl_fork(). False if pcntl_fork is unavailable
 	 */
 	public static function fork()
 	{
 		if(!function_exists('pcntl_fork')) {
-			return -1;
+			return false;
 		}
 
 		// Close the connection to Redis before forking.
@@ -101,8 +101,12 @@ class Resque
 	 */
 	public static function push($queue, $item)
 	{
+		$encodedItem = json_encode($item);
+		if ($encodedItem === false) {
+			return false;
+		}
 		self::redis()->sadd('queues', $queue);
-		$length = self::redis()->rpush('queue:' . $queue, json_encode($item));
+		$length = self::redis()->rpush('queue:' . $queue, $encodedItem);
 		if ($length < 1) {
 			return false;
 		}
@@ -277,12 +281,12 @@ class Resque
 		$originalQueue = 'queue:'. $queue;
 		$tempQueue = $originalQueue. ':temp:'. time();
 		$requeueQueue = $tempQueue. ':requeue';
-		
+
 		// move each item from original queue to temp queue and process it
 		$finished = false;
 		while (!$finished) {
 			$string = self::redis()->rpoplpush($originalQueue, self::redis()->getPrefix() . $tempQueue);
-	
+
 			if (!empty($string)) {
 				if(self::matchItem($string, $items)) {
 					self::redis()->rpop($tempQueue);
@@ -307,7 +311,7 @@ class Resque
 		// remove temp queue and requeue queue
 		self::redis()->del($requeueQueue);
 		self::redis()->del($tempQueue);
-		
+
 		return $counter;
 	}
 
@@ -373,4 +377,3 @@ class Resque
 		return md5(uniqid('', true));
 	}
 }
-

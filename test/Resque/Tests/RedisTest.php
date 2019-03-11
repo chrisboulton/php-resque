@@ -1,13 +1,29 @@
 <?php
 /**
- * Resque_Redis DSN tests.
+ * Resque_Event tests.
  *
  * @package		Resque/Tests
- * @author		Iskandar Najmuddin <github@iskandar.co.uk>
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Resque_Tests_DsnTest extends Resque_Tests_TestCase
+class Resque_Tests_RedisTest extends Resque_Tests_TestCase
 {
+	/**
+	 * @expectedException Resque_RedisException
+	 */
+	public function testRedisExceptionsAreSurfaced()
+	{
+		$mockCredis = $this->getMockBuilder('Credis_Client')
+			->setMethods(['connect', '__call'])
+			->getMock();
+		$mockCredis->expects($this->any())->method('__call')
+			->will($this->throwException(new CredisException('failure')));
+
+		Resque::setBackend(function($database) use ($mockCredis) {
+			return new Resque_Redis('localhost:6379', $database, $mockCredis);
+		});
+		Resque::redis()->ping();
+	}
 
 	/**
 	 * These DNS strings are considered valid.
@@ -178,5 +194,4 @@ class Resque_Tests_DsnTest extends Resque_Tests_TestCase
 		// The next line should throw an InvalidArgumentException
 		$result = Resque_Redis::parseDsn($dsn);
 	}
-
 }
