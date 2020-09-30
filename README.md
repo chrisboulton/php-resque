@@ -30,9 +30,9 @@ The PHP port provides much the same features as the Ruby version:
 It also supports the following additional features:
 
 * Has the ability to track the status of jobs
-* Will mark a job as failed, if a forked child running a job does
+* Will mark a job as failed if a forked child running a job does
 not exit with a status code as 0
-* Has built in support for `setUp` and `tearDown` methods, called
+* Has built-in support for `setUp` and `tearDown` methods, called
 pre and post jobs
 
 ## Requirements ##
@@ -86,7 +86,7 @@ Resque::enqueue('default', 'My_Job', $args);
 
 ### Defining Jobs ###
 
-Each job should be in its own class, and include a `perform` method.
+Each job should be in its own class and include a `perform` method.
 
 ```php
 class My_Job
@@ -189,7 +189,7 @@ Valid statuses include:
 * `false` - Failed to fetch the status - is the token valid?
 
 Statuses are available for up to 24 hours after a job has completed
-or failed, and are then automatically expired. A status can also
+or failed, and are then automatically expired. Status can also
 forcefully be expired by calling the `stop()` method on a status
 class.
 
@@ -222,7 +222,7 @@ $ QUEUE=file_serve APP_INCLUDE=../application/init.php php bin/resque
 ```
 
 *Pro tip: Using Composer? More than likely, you don't need to worry about
-`APP_INCLUDE`, because hopefully Composer is responsible for autoloading
+`APP_INCLUDE`, because hopefully the Composer is responsible for autoloading
 your application too!*
 
 Getting your application underway also includes telling the worker your job
@@ -306,7 +306,7 @@ the job.
 Signals also work on supported platforms exactly as in the Ruby
 version of Resque:
 
-* `QUIT` - Wait for job to finish processing then exit
+* `QUIT` - Wait for the job to finish processing then exit
 * `TERM` / `INT` - Immediately kill job then exit
 * `USR1` - Immediately kill job but don't exit
 * `USR2` - Pause worker, no new jobs will be processed
@@ -392,7 +392,7 @@ changes made will only live as long as the **job** is being processed.
 Called before the `setUp` and `perform` methods on a job are run. Argument passed
 contains the instance of `Resque_Job` for the job about to be run.
 
-You can prevent execution of the job by throwing an exception of `Resque_Job_DontPerform`.
+You can prevent the execution of the job by throwing an exception of `Resque_Job_DontPerform`.
 Any other exceptions thrown will be treated as if they were thrown in a job, causing the
 job to fail.
 
@@ -421,17 +421,17 @@ Arguments passed (in this order) include:
 * Queue - string containing the name of the queue the job is to be enqueued in
 * ID - string containing the token of the job to be enqueued
 
-You can prevent enqueing of the job by throwing an exception of `Resque_Job_DontCreate`.
+You can prevent the enqueing of the job by throwing an exception of `Resque_Job_DontCreate`.
 
 #### afterEnqueue ####
 
 Called after a job has been queued using the `Resque::enqueue` method. Arguments passed
 (in this order) include:
 
-* Class - string containing the name of scheduled job
-* Arguments - array of arguments supplied to the job
-* Queue - string containing the name of the queue the job was added to
-* ID - string containing the new token of the enqueued job
+* Class - A string containing the name of the scheduled job
+* Arguments - A array of arguments supplied to the job
+* Queue - A string containing the name of the queue the job was added to
+* ID - A string containing the new token of the enqueued job
 
 ## Step-By-Step ##
 
