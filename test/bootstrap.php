@@ -119,7 +119,7 @@ class Test_Job_With_SetUp
 	public static $called = false;
 	public $args = false;
 
-	public function setUp()
+	public function setUp(): void
 	{
 		self::$called = true;
 	}

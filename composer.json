@@ -18,9 +18,9 @@
 		}
 	],
 	"require": {
-		"php": ">=5.3.0",
+		"php": ">=8.2",
 		"ext-pcntl": "*",
-		"colinmollenhour/credis": "~1.7",
+		"colinmollenhour/credis": "dev-master",
 		"psr/log": "~1.0"
 	},
 	"suggest": {
@@ -28,7 +28,7 @@
 		"ext-redis": "Native PHP extension for Redis connectivity. Credis will automatically utilize when available."
 	},
 	"require-dev": {
-		"phpunit/phpunit": "3.7.*"
+		"phpunit/phpunit": "^10"
 	},
 	"bin": [
 		"bin/resque"
