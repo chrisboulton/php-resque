@@ -109,11 +109,6 @@ class Failing_Job
 	}
 }
 
-class Test_Job_Without_Perform_Method
-{
-
-}
-
 class Test_Job_With_SetUp
 {
 	public static $called = false;
