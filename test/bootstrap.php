@@ -109,17 +109,12 @@ class Failing_Job
 	}
 }
 
-class Test_Job_Without_Perform_Method
-{
-
-}
-
 class Test_Job_With_SetUp
 {
 	public static $called = false;
 	public $args = false;
 
-	public function setUp()
+	public function setUp(): void
 	{
 		self::$called = true;
 	}
