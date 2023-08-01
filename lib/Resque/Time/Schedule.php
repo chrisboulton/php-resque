@@ -21,8 +21,11 @@ class Resque_Time_Schedule
     // -----------------------------------------------------------------------------------------------------------------
     // Schedule checking
 
-    public function isInSchedule(DateTime $now): bool
+    public function isInSchedule(?DateTime $now = null): bool
     {
+        if (!$now)
+            $now = new DateTime('now');
+
         $todayFrom = $this->getFromDateTime($now);
 
         if ($todayFrom > $now) {
@@ -80,5 +83,13 @@ class Resque_Time_Schedule
             return null;
 
         return new Resque_Time_Schedule($from, $until);
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Schedule formatting
+
+    public function __toString(): string
+    {
+        return "{$this->from} - {$this->until}";
     }
 }

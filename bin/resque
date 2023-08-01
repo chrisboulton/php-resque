@@ -93,6 +93,15 @@ if(!empty($PREFIX)) {
     Resque_Redis::prefix($PREFIX);
 }
 
+$SCHEDULE = getenv('SCHEDULE');
+$scheduleParsed = null;
+if (!empty($SCHEDULE)) {
+    $scheduleParsed = Resque_Time_Schedule::tryParse($SCHEDULE);
+    if (!$scheduleParsed) {
+        die('SCHEDULE ('.$SCHEDULE.") expression invalid (parse error).\n");
+    }
+}
+
 if($count > 1) {
     for($i = 0; $i < $count; ++$i) {
         $pid = Resque::fork();
@@ -116,6 +125,9 @@ else {
     $queues = explode(',', $QUEUE);
     $worker = new Resque_Worker($queues);
     $worker->setLogger($logger);
+
+    if ($scheduleParsed)
+        $worker->setSchedule($scheduleParsed);
 
     $PIDFILE = getenv('PIDFILE');
     if ($PIDFILE) {

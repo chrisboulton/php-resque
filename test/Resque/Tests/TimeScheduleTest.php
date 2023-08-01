@@ -116,4 +116,15 @@ class Resque_Tests_TimeScheduleTest extends Resque_Tests_TestCase
             "Invalid schedule expression - tryParse should return null"
         );
     }
+
+    public function testFormatScheduleExpression()
+    {
+        $this->assertSame(
+            "22:34 - 06:56",
+            (string)new Resque_Time_Schedule(
+                new Resque_Time_Expression(22, 34),
+                new Resque_Time_Expression(6, 56),
+            )
+        );
+    }
 }

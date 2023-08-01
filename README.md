@@ -2,7 +2,7 @@
 
 **php-resque is a Redis-based library for enqueuing and running background jobs.**
 
-This is a lightly maintained fork of **chrisboulton/php-resque**, compatible with PHP 8.2+.
+This is a lightly maintained fork of **chrisboulton/php-resque**, with fixes and improvements, compatible with PHP 8.2+.
 
 ⚠️ Not recommended for new projects. We are only maintaining this for legacy projects.
 
@@ -74,14 +74,15 @@ QUEUE=default php vendor/bin/resque
 
 You can set the following environment variables on the worker:
 
-| Name          | Description                                                                                                             |
-|---------------|-------------------------------------------------------------------------------------------------------------------------|
-| `QUEUE`       | Required. Defines one or more comma-separated queues to process tasks from. Set to `*` to process from any queue.       |
-| `APP_INCLUDE` | Optional. Defines a bootstrap script to run before starting the worker.                                                 |
-| `PREFIX`      | Optional. Prefix to use in Redis.                                                                                       |
-| `COUNT`       | Optional. Amount of worker forks to start. If set to > 1, the process will start the workers and then exit immediately. |
-| `VERBOSE`     | Optional. Forces verbose log output.                                                                                    |
-| `VVERBOSE`    | Optional. Forces detailed verbose log output.                                                                           |
+| Name          | Description                                                                                                                                                                                                          |
+|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `QUEUE`       | Required. Defines one or more comma-separated queues to process tasks from. Set to `*` to process from any queue.                                                                                                    |
+| `APP_INCLUDE` | Optional. Defines a bootstrap script to run before starting the worker.                                                                                                                                              |
+| `PREFIX`      | Optional. Prefix to use in Redis.                                                                                                                                                                                    |
+| `COUNT`       | Optional. Amount of worker forks to start. If set to > 1, the process will start the workers and then exit immediately.                                                                                              |
+| `SCHEDULE`    | Optional. An expression with a from/until time, e.g. `22:00-06:00` to only run tasks between 10pm and 6am. The worker is paused outside of the schedule. Relative to default timezone (`date_default_timezone_set`). | 
+| `VERBOSE`     | Optional. Forces verbose log output.                                                                                                                                                                                 |
+| `VVERBOSE`    | Optional. Forces detailed verbose log output.                                                                                                                                                                        |
 
 ### Events
 

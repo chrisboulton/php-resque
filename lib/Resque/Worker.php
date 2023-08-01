@@ -52,6 +52,12 @@ class Resque_Worker
 	private $child = null;
 
     /**
+     * The schedule constraints for this worker.
+     * If a schedule is set, the worker will not perform any tasks outside of it.
+     */
+    private ?Resque_Time_Schedule $schedule = null;
+
+    /**
      * Instantiate a new worker, given a list of queues that it should be working
      * on. The list of queues should be supplied in the priority that they should
      * be checked for jobs (first come, first served)
@@ -191,6 +197,28 @@ class Resque_Worker
 				$this->shutdownNow();
 				break;
 			}
+
+            // Check schedule constraints
+            if ($this->schedule) {
+                $didScheduleDelay = false;
+                while (!$this->schedule->isInSchedule()) {
+                    if (!$didScheduleDelay) {
+                        // Announce schedule pause
+                        $this->logger->log(Psr\Log\LogLevel::NOTICE, "Pausing, outside schedule constraint ({$this->schedule})");
+                        $this->updateProcLine("Paused for " . implode(',', $this->queues) . " with schedule constraint {$this->schedule}");
+                        $didScheduleDelay = true;
+                    }
+                    if ($this->shutdown) {
+                        // Interrupted, immediate shutdown
+                        $this->shutdownNow();
+                        return;
+                    }
+                    usleep(10000000); // 10s
+                }
+                if ($didScheduleDelay) {
+                    $this->logger->log(Psr\Log\LogLevel::NOTICE, "Resuming, now within schedule constraint ({$this->schedule})");
+                }
+            }
 
 			// Attempt to find and reserve a job
 			$job = false;
@@ -601,4 +629,9 @@ class Resque_Worker
 	{
 		$this->logger = $logger;
 	}
+
+    public function setSchedule(?Resque_Time_Schedule $schedule): void
+    {
+        $this->schedule = $schedule;
+    }
 }
