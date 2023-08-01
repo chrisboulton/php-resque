@@ -153,7 +153,7 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
 		throw new Resque_Job_DontPerform;
 	}
 
-	public function beforeEnqueueEventDontCreateCallback($class, $args, $queue, $id, $track = false)
+	public function beforeEnqueueEventDontCreateCallback(string $class, ?array $args, string $queue, string $id, $track = false)
 	{
 		$this->callbacksHit[] = __FUNCTION__;
 		throw new Resque_Job_DontCreate;
