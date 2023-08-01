@@ -22,8 +22,6 @@ class Resque_Event
 	 */
 	public static function trigger($event, $data = null)
 	{
-        echo "Calling {$event} with: " . print_r($data, true);
-
 		if (!is_array($data)) {
 			$data = array($data);
 		}
